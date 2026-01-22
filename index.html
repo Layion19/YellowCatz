@@ -21,6 +21,31 @@
             font-family: 'Arial', sans-serif;
         }
 
+        /* Music Button */
+        .music-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 3px solid #8B5A00;
+            background-color: transparent;
+            color: #8B5A00;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .music-btn:hover {
+            background-color: #8B5A00;
+            color: #E8A000;
+        }
+
         /* Hamburger Menu */
         .menu-btn {
             position: fixed;
@@ -193,6 +218,14 @@
     </style>
 </head>
 <body>
+    <!-- Background Music -->
+    <audio id="bgMusic" loop>
+        <source src="images/music.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Music Button -->
+    <button class="music-btn" id="musicBtn">▶</button>
+
     <!-- Hamburger Menu Button -->
     <div class="menu-btn" id="menuBtn">
         <span></span>
@@ -233,6 +266,21 @@
     </div>
 
     <script>
+        // Music Toggle
+        const bgMusic = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+
+        musicBtn.addEventListener('click', () => {
+            if (bgMusic.paused) {
+                bgMusic.volume = 0.5;
+                bgMusic.play();
+                musicBtn.textContent = '❚❚';
+            } else {
+                bgMusic.pause();
+                musicBtn.textContent = '▶';
+            }
+        });
+
         // Menu Toggle
         const menuBtn = document.getElementById('menuBtn');
         const sidebar = document.getElementById('sidebar');
