@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Yellow Cat - About</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -19,6 +20,31 @@
             justify-content: center;
             align-items: center;
             padding: 80px 20px 40px;
+        }
+
+        /* Music Button */
+        .music-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 3px solid #8B5A00;
+            background-color: transparent;
+            color: #8B5A00;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .music-btn:hover {
+            background-color: #8B5A00;
+            color: #E8A000;
         }
 
         /* Hamburger Menu */
@@ -144,7 +170,7 @@
         }
 
         .content .rule {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
             text-align: center;
             margin: 30px 0;
@@ -156,9 +182,25 @@
             text-align: center;
             margin-top: 30px;
         }
+
+        .content .section {
+            margin-bottom: 25px;
+        }
+
+        .content .italic {
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
+    <!-- Background Music -->
+    <audio id="bgMusic" loop>
+        <source src="images/music.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Music Button -->
+    <button class="music-btn" id="musicBtn">▶</button>
+
     <!-- Hamburger Menu Button -->
     <div class="menu-btn" id="menuBtn">
         <span></span>
@@ -178,30 +220,103 @@
 
     <!-- Main Content -->
     <div class="content">
-        <h1>The Story of Yellow Cat</h1>
+        <h1>The Story of Yellow Catz</h1>
         
-        <p>They say that at the very beginning of crypto chaos, when the charts were red and traders were losing faith…</p>
-        
+        <div class="section">
+            <p>At the dawn of crypto chaos,<br>
+            when charts were bleeding red<br>
+            and conviction was fading…</p>
+        </div>
+
         <p><span class="highlight">A cat appeared.</span></p>
         
-        <p>No one knew where it came from. It was neither bull nor bear. It was <span class="highlight">yellow</span>.</p>
-        
-        <div class="yellow-lines">
-            🟡 Yellow like optimism.<br>
-            🟡 Yellow like the sun after the storm.<br>
-            🟡 Yellow like those who HODL while everyone else panics.
+        <div class="section">
+            <p>No one knows where it came from.<br>
+            Not a bull. Not a bear.<br>
+            Just <span class="highlight">yellow</span>.</p>
         </div>
         
-        <p>Yellow Cat doesn't talk. It watches. Black sunglasses. Yellow hoodie. Always chill while the market shakes.</p>
+        <div class="yellow-lines">
+            🟡 Yellow like optimism when everything feels lost.<br>
+            🟡 Yellow like the light after the blackout.<br>
+            🟡 Yellow like those who stay calm while the system panics.
+        </div>
         
-        <p>No promises. No roadmap. No bullshit. Just one rule:</p>
+        <div class="section">
+            <p>Yellow Catz doesn't chase trends.<br>
+            It watches.<br>
+            Black sunglasses on.<br>
+            Yellow hoodie zipped.<br>
+            Unmoved while the market shakes.</p>
+        </div>
+
+        <div class="section">
+            <p class="italic">This isn't a roadmap.<br>
+            This isn't a promise.<br>
+            This is a state of mind.</p>
+        </div>
+
+        <div class="section">
+            <p>Inspired by pop and cinematic culture,<br>
+            by stories of confinement, rebellion, and awakening,<br>
+            Yellow Catz plays with symbols, not rules.</p>
+        </div>
+
+        <div class="section">
+            <p>There's no noise here.<br>
+            No fake hype.<br>
+            No forced utility.</p>
+        </div>
+
+        <p>Just one idea:</p>
         
         <p class="rule">Stay cool. Stay yellow.</p>
         
-        <p class="ending">Yellow Cat isn't here to save crypto. It's here to remind us why we came in the first place: memes, community, and fun.</p>
+        <p class="ending">Yellow Catz isn't here to save crypto.<br>
+        It's here to remind us why we showed up in the first place —<br>
+        for the memes, the culture, and the community we build together.</p>
     </div>
 
     <script>
+        // Music Player with persistence
+        const bgMusic = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+
+        // Check if music was playing
+        window.addEventListener('load', () => {
+            const wasPlaying = localStorage.getItem('musicPlaying') === 'true';
+            const savedTime = parseFloat(localStorage.getItem('musicTime')) || 0;
+            
+            if (wasPlaying) {
+                bgMusic.currentTime = savedTime;
+                bgMusic.volume = 0.5;
+                bgMusic.play().then(() => {
+                    musicBtn.textContent = '❚❚';
+                }).catch(() => {
+                    musicBtn.textContent = '▶';
+                });
+            }
+        });
+
+        // Save state before leaving page
+        window.addEventListener('beforeunload', () => {
+            localStorage.setItem('musicTime', bgMusic.currentTime);
+        });
+
+        // Toggle music
+        musicBtn.addEventListener('click', () => {
+            if (bgMusic.paused) {
+                bgMusic.volume = 0.5;
+                bgMusic.play();
+                musicBtn.textContent = '❚❚';
+                localStorage.setItem('musicPlaying', 'true');
+            } else {
+                bgMusic.pause();
+                musicBtn.textContent = '▶';
+                localStorage.setItem('musicPlaying', 'false');
+            }
+        });
+
         // Menu Toggle
         const menuBtn = document.getElementById('menuBtn');
         const sidebar = document.getElementById('sidebar');

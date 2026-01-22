@@ -266,18 +266,42 @@
     </div>
 
     <script>
-        // Music Toggle
+        // Music Player with persistence
         const bgMusic = document.getElementById('bgMusic');
         const musicBtn = document.getElementById('musicBtn');
 
+        // Check if music was playing
+        window.addEventListener('load', () => {
+            const wasPlaying = localStorage.getItem('musicPlaying') === 'true';
+            const savedTime = parseFloat(localStorage.getItem('musicTime')) || 0;
+            
+            if (wasPlaying) {
+                bgMusic.currentTime = savedTime;
+                bgMusic.volume = 0.5;
+                bgMusic.play().then(() => {
+                    musicBtn.textContent = '❚❚';
+                }).catch(() => {
+                    musicBtn.textContent = '▶';
+                });
+            }
+        });
+
+        // Save state before leaving page
+        window.addEventListener('beforeunload', () => {
+            localStorage.setItem('musicTime', bgMusic.currentTime);
+        });
+
+        // Toggle music
         musicBtn.addEventListener('click', () => {
             if (bgMusic.paused) {
                 bgMusic.volume = 0.5;
                 bgMusic.play();
                 musicBtn.textContent = '❚❚';
+                localStorage.setItem('musicPlaying', 'true');
             } else {
                 bgMusic.pause();
                 musicBtn.textContent = '▶';
+                localStorage.setItem('musicPlaying', 'false');
             }
         });
 
