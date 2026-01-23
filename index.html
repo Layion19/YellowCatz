@@ -83,6 +83,24 @@
             transform: rotate(-45deg) translate(7px, -7px);
         }
 
+        /* Secret M button - centered under hamburger, at Z height */
+        .secret-m {
+            position: fixed;
+            top: 33%;
+            right: 32px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: transparent;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .secret-m:hover {
+            background-color: rgba(212, 146, 0, 0.15);
+        }
+
         /* Sidebar Menu */
         .sidebar {
             position: fixed;
@@ -166,6 +184,31 @@
             text-align: center;
         }
 
+        /* Secret O button */
+        .secret-o {
+            cursor: pointer;
+            position: relative;
+            display: inline-block;
+        }
+
+        .secret-o::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background-color: #D49200;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .secret-o:hover::after {
+            opacity: 0.3;
+        }
+
         .title-bottom {
             display: flex;
             align-items: center;
@@ -185,9 +228,11 @@
             letter-spacing: 8px;
         }
 
-        /* Cat Image */
+        /* Cat Image Container */
         .cat-container {
             text-align: center;
+            position: relative;
+            display: inline-block;
         }
 
         .cat-image {
@@ -195,6 +240,28 @@
             width: 90vw;
             height: auto;
             transition: opacity 0.5s ease;
+        }
+
+        /* Bars Overlay */
+        .bars-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            transition: opacity 1s ease;
+            z-index: 10;
+        }
+
+        .bars-overlay img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .bars-overlay.hidden {
+            opacity: 0;
         }
 
         /* Twitter/X Link */
@@ -239,6 +306,16 @@
             .line-right {
                 margin: 0 10px;
             }
+            .secret-o::after {
+                width: 12px;
+                height: 12px;
+            }
+            .secret-m {
+                top: 35%;
+                right: 28px;
+                width: 12px;
+                height: 12px;
+            }
         }
     </style>
 </head>
@@ -250,6 +327,9 @@
 
     <!-- Music Button -->
     <button class="music-btn" id="musicBtn">▶</button>
+
+    <!-- Secret M Button -->
+    <div class="secret-m" id="secretM"></div>
 
     <!-- Hamburger Menu Button -->
     <div class="menu-btn" id="menuBtn">
@@ -273,7 +353,7 @@
         <div class="title-container">
             <div class="line-left"></div>
             <div class="title-text">
-                <div class="title-top">YELLOW</div>
+                <div class="title-top">YELL<span class="secret-o" id="secretO">O</span>W</div>
                 <div class="title-bottom">
                     <div class="small-text">
                         <div>IS</div>
@@ -287,6 +367,10 @@
         </div>
         <div class="cat-container">
             <img src="images/Catz0.png" alt="Yellow Cat" class="cat-image" id="catImage">
+            <!-- Bars Overlay -->
+            <div class="bars-overlay" id="barsOverlay">
+                <img src="images/bar.png" alt="Bars">
+            </div>
         </div>
     </div>
 
@@ -299,31 +383,77 @@
         </a>
     </div>
 
+    <!-- Hidden images for secret downloads -->
+    <img id="secretImageX" src="images/YellowCatzX.png" style="display: none;">
+    <img id="secretImageM" src="images/YellowCatzM.png" style="display: none;">
+
     <script>
-        // Music Player with persistence
+        // Secret O download
+        const secretO = document.getElementById('secretO');
+        const secretImageX = document.getElementById('secretImageX');
+
+        secretO.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = secretImageX.naturalWidth;
+            canvas.height = secretImageX.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(secretImageX, 0, 0);
+            
+            const link = document.createElement('a');
+            link.download = 'YellowCatzX.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+
+        // Secret M download
+        const secretM = document.getElementById('secretM');
+        const secretImageM = document.getElementById('secretImageM');
+
+        secretM.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = secretImageM.naturalWidth;
+            canvas.height = secretImageM.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(secretImageM, 0, 0);
+            
+            const link = document.createElement('a');
+            link.download = 'YellowCatzM.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+
+        // Music Player
         const bgMusic = document.getElementById('bgMusic');
         const musicBtn = document.getElementById('musicBtn');
+        const barsOverlay = document.getElementById('barsOverlay');
+        const catImage = document.getElementById('catImage');
 
-        // Check if music was playing
-        window.addEventListener('load', () => {
-            const wasPlaying = localStorage.getItem('musicPlaying') === 'true';
-            const savedTime = parseFloat(localStorage.getItem('musicTime')) || 0;
-            
-            if (wasPlaying) {
-                bgMusic.currentTime = savedTime;
-                bgMusic.volume = 0.5;
-                bgMusic.play().then(() => {
-                    musicBtn.textContent = '❚❚';
-                }).catch(() => {
-                    musicBtn.textContent = '▶';
-                });
-            }
-        });
+        // Image Rotation
+        const images = [
+            'images/Catz0.png',
+            'images/Catz1.png',
+            'images/Catz2.png',
+            'images/Catz3.png',
+            'images/Catz4.png'
+        ];
 
-        // Save state before leaving page
-        window.addEventListener('beforeunload', () => {
-            localStorage.setItem('musicTime', bgMusic.currentTime);
-        });
+        let currentIndex = 0;
+        let rotationInterval = null;
+        let hasStarted = false;
+
+        // Start image rotation
+        function startRotation() {
+            if (rotationInterval) return;
+            rotationInterval = setInterval(() => {
+                currentIndex = (currentIndex + 1) % images.length;
+                catImage.style.opacity = 0;
+                
+                setTimeout(() => {
+                    catImage.src = images[currentIndex];
+                    catImage.style.opacity = 1;
+                }, 300);
+            }, 3500);
+        }
 
         // Toggle music
         musicBtn.addEventListener('click', () => {
@@ -331,11 +461,16 @@
                 bgMusic.volume = 0.5;
                 bgMusic.play();
                 musicBtn.textContent = '❚❚';
-                localStorage.setItem('musicPlaying', 'true');
+                
+                // First time playing: remove bars and start rotation
+                if (!hasStarted) {
+                    hasStarted = true;
+                    barsOverlay.classList.add('hidden');
+                    startRotation();
+                }
             } else {
                 bgMusic.pause();
                 musicBtn.textContent = '▶';
-                localStorage.setItem('musicPlaying', 'false');
             }
         });
 
@@ -355,28 +490,6 @@
             sidebar.classList.remove('active');
             overlay.classList.remove('active');
         });
-
-        // Image Rotation
-        const images = [
-            'images/Catz0.png',
-            'images/Catz1.png',
-            'images/Catz2.png',
-            'images/Catz3.png',
-            'images/Catz4.png'
-        ];
-
-        let currentIndex = 0;
-        const catImage = document.getElementById('catImage');
-
-        setInterval(() => {
-            currentIndex = (currentIndex + 1) % images.length;
-            catImage.style.opacity = 0;
-            
-            setTimeout(() => {
-                catImage.src = images[currentIndex];
-                catImage.style.opacity = 1;
-            }, 300);
-        }, 3500);
     </script>
 </body>
 </html>
