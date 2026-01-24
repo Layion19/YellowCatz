@@ -133,6 +133,22 @@
             color: #fff;
         }
 
+        /* Secret Yellow Dot - Entry to Yellow World */
+        .yellow-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #E8A000;
+            margin: 25px auto 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.6;
+        }
+
+        .yellow-dot:hover {
+            opacity: 1;
+        }
+
         /* Overlay */
         .overlay {
             position: fixed;
@@ -344,6 +360,8 @@
         <a href="about.html">About</a>
         <a href="yellowmap.html">YellowMap</a>
         <a href="gallery.html">Gallery</a>
+        <!-- Secret Yellow Dot - Entry to Yellow World -->
+        <div class="yellow-dot" id="yellowDot"></div>
     </nav>
 
     <!-- Overlay -->
@@ -421,6 +439,12 @@
             link.download = 'YellowCatzM.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
+        });
+
+        // Yellow World Entry
+        const yellowDot = document.getElementById('yellowDot');
+        yellowDot.addEventListener('click', () => {
+            window.location.href = 'yellow.html';
         });
 
         // Music Player
