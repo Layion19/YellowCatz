@@ -1,5 +1,5 @@
-import { createToken, createSessionCookie, parseCookies } from '../lib/auth.js';
-import { initDatabase, getUserByXId, createUser, updateUser, awardBadge, isOGPeriodActive } from '../lib/db.js';
+import { createToken, createSessionCookie, parseCookies } from '../../lib/auth.js';
+import { initDatabase, getUserByXId, createUser, updateUser, awardBadge, isOGPeriodActive } from '../../lib/db.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
