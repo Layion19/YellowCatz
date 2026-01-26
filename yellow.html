@@ -22,7 +22,6 @@
             overflow: hidden;
         }
 
-        /* Main Container */
         .container {
             text-align: center;
             display: flex;
@@ -31,7 +30,6 @@
             justify-content: center;
         }
 
-        /* Play Button */
         .play-btn {
             width: 80px;
             height: 80px;
@@ -64,7 +62,6 @@
             margin-left: 5px;
         }
 
-        /* Text Container */
         .text-container {
             position: absolute;
             display: flex;
@@ -79,7 +76,6 @@
             opacity: 1;
         }
 
-        /* Welcome Text */
         .welcome-text {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 72px;
@@ -89,7 +85,6 @@
             min-height: 86px;
         }
 
-        /* Enter Text */
         .enter-text {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 32px;
@@ -99,7 +94,6 @@
             min-height: 38px;
         }
 
-        /* Small Text */
         .small-text {
             font-size: 14px;
             letter-spacing: 1px;
@@ -109,7 +103,6 @@
             min-height: 20px;
         }
 
-        /* Cursor for typewriter */
         .cursor {
             display: inline-block;
             width: 3px;
@@ -125,7 +118,6 @@
             51%, 100% { opacity: 0; }
         }
 
-        /* X Connect Button */
         .x-connect {
             margin-top: 50px;
             display: flex;
@@ -179,7 +171,6 @@
             opacity: 0.6;
         }
 
-        /* Responsive */
         @media (max-width: 600px) {
             .welcome-text {
                 font-size: 48px;
@@ -222,20 +213,17 @@
 </head>
 <body>
     <div class="container">
-        <!-- Play Button -->
         <button class="play-btn" id="playBtn">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M8 5v14l11-7z"/>
             </svg>
         </button>
 
-        <!-- Text Container (appears after play) -->
         <div class="text-container" id="textContainer">
             <div class="welcome-text" id="welcomeText"></div>
             <div class="enter-text" id="enterText"></div>
             <div class="small-text" id="smallText"></div>
             
-            <!-- X Connect Button -->
             <div class="x-connect" id="xConnect">
                 <button class="x-btn" id="xBtn">
                     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -256,7 +244,6 @@
         const xConnect = document.getElementById('xConnect');
         const xBtn = document.getElementById('xBtn');
 
-        // Typewriter function
         function typeWriter(element, text, speed = 80) {
             return new Promise((resolve) => {
                 let i = 0;
@@ -268,7 +255,6 @@
                         i++;
                         setTimeout(type, speed);
                     } else {
-                        // Remove cursor when done
                         setTimeout(() => {
                             element.innerHTML = text;
                             resolve();
@@ -279,48 +265,37 @@
             });
         }
 
-        // Play button click handler
         playBtn.addEventListener('click', async () => {
-            // Hide play button
             playBtn.classList.add('hidden');
             
-            // Show text container
             setTimeout(() => {
                 textContainer.classList.add('visible');
             }, 300);
 
-            // Wait for container to be visible
             await new Promise(r => setTimeout(r, 500));
-
-            // Type "WELCOME"
             await typeWriter(welcomeText, 'WELCOME', 120);
-
-            // Pause
             await new Promise(r => setTimeout(r, 600));
-
-            // Type "Enter the Yellow World"
             await typeWriter(enterText, 'Enter the Yellow World', 60);
-
-            // Pause
             await new Promise(r => setTimeout(r, 400));
-
-            // Type small text
             await typeWriter(smallText, 'Not everyone needs to go further.', 40);
-
-            // Wait then show X button
             await new Promise(r => setTimeout(r, 1500));
             xConnect.classList.add('visible');
         });
 
-        // X button click handler (placeholder for OAuth)
         xBtn.addEventListener('click', () => {
-            // TODO: Implement X OAuth
-            // For now, redirect to status page (will be created with backend)
-            alert('X OAuth will be implemented with the backend.\nThis will connect to Twitter/X for authentication.');
+            xBtn.style.opacity = '0.5';
+            xBtn.style.pointerEvents = 'none';
             
-            // Future implementation:
-            // window.location.href = '/api/auth/twitter';
+            setTimeout(() => {
+                window.location.href = '/api/auth/login';
+            }, 300);
         });
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const error = urlParams.get('error');
+        if (error) {
+            console.error('OAuth error:', error);
+        }
     </script>
 </body>
 </html>

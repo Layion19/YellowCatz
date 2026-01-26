@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yellow World - Your Status</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: #E8A000;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .page-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 36px;
+            letter-spacing: 4px;
+            color: #8B5A00;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .identity-card {
+            background-color: #000;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .identity-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #222;
+        }
+
+        .identity-row:last-child {
+            border-bottom: none;
+        }
+
+        .identity-label {
+            font-size: 12px;
+            letter-spacing: 2px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .identity-value {
+            font-size: 16px;
+            color: #E8A000;
+            font-weight: bold;
+        }
+
+        .identity-value.username {
+            font-size: 18px;
+        }
+
+        .badges-section {
+            background-color: #000;
+            border-radius: 16px;
+            padding: 25px;
+        }
+
+        .badges-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px;
+            letter-spacing: 3px;
+            color: #E8A000;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .badges-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .badge {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 14px;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .badge.locked {
+            background-color: #1a1a1a;
+            border: 2px solid #333;
+            color: #444;
+        }
+
+        .badge.unlocked {
+            background-color: #E8A000;
+            border: 2px solid #8B5A00;
+            color: #000;
+            box-shadow: 0 0 15px rgba(232, 160, 0, 0.3);
+        }
+
+        .badge.unlocked:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(232, 160, 0, 0.5);
+        }
+
+        .badge-tooltip {
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #000;
+            border: 1px solid #333;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: 'Arial', sans-serif;
+            font-size: 11px;
+            letter-spacing: 0;
+            color: #888;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .badge-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #333;
+        }
+
+        .badge:hover .badge-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .badge-tooltip.unlocked-tip {
+            color: #E8A000;
+            border-color: #8B5A00;
+        }
+
+        .badge-tooltip.unlocked-tip::after {
+            border-top-color: #8B5A00;
+        }
+
+        .badge-number {
+            font-size: 16px;
+            color: #333;
+        }
+
+        .signal-message {
+            text-align: center;
+            font-size: 13px;
+            letter-spacing: 1px;
+            color: #555;
+            font-style: italic;
+        }
+
+        .back-btn {
+            display: block;
+            margin: 30px auto 0;
+            padding: 12px 30px;
+            background-color: transparent;
+            border: 2px solid #8B5A00;
+            border-radius: 30px;
+            color: #8B5A00;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 16px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background-color: #8B5A00;
+            color: #E8A000;
+        }
+
+        @media (max-width: 400px) {
+            .badges-grid {
+                gap: 10px;
+            }
+
+            .badge {
+                font-size: 12px;
+            }
+
+            .page-title {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="page-title">Your Yellow Status</h1>
+
+        <div class="identity-card">
+            <div class="identity-row">
+                <span class="identity-label">Username</span>
+                <span class="identity-value username" id="username">Loading...</span>
+            </div>
+            <div class="identity-row">
+                <span class="identity-label">Join Date</span>
+                <span class="identity-value" id="joinDate">...</span>
+            </div>
+        </div>
+
+        <div class="badges-section">
+            <h2 class="badges-title">Badges</h2>
+
+            <div class="badges-grid" id="badgesGrid">
+                <div class="badge locked" data-badge="og">
+                    <span>OG</span>
+                    <div class="badge-tooltip">First 24 hours</div>
+                </div>
+                <div class="badge locked" data-badge="badge_2">
+                    <span class="badge-number">?</span>
+                    <div class="badge-tooltip">???</div>
+                </div>
+                <div class="badge locked" data-badge="badge_3">
+                    <span class="badge-number">?</span>
+                    <div class="badge-tooltip">???</div>
+                </div>
+                <div class="badge locked" data-badge="badge_4">
+                    <span class="badge-number">?</span>
+                    <div class="badge-tooltip">???</div>
+                </div>
+                <div class="badge locked" data-badge="badge_5">
+                    <span class="badge-number">?</span>
+                    <div class="badge-tooltip">???</div>
+                </div>
+                <div class="badge locked" data-badge="badge_6">
+                    <span class="badge-number">?</span>
+                    <div class="badge-tooltip">???</div>
+                </div>
+                <div class="badge locked" data-badge="badge_7">
+                    <span class="badge-number">?</span>
+                    <div class="badge-tooltip">???</div>
+                </div>
+                <div class="badge locked" data-badge="badge_8">
+                    <span class="badge-number">?</span>
+                    <div class="badge-tooltip">???</div>
+                </div>
+                <div class="badge locked" data-badge="badge_9">
+                    <span class="badge-number">?</span>
+                    <div class="badge-tooltip">???</div>
+                </div>
+                <div class="badge locked" data-badge="badge_10">
+                    <span class="badge-number">?</span>
+                    <div class="badge-tooltip">???</div>
+                </div>
+            </div>
+
+            <p class="signal-message">First signal available.</p>
+        </div>
+
+        <button class="back-btn" id="backBtn">Exit Yellow World</button>
+    </div>
+
+    <script>
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const options = { day: '2-digit', month: 'short', year: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        function unlockBadge(badgeId) {
+            const badge = document.querySelector(`[data-badge="${badgeId}"]`);
+            if (badge) {
+                badge.classList.remove('locked');
+                badge.classList.add('unlocked');
+                
+                const tooltip = badge.querySelector('.badge-tooltip');
+                if (tooltip) {
+                    tooltip.classList.add('unlocked-tip');
+                    if (badgeId === 'og') {
+                        tooltip.textContent = 'Founder - First 24h';
+                    }
+                }
+            }
+        }
+
+        function initPage(userData) {
+            document.getElementById('username').textContent = userData.user.username;
+            document.getElementById('joinDate').textContent = formatDate(userData.user.joinDate);
+            userData.badges.forEach(badgeId => {
+                unlockBadge(badgeId);
+            });
+        }
+
+        async function fetchUserData() {
+            try {
+                const response = await fetch('/api/user/status', {
+                    credentials: 'include'
+                });
+                
+                if (response.status === 401) {
+                    window.location.href = '/yellow.html';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user data');
+                }
+                
+                const userData = await response.json();
+                initPage(userData);
+                
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+                document.getElementById('username').textContent = 'Error';
+                document.getElementById('joinDate').textContent = 'Connection failed';
+                
+                setTimeout(() => {
+                    window.location.href = '/yellow.html';
+                }, 2000);
+            }
+        }
+
+        document.getElementById('backBtn').addEventListener('click', () => {
+            window.location.href = '/api/auth/logout';
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchUserData();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "routes": [
+    {
+      "src": "/yellow",
+      "dest": "/yellow.html"
+    },
+    {
+      "src": "/status",
+      "dest": "/status.html"
+    }
+  ]
+}
