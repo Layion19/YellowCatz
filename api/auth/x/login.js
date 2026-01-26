@@ -1,4 +1,8 @@
-import { generateState, generateCodeVerifier, generateCodeChallenge } from '../../lib/auth.js';
+import {
+  generateState,
+  generateCodeVerifier,
+  generateCodeChallenge
+} from '../../lib/auth.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -19,23 +23,29 @@ export default async function handler(req, res) {
     const codeChallenge = await generateCodeChallenge(codeVerifier);
 
     const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
-    const stateCookie = `oauth_state=${state}; HttpOnly; SameSite=Lax; Max-Age=600; Path=/${secure}`;
-    const verifierCookie = `code_verifier=${codeVerifier}; HttpOnly; SameSite=Lax; Max-Age=600; Path=/${secure}`;
+    const cookieOpts = `HttpOnly; SameSite=Lax; Max-Age=600; Path=/${secure}`;
+
+    res.setHeader('Set-Cookie', [
+      `oauth_state=${state}; ${cookieOpts}`,
+      `code_verifier=${codeVerifier}; ${cookieOpts}`
+    ]);
 
     const authUrl = new URL('https://twitter.com/i/oauth2/authorize');
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('client_id', clientId);
     authUrl.searchParams.set('redirect_uri', redirectUri);
-    authUrl.searchParams.set('scope', 'tweet.read users.read');
+    authUrl.searchParams.set(
+      'scope',
+      'users.read tweet.read offline.access' // 🔥 OBLIGATOIRE
+    );
     authUrl.searchParams.set('state', state);
     authUrl.searchParams.set('code_challenge', codeChallenge);
     authUrl.searchParams.set('code_challenge_method', 'S256');
 
-    res.setHeader('Set-Cookie', [stateCookie, verifierCookie]);
-    res.redirect(302, authUrl.toString());
+    return res.redirect(authUrl.toString());
 
-  } catch (error) {
-    console.error('OAuth login error:', error);
-    res.redirect('/yellow.html?error=login_failed');
+  } catch (err) {
+    console.error('OAuth login error:', err);
+    return res.redirect('/yellow.html?error=login_failed');
   }
 }
