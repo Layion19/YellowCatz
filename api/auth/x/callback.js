@@ -172,6 +172,7 @@ async function exchangeCodeForToken(code, codeVerifier) {
       },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
+        client_id: clientId, // ← ✅ LIGNE MANQUANTE (CAUSE DU BUG)
         code,
         redirect_uri: redirectUri,
         code_verifier: codeVerifier
