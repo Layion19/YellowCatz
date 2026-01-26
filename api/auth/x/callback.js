@@ -14,7 +14,8 @@ import {
 } from '../../lib/db.js';
 
 /**
- * OAuth callback for X (Twitter) – PKCE
+ * OAuth 2.0 Callback for X (Twitter)
+ * Client confidentiel + PKCE
  */
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -24,42 +25,49 @@ export default async function handler(req, res) {
   try {
     const { code, state, error } = req.query;
 
-    // 1️⃣ Erreur renvoyée par X
+    /* ---------------------------------------------------------------------- */
+    /* 1. Erreur OAuth renvoyée par X                                           */
+    /* ---------------------------------------------------------------------- */
     if (error) {
       console.error('OAuth error from X:', error);
       return res.redirect('/yellow.html?error=access_denied');
     }
 
-    // 2️⃣ Code manquant
     if (!code) {
-      console.error('No authorization code received');
+      console.error('Missing authorization code');
       return res.redirect('/yellow.html?error=no_code');
     }
 
-    // 3️⃣ Lecture cookies (PKCE + CSRF)
+    /* ---------------------------------------------------------------------- */
+    /* 2. Lecture cookies (state + PKCE verifier)                              */
+    /* ---------------------------------------------------------------------- */
     const cookies = parseCookies(req.headers.cookie || '');
     const storedState = cookies.oauth_state;
     const codeVerifier = cookies.code_verifier;
 
-    if (!state || state !== storedState) {
+    if (!storedState || state !== storedState) {
       console.error('Invalid OAuth state');
       return res.redirect('/yellow.html?error=invalid_state');
     }
 
     if (!codeVerifier) {
-      console.error('Missing code_verifier');
+      console.error('Missing PKCE code_verifier');
       return res.redirect('/yellow.html?error=missing_verifier');
     }
 
-    // 4️⃣ Échange code → access_token (PKCE, SANS client_secret)
+    /* ---------------------------------------------------------------------- */
+    /* 3. Échange code → access_token (Client confidentiel + PKCE)             */
+    /* ---------------------------------------------------------------------- */
     const tokenData = await exchangeCodeForToken(code, codeVerifier);
 
     if (!tokenData || !tokenData.access_token) {
-      console.error('Failed to obtain access token');
+      console.error('Token exchange failed');
       return res.redirect('/yellow.html?error=token_failed');
     }
 
-    // 5️⃣ Récupération utilisateur X
+    /* ---------------------------------------------------------------------- */
+    /* 4. Récupération du profil X                                             */
+    /* ---------------------------------------------------------------------- */
     const xUser = await getXUser(tokenData.access_token);
 
     if (!xUser || !xUser.data) {
@@ -67,7 +75,9 @@ export default async function handler(req, res) {
       return res.redirect('/yellow.html?error=user_failed');
     }
 
-    // 6️⃣ DB
+    /* ---------------------------------------------------------------------- */
+    /* 5. Base de données                                                      */
+    /* ---------------------------------------------------------------------- */
     await initDatabase();
 
     let user = await getUserByXId(xUser.data.id);
@@ -99,48 +109,69 @@ export default async function handler(req, res) {
       user.avatar_url = xUser.data.profile_image_url || null;
     }
 
-    // 7️⃣ Badge OG
+    /* ---------------------------------------------------------------------- */
+    /* 6. Badge OG                                                             */
+    /* ---------------------------------------------------------------------- */
     if (isNewUser && isOGPeriodActive()) {
       await awardBadge(user.id, 'og');
     }
 
-    // 8️⃣ Session
+    /* ---------------------------------------------------------------------- */
+    /* 7. Création session utilisateur                                         */
+    /* ---------------------------------------------------------------------- */
     const sessionToken = createToken(user);
     const sessionCookie = createSessionCookie(sessionToken);
 
-    // Nettoyage cookies OAuth
-    const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
+    const isProd = process.env.NODE_ENV === 'production';
+    const secure = isProd ? '; Secure' : '';
+
     const clearState = `oauth_state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
     const clearVerifier = `code_verifier=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
 
-    res.setHeader('Set-Cookie', [sessionCookie, clearState, clearVerifier]);
+    res.setHeader('Set-Cookie', [
+      sessionCookie,
+      clearState,
+      clearVerifier
+    ]);
 
-    // 9️⃣ Succès
+    /* ---------------------------------------------------------------------- */
+    /* 8. Succès                                                               */
+    /* ---------------------------------------------------------------------- */
     return res.redirect('/status.html');
 
   } catch (err) {
-    console.error('Callback fatal error:', err);
+    console.error('OAuth callback fatal error:', err);
     return res.redirect('/yellow.html?error=callback_failed');
   }
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                   HELPERS                                  */
+/*                                  HELPERS                                   */
 /* -------------------------------------------------------------------------- */
 
 async function exchangeCodeForToken(code, codeVerifier) {
   const clientId = process.env.X_CLIENT_ID;
+  const clientSecret = process.env.X_CLIENT_SECRET;
   const redirectUri = process.env.X_REDIRECT_URI;
+
+  if (!clientId || !clientSecret || !redirectUri) {
+    console.error('Missing OAuth environment variables');
+    return null;
+  }
+
+  const basicAuth = Buffer
+    .from(`${clientId}:${clientSecret}`)
+    .toString('base64');
 
   try {
     const response = await fetch('https://api.twitter.com/2/oauth2/token', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${basicAuth}`
       },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
-        client_id: clientId,
         code,
         redirect_uri: redirectUri,
         code_verifier: codeVerifier
@@ -149,13 +180,14 @@ async function exchangeCodeForToken(code, codeVerifier) {
 
     if (!response.ok) {
       const text = await response.text();
-      console.error('Token exchange failed:', response.status, text);
+      console.error('Token endpoint error:', response.status, text);
       return null;
     }
 
     return await response.json();
+
   } catch (err) {
-    console.error('Token exchange error:', err);
+    console.error('Token exchange exception:', err);
     return null;
   }
 }
@@ -173,13 +205,14 @@ async function getXUser(accessToken) {
 
     if (!response.ok) {
       const text = await response.text();
-      console.error('User fetch failed:', response.status, text);
+      console.error('User fetch error:', response.status, text);
       return null;
     }
 
     return await response.json();
+
   } catch (err) {
-    console.error('User fetch error:', err);
+    console.error('User fetch exception:', err);
     return null;
   }
 }
