@@ -22,8 +22,15 @@ export default async function handler(req, res) {
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-    const secure = process.env.NODE_ENV === 'production' ? '; Secure' : '';
-    const cookieOpts = `HttpOnly; SameSite=Lax; Max-Age=600; Path=/${secure}`;
+    const isProd = process.env.NODE_ENV === 'production';
+
+    const cookieOpts = [
+      'HttpOnly',
+      'Path=/',
+      'Max-Age=600',
+      isProd ? 'Secure' : '',
+      isProd ? 'SameSite=None' : 'SameSite=Lax'
+    ].filter(Boolean).join('; ');
 
     res.setHeader('Set-Cookie', [
       `oauth_state=${state}; ${cookieOpts}`,
@@ -36,7 +43,7 @@ export default async function handler(req, res) {
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set(
       'scope',
-      'users.read tweet.read offline.access' // 🔥 OBLIGATOIRE
+      'users.read tweet.read'
     );
     authUrl.searchParams.set('state', state);
     authUrl.searchParams.set('code_challenge', codeChallenge);
@@ -44,8 +51,8 @@ export default async function handler(req, res) {
 
     return res.redirect(authUrl.toString());
 
-  } catch (err) {
-    console.error('OAuth login error:', err);
+  } catch (error) {
+    console.error('OAuth login error:', error);
     return res.redirect('/yellow.html?error=login_failed');
   }
 }
