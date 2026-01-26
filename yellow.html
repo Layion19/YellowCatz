@@ -42,6 +42,7 @@
             align-items: center;
             transition: all 0.5s ease;
             opacity: 1;
+            z-index: 2; /* sécurité */
         }
 
         .play-btn:hover {
@@ -62,6 +63,7 @@
             margin-left: 5px;
         }
 
+        /* 🔑 CORRECTION ICI */
         .text-container {
             position: absolute;
             display: flex;
@@ -70,10 +72,12 @@
             justify-content: center;
             opacity: 0;
             transition: opacity 0.5s ease;
+            pointer-events: none; /* empêche de bloquer le Play */
         }
 
         .text-container.visible {
             opacity: 1;
+            pointer-events: auto; /* réactive les clics après */
         }
 
         .welcome-text {
@@ -223,7 +227,7 @@
             <div class="welcome-text" id="welcomeText"></div>
             <div class="enter-text" id="enterText"></div>
             <div class="small-text" id="smallText"></div>
-            
+
             <div class="x-connect" id="xConnect">
                 <button class="x-btn" id="xBtn">
                     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -248,7 +252,7 @@
             return new Promise((resolve) => {
                 let i = 0;
                 element.innerHTML = '<span class="cursor"></span>';
-                
+
                 function type() {
                     if (i < text.length) {
                         element.innerHTML = text.substring(0, i + 1) + '<span class="cursor"></span>';
@@ -267,7 +271,7 @@
 
         playBtn.addEventListener('click', async () => {
             playBtn.classList.add('hidden');
-            
+
             setTimeout(() => {
                 textContainer.classList.add('visible');
             }, 300);
@@ -285,17 +289,11 @@
         xBtn.addEventListener('click', () => {
             xBtn.style.opacity = '0.5';
             xBtn.style.pointerEvents = 'none';
-            
+
             setTimeout(() => {
                 window.location.href = '/api/auth/login';
             }, 300);
         });
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const error = urlParams.get('error');
-        if (error) {
-            console.error('OAuth error:', error);
-        }
     </script>
 </body>
 </html>
