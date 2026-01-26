@@ -1,299 +1,320 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yellow World</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yellow World</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
 
-        body {
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #E8A000;
-            font-family: 'Arial', sans-serif;
-            overflow: hidden;
-        }
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
 
-        .container {
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
+body{
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#E8A000;
+  font-family:Arial,sans-serif;
+  overflow:hidden;
+}
 
-        .play-btn {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            border: 3px solid #8B5A00;
-            background-color: transparent;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.5s ease;
-            opacity: 1;
-            z-index: 2; /* sécurité */
-        }
+/* ---------- USER BAR ---------- */
+#user-bar{
+  position:fixed;
+  top:20px;
+  left:20px;
+  display:none;
+  align-items:center;
+  gap:10px;
+  z-index:20;
+}
 
-        .play-btn:hover {
-            background-color: rgba(139, 90, 0, 0.1);
-            transform: scale(1.05);
-        }
+#user-avatar{
+  width:36px;
+  height:36px;
+  border-radius:50%;
+}
 
-        .play-btn.hidden {
-            opacity: 0;
-            pointer-events: none;
-            transform: scale(0.8);
-        }
+#status-dot{
+  position:absolute;
+  bottom:0;
+  right:0;
+  width:8px;
+  height:8px;
+  background:#00c853;
+  border-radius:50%;
+  border:2px solid #E8A000;
+}
 
-        .play-btn svg {
-            width: 30px;
-            height: 30px;
-            fill: #8B5A00;
-            margin-left: 5px;
-        }
+/* ---------- MAIN ---------- */
+.container{
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
 
-        /* 🔑 CORRECTION ICI */
-        .text-container {
-            position: absolute;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-            pointer-events: none; /* empêche de bloquer le Play */
-        }
+.play-btn{
+  width:80px;height:80px;border-radius:50%;
+  border:3px solid #8B5A00;
+  background:transparent;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:.5s;
+  z-index:2;
+}
 
-        .text-container.visible {
-            opacity: 1;
-            pointer-events: auto; /* réactive les clics après */
-        }
+.play-btn.hidden{opacity:0;pointer-events:none;transform:scale(.8)}
+.play-btn svg{width:30px;height:30px;fill:#8B5A00;margin-left:5px}
 
-        .welcome-text {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 72px;
-            letter-spacing: 12px;
-            color: #8B5A00;
-            margin-bottom: 20px;
-            min-height: 86px;
-        }
+.text-container{
+  position:absolute;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  opacity:0;
+  transition:.5s;
+  pointer-events:none;
+}
 
-        .enter-text {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 32px;
-            letter-spacing: 4px;
-            color: #8B5A00;
-            margin-bottom: 30px;
-            min-height: 38px;
-        }
+.text-container.visible{
+  opacity:1;
+  pointer-events:auto;
+}
 
-        .small-text {
-            font-size: 14px;
-            letter-spacing: 1px;
-            color: #8B5A00;
-            opacity: 0.7;
-            font-style: italic;
-            min-height: 20px;
-        }
+.welcome-text{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:72px;
+  letter-spacing:12px;
+  color:#8B5A00;
+  margin-bottom:20px;
+}
 
-        .cursor {
-            display: inline-block;
-            width: 3px;
-            height: 1em;
-            background-color: #8B5A00;
-            margin-left: 2px;
-            animation: blink 0.7s infinite;
-            vertical-align: middle;
-        }
+.enter-text{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:32px;
+  letter-spacing:4px;
+  color:#8B5A00;
+  margin-bottom:30px;
+}
 
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0; }
-        }
+.small-text{
+  font-size:14px;
+  color:#8B5A00;
+  opacity:.7;
+  font-style:italic;
+}
 
-        .x-connect {
-            margin-top: 50px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.8s ease;
-            pointer-events: none;
-        }
+.cursor{
+  display:inline-block;
+  width:3px;
+  height:1em;
+  background:#8B5A00;
+  margin-left:2px;
+  animation:blink .7s infinite;
+}
 
-        .x-connect.visible {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
+@keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
 
-        .x-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: 2px solid #8B5A00;
-            background-color: transparent;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
+.x-connect{
+  margin-top:50px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  opacity:0;
+  transform:translateY(20px);
+  transition:.8s;
+  pointer-events:none;
+}
 
-        .x-btn:hover {
-            background-color: #8B5A00;
-        }
+.x-connect.visible{opacity:1;transform:translateY(0);pointer-events:auto}
 
-        .x-btn:hover svg {
-            fill: #E8A000;
-        }
+.x-btn{
+  width:60px;height:60px;
+  border-radius:50%;
+  border:2px solid #8B5A00;
+  background:transparent;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 
-        .x-btn svg {
-            width: 28px;
-            height: 28px;
-            fill: #8B5A00;
-            transition: all 0.3s ease;
-        }
+.x-btn svg{width:28px;height:28px;fill:#8B5A00}
 
-        .connect-text {
-            margin-top: 12px;
-            font-size: 12px;
-            letter-spacing: 2px;
-            color: #8B5A00;
-            opacity: 0.6;
-        }
+/* ---------- BADGES ---------- */
+#badges-section{
+  display:none;
+  margin-top:40px;
+  text-align:center;
+}
 
-        @media (max-width: 600px) {
-            .welcome-text {
-                font-size: 48px;
-                letter-spacing: 8px;
-                min-height: 58px;
-            }
+.badges-title{
+  font-size:14px;
+  letter-spacing:1px;
+  color:#8B5A00;
+}
 
-            .enter-text {
-                font-size: 20px;
-                letter-spacing: 2px;
-                min-height: 24px;
-            }
+.badges-sub{
+  font-size:12px;
+  color:#8B5A00;
+  opacity:.7;
+  margin-bottom:20px;
+}
 
-            .small-text {
-                font-size: 12px;
-                padding: 0 20px;
-            }
+#badges-grid{
+  display:flex;
+  justify-content:center;
+  gap:14px;
+  flex-wrap:wrap;
+}
 
-            .play-btn {
-                width: 70px;
-                height: 70px;
-            }
+.badge{
+  width:46px;height:46px;
+  border-radius:50%;
+  background:#777;
+  opacity:.4;
+  cursor:pointer;
+  transition:.3s;
+}
 
-            .play-btn svg {
-                width: 25px;
-                height: 25px;
-            }
+.badge.unlocked{
+  background:#FFD000;
+  opacity:1;
+}
 
-            .x-btn {
-                width: 50px;
-                height: 50px;
-            }
+#badge-info{
+  margin-top:10px;
+  display:none;
+}
 
-            .x-btn svg {
-                width: 24px;
-                height: 24px;
-            }
-        }
-    </style>
+#badge-name{
+  font-weight:bold;
+  color:#8B5A00;
+}
+
+#badge-description{
+  font-size:12px;
+  color:#8B5A00;
+  opacity:.7;
+}
+</style>
 </head>
+
 <body>
-    <div class="container">
-        <button class="play-btn" id="playBtn">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M8 5v14l11-7z"/>
-            </svg>
-        </button>
 
-        <div class="text-container" id="textContainer">
-            <div class="welcome-text" id="welcomeText"></div>
-            <div class="enter-text" id="enterText"></div>
-            <div class="small-text" id="smallText"></div>
+<div id="user-bar">
+  <div style="position:relative">
+    <img id="user-avatar">
+    <span id="status-dot"></span>
+  </div>
+</div>
 
-            <div class="x-connect" id="xConnect">
-                <button class="x-btn" id="xBtn">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                    </svg>
-                </button>
-                <span class="connect-text">Connect with X</span>
-            </div>
-        </div>
+<div class="container">
+  <button class="play-btn" id="playBtn">
+    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+  </button>
+
+  <div class="text-container" id="textContainer">
+    <div class="welcome-text" id="welcomeText"></div>
+    <div class="enter-text" id="enterText"></div>
+    <div class="small-text" id="smallText"></div>
+
+    <div class="x-connect" id="xConnect">
+      <button class="x-btn" id="xBtn">
+        <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231z"/></svg>
+      </button>
+      <span class="connect-text">Connect with X</span>
     </div>
 
-    <script>
-        const playBtn = document.getElementById('playBtn');
-        const textContainer = document.getElementById('textContainer');
-        const welcomeText = document.getElementById('welcomeText');
-        const enterText = document.getElementById('enterText');
-        const smallText = document.getElementById('smallText');
-        const xConnect = document.getElementById('xConnect');
-        const xBtn = document.getElementById('xBtn');
+    <section id="badges-section">
+      <p class="badges-title">Badges to collect in the Yellow World</p>
+      <p class="badges-sub">Some are obvious.<br>Some are hidden.<br>Some are not for everyone.</p>
 
-        function typeWriter(element, text, speed = 80) {
-            return new Promise((resolve) => {
-                let i = 0;
-                element.innerHTML = '<span class="cursor"></span>';
+      <div id="badges-grid"></div>
 
-                function type() {
-                    if (i < text.length) {
-                        element.innerHTML = text.substring(0, i + 1) + '<span class="cursor"></span>';
-                        i++;
-                        setTimeout(type, speed);
-                    } else {
-                        setTimeout(() => {
-                            element.innerHTML = text;
-                            resolve();
-                        }, 500);
-                    }
-                }
-                type();
-            });
-        }
+      <div id="badge-info">
+        <p id="badge-name"></p>
+        <p id="badge-description"></p>
+      </div>
+    </section>
+  </div>
+</div>
 
-        playBtn.addEventListener('click', async () => {
-            playBtn.classList.add('hidden');
+<script>
+const playBtn=document.getElementById('playBtn');
+const textContainer=document.getElementById('textContainer');
+const welcomeText=document.getElementById('welcomeText');
+const enterText=document.getElementById('enterText');
+const smallText=document.getElementById('smallText');
+const xConnect=document.getElementById('xConnect');
 
-            setTimeout(() => {
-                textContainer.classList.add('visible');
-            }, 300);
+function typeWriter(el,text,speed){
+  return new Promise(r=>{
+    let i=0;
+    function t(){
+      if(i<text.length){
+        el.innerHTML=text.slice(0,i+1)+'<span class="cursor"></span>';
+        i++;setTimeout(t,speed);
+      }else{el.innerHTML=text;r()}
+    }
+    t();
+  });
+}
 
-            await new Promise(r => setTimeout(r, 500));
-            await typeWriter(welcomeText, 'WELCOME', 120);
-            await new Promise(r => setTimeout(r, 600));
-            await typeWriter(enterText, 'Enter the Yellow World', 60);
-            await new Promise(r => setTimeout(r, 400));
-            await typeWriter(smallText, 'Not everyone needs to go further.', 40);
-            await new Promise(r => setTimeout(r, 1500));
-            xConnect.classList.add('visible');
-        });
+playBtn.onclick=async()=>{
+  playBtn.classList.add('hidden');
+  textContainer.classList.add('visible');
+  await typeWriter(welcomeText,'WELCOME',120);
+  await typeWriter(enterText,'Enter the Yellow World',60);
+  await typeWriter(smallText,'Not everyone needs to go further.',40);
+  xConnect.classList.add('visible');
+};
 
-        xBtn.addEventListener('click', () => {
-            xBtn.style.opacity = '0.5';
-            xBtn.style.pointerEvents = 'none';
+document.getElementById('xBtn').onclick=()=>location.href='/api/auth/x/login';
 
-            setTimeout(() => {
-                window.location.href = '/api/auth/x/login';
-            }, 300);
-        });
-    </script>
+/* ---------- STATUS + BADGES ---------- */
+fetch('/api/user/status')
+.then(r=>r.json())
+.then(d=>{
+  if(!d.authenticated)return;
+
+  document.getElementById('user-bar').style.display='flex';
+  document.getElementById('user-avatar').src=d.user.avatarUrl;
+  document.getElementById('badges-section').style.display='block';
+
+  const grid=document.getElementById('badges-grid');
+  const info=document.getElementById('badge-info');
+  const name=document.getElementById('badge-name');
+  const desc=document.getElementById('badge-description');
+
+  const defs=[
+    {id:'og',name:'OG',desc:'Early access – first 24 hours'},
+    {id:'badge_2'},{id:'badge_3'},{id:'badge_4'},{id:'badge_5'},
+    {id:'badge_6'},{id:'badge_7'},{id:'badge_8'},{id:'badge_9'},{id:'badge_10'}
+  ];
+
+  defs.forEach(b=>{
+    const unlocked=d.badges.find(x=>x.id===b.id)?.unlocked;
+    const el=document.createElement('div');
+    el.className='badge'+(unlocked?' unlocked':'');
+    el.onclick=()=>{
+      info.style.display='block';
+      if(unlocked && b.id==='og'){
+        name.textContent=b.name;
+        desc.textContent=b.desc;
+      }else{
+        name.textContent='???';
+        desc.textContent='This badge has not been unlocked yet';
+      }
+    };
+    grid.appendChild(el);
+  });
+});
+</script>
 </body>
 </html>
