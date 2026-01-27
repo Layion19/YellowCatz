@@ -19,6 +19,93 @@ body{
   overflow:hidden;
 }
 
+/* ---------- HAMBURGER MENU ---------- */
+#hamburger-menu {
+  display: none;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+}
+
+#hamburger-btn {
+  width: 50px;
+  height: 50px;
+  background: #8B5A00;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  transition: 0.3s;
+}
+
+#hamburger-btn:hover {
+  background: #6B4A00;
+}
+
+#hamburger-btn span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: #E8A000;
+  transition: 0.3s;
+}
+
+#hamburger-btn.open span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+#hamburger-btn.open span:nth-child(2) {
+  opacity: 0;
+}
+
+#hamburger-btn.open span:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+#nav-menu {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  background: #8B5A00;
+  border-radius: 12px;
+  padding: 10px 0;
+  min-width: 180px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: 0.3s;
+}
+
+#nav-menu.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+#nav-menu a {
+  display: block;
+  padding: 12px 20px;
+  color: #E8A000;
+  text-decoration: none;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+#nav-menu a:hover {
+  background: rgba(232, 160, 0, 0.2);
+}
+
+#nav-menu .divider {
+  height: 1px;
+  background: rgba(232, 160, 0, 0.3);
+  margin: 5px 0;
+}
+
 /* ---------- USER BAR ---------- */
 #user-bar{
   position:fixed;
@@ -34,6 +121,12 @@ body{
   width:36px;
   height:36px;
   border-radius:50%;
+}
+
+#user-name {
+  color: #8B5A00;
+  font-weight: bold;
+  font-size: 14px;
 }
 
 #status-dot{
@@ -146,6 +239,12 @@ body{
 
 .x-btn svg{width:28px;height:28px;fill:#8B5A00}
 
+.connect-text {
+  margin-top: 10px;
+  color: #8B5A00;
+  font-size: 12px;
+}
+
 /* ---------- BADGES ---------- */
 #badges-section{
   display:none;
@@ -207,11 +306,31 @@ body{
 
 <body>
 
+<!-- HAMBURGER MENU -->
+<div id="hamburger-menu">
+  <button id="hamburger-btn" onclick="toggleMenu()">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+  <nav id="nav-menu">
+    <a href="/index.html">🏠 Home</a>
+    <a href="/yellow.html">🌟 Yellow World</a>
+    <a href="/status.html">📊 My Status</a>
+    <a href="/gallery.html">🖼️ Gallery</a>
+    <a href="/about.html">ℹ️ About</a>
+    <div class="divider"></div>
+    <a href="/api/auth/logout">🚪 Logout</a>
+  </nav>
+</div>
+
+<!-- USER BAR -->
 <div id="user-bar">
   <div style="position:relative">
     <img id="user-avatar">
     <span id="status-dot"></span>
   </div>
+  <span id="user-name"></span>
 </div>
 
 <div class="container">
@@ -246,75 +365,121 @@ body{
 </div>
 
 <script>
-const playBtn=document.getElementById('playBtn');
-const textContainer=document.getElementById('textContainer');
-const welcomeText=document.getElementById('welcomeText');
-const enterText=document.getElementById('enterText');
-const smallText=document.getElementById('smallText');
-const xConnect=document.getElementById('xConnect');
+const playBtn = document.getElementById('playBtn');
+const textContainer = document.getElementById('textContainer');
+const welcomeText = document.getElementById('welcomeText');
+const enterText = document.getElementById('enterText');
+const smallText = document.getElementById('smallText');
+const xConnect = document.getElementById('xConnect');
 
-function typeWriter(el,text,speed){
-  return new Promise(r=>{
-    let i=0;
-    function t(){
-      if(i<text.length){
-        el.innerHTML=text.slice(0,i+1)+'<span class="cursor"></span>';
-        i++;setTimeout(t,speed);
-      }else{el.innerHTML=text;r()}
+let isAuthenticated = false;
+
+// Toggle hamburger menu
+function toggleMenu() {
+  document.getElementById('hamburger-btn').classList.toggle('open');
+  document.getElementById('nav-menu').classList.toggle('open');
+}
+
+// Close menu when clicking outside
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('hamburger-menu');
+  if (!menu.contains(e.target)) {
+    document.getElementById('hamburger-btn').classList.remove('open');
+    document.getElementById('nav-menu').classList.remove('open');
+  }
+});
+
+function typeWriter(el, text, speed) {
+  return new Promise(r => {
+    let i = 0;
+    function t() {
+      if (i < text.length) {
+        el.innerHTML = text.slice(0, i + 1) + '<span class="cursor"></span>';
+        i++;
+        setTimeout(t, speed);
+      } else {
+        el.innerHTML = text;
+        r();
+      }
     }
     t();
   });
 }
 
-playBtn.onclick=async()=>{
+playBtn.onclick = async () => {
   playBtn.classList.add('hidden');
   textContainer.classList.add('visible');
-  await typeWriter(welcomeText,'WELCOME',120);
-  await typeWriter(enterText,'Enter the Yellow World',60);
-  await typeWriter(smallText,'Not everyone needs to go further.',40);
-  xConnect.classList.add('visible');
+  await typeWriter(welcomeText, 'WELCOME', 120);
+  await typeWriter(enterText, 'Enter the Yellow World', 60);
+  await typeWriter(smallText, 'Not everyone needs to go further.', 40);
+  
+  // Show X connect button only if not authenticated
+  if (!isAuthenticated) {
+    xConnect.classList.add('visible');
+  }
 };
 
-document.getElementById('xBtn').onclick=()=>location.href='/api/auth/login';
+document.getElementById('xBtn').onclick = () => location.href = '/api/auth/login';
 
 /* ---------- STATUS + BADGES ---------- */
 fetch('/api/user/status')
-.then(r=>r.json())
-.then(d=>{
-  if(!d.authenticated)return;
+  .then(r => r.json())
+  .then(d => {
+    if (!d.authenticated) return;
 
-  document.getElementById('user-bar').style.display='flex';
-  document.getElementById('user-avatar').src=d.user.avatarUrl;
-  document.getElementById('badges-section').style.display='block';
+    isAuthenticated = true;
 
-  const grid=document.getElementById('badges-grid');
-  const info=document.getElementById('badge-info');
-  const name=document.getElementById('badge-name');
-  const desc=document.getElementById('badge-description');
+    // Show hamburger menu
+    document.getElementById('hamburger-menu').style.display = 'block';
 
-  const defs=[
-    {id:'og',name:'OG',desc:'Early access – first 24 hours'},
-    {id:'badge_2'},{id:'badge_3'},{id:'badge_4'},{id:'badge_5'},
-    {id:'badge_6'},{id:'badge_7'},{id:'badge_8'},{id:'badge_9'},{id:'badge_10'}
-  ];
+    // Show user bar
+    document.getElementById('user-bar').style.display = 'flex';
+    document.getElementById('user-avatar').src = d.user.avatarUrl;
+    document.getElementById('user-name').textContent = '@' + d.user.username;
 
-  defs.forEach(b=>{
-    const unlocked=d.badges.find(x=>x.id===b.id)?.unlocked;
-    const el=document.createElement('div');
-    el.className='badge'+(unlocked?' unlocked':'');
-    el.onclick=()=>{
-      info.style.display='block';
-      if(unlocked && b.id==='og'){
-        name.textContent=b.name;
-        desc.textContent=b.desc;
-      }else{
-        name.textContent='???';
-        desc.textContent='This badge has not been unlocked yet';
-      }
-    };
-    grid.appendChild(el);
+    // Hide X connect button since already connected
+    xConnect.style.display = 'none';
+
+    // Show badges section
+    document.getElementById('badges-section').style.display = 'block';
+
+    const grid = document.getElementById('badges-grid');
+    const info = document.getElementById('badge-info');
+    const name = document.getElementById('badge-name');
+    const desc = document.getElementById('badge-description');
+
+    const defs = [
+      { id: 'og', name: 'OG', desc: 'Early access – first 24 hours' },
+      { id: 'badge_2', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_3', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_4', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_5', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_6', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_7', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_8', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_9', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_10', name: '???', desc: 'Mystery badge' }
+    ];
+
+    defs.forEach(b => {
+      const userBadge = d.badges.find(x => x.badge_id === b.id);
+      const unlocked = !!userBadge;
+      
+      const el = document.createElement('div');
+      el.className = 'badge' + (unlocked ? ' unlocked' : '');
+      el.onclick = () => {
+        info.style.display = 'block';
+        if (unlocked) {
+          name.textContent = userBadge.badge_name || b.name;
+          desc.textContent = userBadge.description || b.desc;
+        } else {
+          name.textContent = '???';
+          desc.textContent = 'This badge has not been unlocked yet';
+        }
+      };
+      grid.appendChild(el);
+    });
   });
-});
 </script>
 </body>
 </html>
