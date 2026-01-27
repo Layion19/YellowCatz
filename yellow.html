@@ -19,91 +19,108 @@ body{
   overflow:hidden;
 }
 
-/* ---------- HAMBURGER MENU ---------- */
-#hamburger-menu {
-  display: none;
+/* ---------- HAMBURGER MENU (same as index.html) ---------- */
+.menu-btn {
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 100;
-}
-
-#hamburger-btn {
-  width: 50px;
-  height: 50px;
-  background: #8B5A00;
-  border: none;
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
   cursor: pointer;
-  display: flex;
+  z-index: 1000;
+  display: none; /* Hidden until authenticated */
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 5px;
-  transition: 0.3s;
+  gap: 6px;
 }
 
-#hamburger-btn:hover {
-  background: #6B4A00;
-}
-
-#hamburger-btn span {
+.menu-btn span {
   display: block;
-  width: 22px;
-  height: 2px;
-  background: #E8A000;
-  transition: 0.3s;
+  width: 30px;
+  height: 3px;
+  background-color: #000;
+  border-radius: 3px;
+  transition: all 0.3s ease;
 }
 
-#hamburger-btn.open span:nth-child(1) {
-  transform: rotate(45deg) translate(5px, 5px);
+.menu-btn.active span:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 6px);
 }
 
-#hamburger-btn.open span:nth-child(2) {
+.menu-btn.active span:nth-child(2) {
   opacity: 0;
 }
 
-#hamburger-btn.open span:nth-child(3) {
-  transform: rotate(-45deg) translate(5px, -5px);
+.menu-btn.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -7px);
 }
 
-#nav-menu {
-  position: absolute;
-  top: 60px;
+/* ---------- SIDEBAR (same as index.html) ---------- */
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: -300px;
+  width: 300px;
+  height: 100vh;
+  background-color: #000;
+  transition: right 0.3s ease;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  padding: 80px 30px 30px;
+}
+
+.sidebar.active {
   right: 0;
-  background: #8B5A00;
-  border-radius: 12px;
-  padding: 10px 0;
-  min-width: 180px;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px);
-  transition: 0.3s;
 }
 
-#nav-menu.open {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-#nav-menu a {
-  display: block;
-  padding: 12px 20px;
+.sidebar a {
   color: #E8A000;
   text-decoration: none;
-  font-size: 14px;
-  transition: 0.2s;
+  font-size: 24px;
+  padding: 15px 0;
+  border-bottom: 1px solid #333;
+  transition: color 0.3s ease;
 }
 
-#nav-menu a:hover {
-  background: rgba(232, 160, 0, 0.2);
+.sidebar a:hover {
+  color: #fff;
 }
 
-#nav-menu .divider {
-  height: 1px;
-  background: rgba(232, 160, 0, 0.3);
-  margin: 5px 0;
+/* Yellow Dot in sidebar */
+.yellow-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #E8A000;
+  margin: 25px auto 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0.6;
+}
+
+.yellow-dot:hover {
+  opacity: 1;
+}
+
+/* ---------- OVERLAY ---------- */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 998;
+}
+
+.overlay.active {
+  opacity: 1;
+  visibility: visible;
 }
 
 /* ---------- USER BAR ---------- */
@@ -301,28 +318,41 @@ body{
   color:#8B5A00;
   opacity:.7;
 }
+
+@media (max-width: 600px) {
+  .welcome-text {
+    font-size: 48px;
+    letter-spacing: 8px;
+  }
+  .enter-text {
+    font-size: 20px;
+  }
+}
 </style>
 </head>
 
 <body>
 
-<!-- HAMBURGER MENU -->
-<div id="hamburger-menu">
-  <button id="hamburger-btn" onclick="toggleMenu()">
-    <span></span>
-    <span></span>
-    <span></span>
-  </button>
-  <nav id="nav-menu">
-    <a href="/index.html">🏠 Home</a>
-    <a href="/yellow.html">🌟 Yellow World</a>
-    <a href="/status.html">📊 My Status</a>
-    <a href="/gallery.html">🖼️ Gallery</a>
-    <a href="/about.html">ℹ️ About</a>
-    <div class="divider"></div>
-    <a href="/api/auth/logout">🚪 Logout</a>
-  </nav>
+<!-- Hamburger Menu Button (same as index.html) -->
+<div class="menu-btn" id="menuBtn">
+  <span></span>
+  <span></span>
+  <span></span>
 </div>
+
+<!-- Sidebar (same as index.html) -->
+<nav class="sidebar" id="sidebar">
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="yellowmap.html">YellowMap</a>
+  <a href="gallery.html">Gallery</a>
+  <a href="status.html">My Status</a>
+  <a href="/api/auth/logout">Logout</a>
+  <div class="yellow-dot" id="yellowDot"></div>
+</nav>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay"></div>
 
 <!-- USER BAR -->
 <div id="user-bar">
@@ -371,22 +401,23 @@ const welcomeText = document.getElementById('welcomeText');
 const enterText = document.getElementById('enterText');
 const smallText = document.getElementById('smallText');
 const xConnect = document.getElementById('xConnect');
+const menuBtn = document.getElementById('menuBtn');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
 
 let isAuthenticated = false;
 
-// Toggle hamburger menu
-function toggleMenu() {
-  document.getElementById('hamburger-btn').classList.toggle('open');
-  document.getElementById('nav-menu').classList.toggle('open');
-}
+// Menu Toggle (same as index.html)
+menuBtn.addEventListener('click', () => {
+  menuBtn.classList.toggle('active');
+  sidebar.classList.toggle('active');
+  overlay.classList.toggle('active');
+});
 
-// Close menu when clicking outside
-document.addEventListener('click', (e) => {
-  const menu = document.getElementById('hamburger-menu');
-  if (!menu.contains(e.target)) {
-    document.getElementById('hamburger-btn').classList.remove('open');
-    document.getElementById('nav-menu').classList.remove('open');
-  }
+overlay.addEventListener('click', () => {
+  menuBtn.classList.remove('active');
+  sidebar.classList.remove('active');
+  overlay.classList.remove('active');
 });
 
 function typeWriter(el, text, speed) {
@@ -430,12 +461,15 @@ fetch('/api/user/status')
     isAuthenticated = true;
 
     // Show hamburger menu
-    document.getElementById('hamburger-menu').style.display = 'block';
+    document.getElementById('menuBtn').style.display = 'flex';
 
     // Show user bar
     document.getElementById('user-bar').style.display = 'flex';
     document.getElementById('user-avatar').src = d.user.avatarUrl;
-    document.getElementById('user-name').textContent = '@' + d.user.username;
+    
+    // Fix: remove @ if already present, then add single @
+    const username = d.user.username.replace(/^@/, '');
+    document.getElementById('user-name').textContent = '@' + username;
 
     // Hide X connect button since already connected
     xConnect.style.display = 'none';
