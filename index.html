@@ -133,20 +133,18 @@
             color: #fff;
         }
 
-        /* Secret Yellow Dot - Entry to Yellow World */
-        .yellow-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background-color: #E8A000;
+        /* Secret Cat Emoji - Entry to Yellow World */
+        .secret-cat {
+            font-size: 14px;
             margin: 25px auto 0;
             cursor: pointer;
             transition: all 0.3s ease;
-            opacity: 0.6;
+            opacity: 0.4;
         }
 
-        .yellow-dot:hover {
+        .secret-cat:hover {
             opacity: 1;
+            transform: scale(1.2);
         }
 
         /* Overlay */
@@ -360,8 +358,8 @@
         <a href="about.html">About</a>
         <a href="yellowmap.html">YellowMap</a>
         <a href="gallery.html">Gallery</a>
-        <!-- Secret Yellow Dot - Entry to Yellow World -->
-        <div class="yellow-dot" id="yellowDot"></div>
+        <!-- Secret Cat Emoji - Entry to Yellow World -->
+        <div class="secret-cat" id="secretCat">😼</div>
     </nav>
 
     <!-- Overlay -->
@@ -441,9 +439,9 @@
             link.click();
         });
 
-        // Yellow World Entry
-        const yellowDot = document.getElementById('yellowDot');
-        yellowDot.addEventListener('click', () => {
+        // Yellow World Entry via Secret Cat
+        const secretCat = document.getElementById('secretCat');
+        secretCat.addEventListener('click', () => {
             window.location.href = 'yellow.html';
         });
 

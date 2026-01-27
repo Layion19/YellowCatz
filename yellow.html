@@ -88,20 +88,18 @@ body{
   color: #fff;
 }
 
-/* Yellow Dot in sidebar */
-.yellow-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #E8A000;
+/* Secret Cat Emoji in sidebar */
+.secret-cat {
+  font-size: 14px;
   margin: 25px auto 0;
   cursor: pointer;
   transition: all 0.3s ease;
-  opacity: 0.6;
+  opacity: 0.4;
 }
 
-.yellow-dot:hover {
+.secret-cat:hover {
   opacity: 1;
+  transform: scale(1.2);
 }
 
 /* ---------- OVERLAY ---------- */
@@ -348,7 +346,7 @@ body{
   <a href="gallery.html">Gallery</a>
   <a href="status.html">My Status</a>
   <a href="/api/auth/logout">Logout</a>
-  <div class="yellow-dot" id="yellowDot"></div>
+  <div class="secret-cat" id="secretCat">😼</div>
 </nav>
 
 <!-- Overlay -->
@@ -418,6 +416,11 @@ overlay.addEventListener('click', () => {
   menuBtn.classList.remove('active');
   sidebar.classList.remove('active');
   overlay.classList.remove('active');
+});
+
+// Secret cat does nothing special on yellow.html (already here)
+document.getElementById('secretCat').addEventListener('click', () => {
+  // Already on yellow world
 });
 
 function typeWriter(el, text, speed) {
