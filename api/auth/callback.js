@@ -2,7 +2,7 @@ import {
   createToken,
   createSessionCookie,
   parseCookies
-} from '../../lib/auth.js';
+} from '../lib/auth.js';
 
 import {
   initDatabase,
@@ -11,7 +11,7 @@ import {
   updateUser,
   awardBadge,
   isOGPeriodActive
-} from '../../lib/db.js';
+} from '../lib/db.js';
 
 /**
  * OAuth 2.0 Callback for X (Twitter)
@@ -80,10 +80,12 @@ export default async function handler(req, res) {
     /* ---------------------------------------------------------------------- */
     await initDatabase();
 
-    let user = await getUserByXId(xUser.data.id);
+    const existingUser = await getUserByXId(xUser.data.id);
+    let user;
     let isNewUser = false;
 
-    if (!user) {
+    if (!existingUser) {
+      // Nouvel utilisateur
       isNewUser = true;
 
       const userId = await createUser(
@@ -99,14 +101,19 @@ export default async function handler(req, res) {
         avatar_url: xUser.data.profile_image_url || null
       };
     } else {
+      // Utilisateur existant - mise à jour
       await updateUser(
         xUser.data.id,
         xUser.data.username,
         xUser.data.profile_image_url || null
       );
 
-      user.x_username = xUser.data.username;
-      user.avatar_url = xUser.data.profile_image_url || null;
+      // Créer un nouvel objet au lieu de modifier l'objet en lecture seule
+      user = {
+        ...existingUser,
+        x_username: xUser.data.username,
+        avatar_url: xUser.data.profile_image_url || null
+      };
     }
 
     /* ---------------------------------------------------------------------- */
@@ -173,7 +180,7 @@ async function exchangeCodeForToken(code, codeVerifier) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${basicAuth}`  // ← CORRECTION: Header ajouté
+        'Authorization': `Basic ${basicAuth}`
       },
       body: new URLSearchParams({
         grant_type: 'authorization_code',
@@ -220,7 +227,7 @@ async function getXUser(accessToken) {
     return await response.json();
 
   } catch (err) {
-    console.error('User fetch exception:', err);s
+    console.error('User fetch exception:', err);
     return null;
   }
-}  
+}
