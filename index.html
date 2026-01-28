@@ -83,18 +83,19 @@
             transform: rotate(-45deg) translate(7px, -7px);
         }
 
-        /* Secret M button - centered under hamburger, at Z height */
+        /* Secret M button - BIGGER (30x30) - HIDDEN by default */
         .secret-m {
             position: fixed;
             top: 33%;
-            right: 32px;
-            width: 15px;
-            height: 15px;
+            right: 24px;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
             background-color: transparent;
             cursor: pointer;
             z-index: 1000;
             transition: all 0.3s ease;
+            display: none; /* Hidden until authenticated */
         }
 
         .secret-m:hover {
@@ -198,9 +199,9 @@
             text-align: center;
         }
 
-        /* Secret O button */
+        /* Secret O button - no cursor pointer by default */
         .secret-o {
-            cursor: pointer;
+            cursor: default; /* Changed to pointer via JS when authenticated */
             position: relative;
             display: inline-block;
         }
@@ -303,6 +304,28 @@
             transition: all 0.3s ease;
         }
 
+        /* Badge Notification */
+        .badge-notification {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #000;
+            color: #E8A000;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .badge-notification.show {
+            opacity: 1;
+        }
+
         @media (max-width: 600px) {
             .title-top {
                 font-size: 42px;
@@ -326,9 +349,9 @@
             }
             .secret-m {
                 top: 35%;
-                right: 28px;
-                width: 12px;
-                height: 12px;
+                right: 20px;
+                width: 24px;
+                height: 24px;
             }
         }
     </style>
@@ -358,6 +381,7 @@
         <a href="about.html">About</a>
         <a href="yellowmap.html">YellowMap</a>
         <a href="gallery.html">Gallery</a>
+        <a href="yellowgame.html">YellowGame</a>
         <!-- Secret Cat Emoji - Entry to Yellow World -->
         <div class="secret-cat" id="secretCat">😼</div>
     </nav>
@@ -400,16 +424,82 @@
         </a>
     </div>
 
+    <!-- Badge Notification -->
+    <div class="badge-notification" id="badgeNotification">🎉 Badge unlocked!</div>
+
     <!-- Hidden images for secret downloads -->
     <img id="secretImageX" src="images/YellowCatzX.png" style="display: none;">
     <img id="secretImageM" src="images/YellowCatzM.png" style="display: none;">
 
     <script>
-        // Secret O download
+        // ============================================================
+        // AUTH STATE
+        // ============================================================
+        let isAuthenticated = false;
+
+        // Check authentication on page load
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/user/status', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.authenticated) {
+                    isAuthenticated = true;
+                    // Show secret elements for authenticated users
+                    document.getElementById('secretM').style.display = 'block';
+                    document.getElementById('secretO').style.cursor = 'pointer';
+                }
+            } catch (error) {
+                console.log('Auth check failed');
+            }
+        }
+
+        // Run auth check on load
+        checkAuth();
+
+        // ============================================================
+        // BADGE CLAIM FUNCTION
+        // ============================================================
+        async function claimBadge(badgeId) {
+            if (!isAuthenticated) return;
+
+            try {
+                const response = await fetch('/api/badge/claim', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ badgeId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show notification
+                    const notification = document.getElementById('badgeNotification');
+                    notification.textContent = `🎉 Badge "${badgeId === 'badge_5' ? 'X Hunter' : 'M Hunter'}" unlocked!`;
+                    notification.classList.add('show');
+                    
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                    }, 3000);
+                }
+            } catch (error) {
+                console.log('Badge claim failed');
+            }
+        }
+
+        // ============================================================
+        // SECRET O DOWNLOAD + BADGE 5 (only if authenticated)
+        // ============================================================
         const secretO = document.getElementById('secretO');
         const secretImageX = document.getElementById('secretImageX');
 
         secretO.addEventListener('click', () => {
+            // Block if not authenticated
+            if (!isAuthenticated) return;
+
             const canvas = document.createElement('canvas');
             canvas.width = secretImageX.naturalWidth;
             canvas.height = secretImageX.naturalHeight;
@@ -420,13 +510,21 @@
             link.download = 'YellowCatzX.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
+
+            // Claim badge 5 (X Hunter)
+            claimBadge('badge_5');
         });
 
-        // Secret M download
+        // ============================================================
+        // SECRET M DOWNLOAD + BADGE 6 (only if authenticated)
+        // ============================================================
         const secretM = document.getElementById('secretM');
         const secretImageM = document.getElementById('secretImageM');
 
         secretM.addEventListener('click', () => {
+            // Block if not authenticated
+            if (!isAuthenticated) return;
+
             const canvas = document.createElement('canvas');
             canvas.width = secretImageM.naturalWidth;
             canvas.height = secretImageM.naturalHeight;
@@ -437,15 +535,22 @@
             link.download = 'YellowCatzM.png';
             link.href = canvas.toDataURL('image/png');
             link.click();
+
+            // Claim badge 6 (M Hunter)
+            claimBadge('badge_6');
         });
 
-        // Yellow World Entry via Secret Cat
+        // ============================================================
+        // YELLOW WORLD ENTRY
+        // ============================================================
         const secretCat = document.getElementById('secretCat');
         secretCat.addEventListener('click', () => {
             window.location.href = 'yellow.html';
         });
 
-        // Music Player
+        // ============================================================
+        // MUSIC PLAYER
+        // ============================================================
         const bgMusic = document.getElementById('bgMusic');
         const musicBtn = document.getElementById('musicBtn');
         const barsOverlay = document.getElementById('barsOverlay');
@@ -497,7 +602,9 @@
             }
         });
 
-        // Menu Toggle
+        // ============================================================
+        // MENU TOGGLE
+        // ============================================================
         const menuBtn = document.getElementById('menuBtn');
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');

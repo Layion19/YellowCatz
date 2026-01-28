@@ -13,7 +13,8 @@ export async function initDatabase() {
       x_username TEXT NOT NULL,
       avatar_url TEXT,
       first_login_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      is_banned INTEGER DEFAULT 0
     )
   `);
 
@@ -23,6 +24,7 @@ export async function initDatabase() {
       badge_id TEXT UNIQUE NOT NULL,
       badge_name TEXT NOT NULL,
       description TEXT,
+      mission TEXT,
       is_time_limited INTEGER DEFAULT 0,
       start_date DATETIME,
       end_date DATETIME
@@ -40,23 +42,84 @@ export async function initDatabase() {
     )
   `);
 
+  // Badges avec descriptions et missions
   const defaultBadges = [
-    { badge_id: 'og', badge_name: 'OG', description: 'First 24 hours founder', is_time_limited: 1 },
-    { badge_id: 'badge_2', badge_name: '???', description: 'Mystery badge 2', is_time_limited: 0 },
-    { badge_id: 'badge_3', badge_name: '???', description: 'Mystery badge 3', is_time_limited: 0 },
-    { badge_id: 'badge_4', badge_name: '???', description: 'Mystery badge 4', is_time_limited: 0 },
-    { badge_id: 'badge_5', badge_name: '???', description: 'Mystery badge 5', is_time_limited: 0 },
-    { badge_id: 'badge_6', badge_name: '???', description: 'Mystery badge 6', is_time_limited: 0 },
-    { badge_id: 'badge_7', badge_name: '???', description: 'Mystery badge 7', is_time_limited: 0 },
-    { badge_id: 'badge_8', badge_name: '???', description: 'Mystery badge 8', is_time_limited: 0 },
-    { badge_id: 'badge_9', badge_name: '???', description: 'Mystery badge 9', is_time_limited: 0 },
-    { badge_id: 'badge_10', badge_name: '???', description: 'Mystery badge 10', is_time_limited: 0 },
+    { 
+      badge_id: 'og', 
+      badge_name: 'OG', 
+      description: 'First 24 hours founder',
+      mission: 'Connect within the first 24 hours of launch',
+      is_time_limited: 1 
+    },
+    { 
+      badge_id: 'badge_2', 
+      badge_name: 'Supporter', 
+      description: 'Community supporter',
+      mission: 'Like and RT the official tweet',
+      is_time_limited: 0 
+    },
+    { 
+      badge_id: 'badge_3', 
+      badge_name: 'Yellow Army', 
+      description: 'Spread the yellow',
+      mission: 'Post a tweet with your new PFP and #YELLOWCATZ',
+      is_time_limited: 0 
+    },
+    { 
+      badge_id: 'badge_4', 
+      badge_name: '???', 
+      description: 'Mystery badge',
+      mission: '???',
+      is_time_limited: 0 
+    },
+    { 
+      badge_id: 'badge_5', 
+      badge_name: 'X Hunter', 
+      description: 'Found the X secret',
+      mission: 'Find and download the hidden YellowCatzX image',
+      is_time_limited: 0 
+    },
+    { 
+      badge_id: 'badge_6', 
+      badge_name: 'M Hunter', 
+      description: 'Found the M secret',
+      mission: 'Find and download the hidden YellowCatzM image',
+      is_time_limited: 0 
+    },
+    { 
+      badge_id: 'badge_7', 
+      badge_name: '???', 
+      description: 'Mystery badge',
+      mission: '???',
+      is_time_limited: 0 
+    },
+    { 
+      badge_id: 'badge_8', 
+      badge_name: '???', 
+      description: 'Mystery badge',
+      mission: '???',
+      is_time_limited: 0 
+    },
+    { 
+      badge_id: 'badge_9', 
+      badge_name: '???', 
+      description: 'Mystery badge',
+      mission: '???',
+      is_time_limited: 0 
+    },
+    { 
+      badge_id: 'badge_10', 
+      badge_name: '???', 
+      description: 'Mystery badge',
+      mission: '???',
+      is_time_limited: 0 
+    },
   ];
 
   for (const badge of defaultBadges) {
     await db.execute({
-      sql: `INSERT OR IGNORE INTO badges (badge_id, badge_name, description, is_time_limited) VALUES (?, ?, ?, ?)`,
-      args: [badge.badge_id, badge.badge_name, badge.description, badge.is_time_limited]
+      sql: `INSERT OR REPLACE INTO badges (badge_id, badge_name, description, mission, is_time_limited) VALUES (?, ?, ?, ?, ?)`,
+      args: [badge.badge_id, badge.badge_name, badge.description, badge.mission, badge.is_time_limited]
     });
   }
 }
@@ -65,6 +128,24 @@ export async function getUserByXId(xUserId) {
   const result = await db.execute({
     sql: 'SELECT * FROM users WHERE x_user_id = ?',
     args: [xUserId]
+  });
+  return result.rows[0] || null;
+}
+
+export async function getUserById(userId) {
+  const result = await db.execute({
+    sql: 'SELECT * FROM users WHERE id = ?',
+    args: [userId]
+  });
+  return result.rows[0] || null;
+}
+
+export async function getUserByUsername(username) {
+  // Remove @ if present
+  const cleanUsername = username.replace(/^@/, '');
+  const result = await db.execute({
+    sql: 'SELECT * FROM users WHERE x_username = ?',
+    args: [cleanUsername]
   });
   return result.rows[0] || null;
 }
@@ -86,12 +167,17 @@ export async function updateUser(xUserId, xUsername, avatarUrl) {
 
 export async function getUserBadges(userId) {
   const result = await db.execute({
-    sql: `SELECT ub.badge_id, ub.unlocked_at, b.badge_name, b.description 
+    sql: `SELECT ub.badge_id, ub.unlocked_at, b.badge_name, b.description, b.mission 
           FROM user_badges ub 
           JOIN badges b ON ub.badge_id = b.badge_id 
           WHERE ub.user_id = ?`,
     args: [userId]
   });
+  return result.rows;
+}
+
+export async function getAllBadges() {
+  const result = await db.execute('SELECT * FROM badges');
   return result.rows;
 }
 
@@ -106,6 +192,53 @@ export async function awardBadge(userId, badgeId) {
     console.error('Error awarding badge:', error);
     return false;
   }
+}
+
+export async function removeBadge(userId, badgeId) {
+  try {
+    await db.execute({
+      sql: 'DELETE FROM user_badges WHERE user_id = ? AND badge_id = ?',
+      args: [userId, badgeId]
+    });
+    return true;
+  } catch (error) {
+    console.error('Error removing badge:', error);
+    return false;
+  }
+}
+
+export async function banUser(userId) {
+  try {
+    await db.execute({
+      sql: 'UPDATE users SET is_banned = 1 WHERE id = ?',
+      args: [userId]
+    });
+    return true;
+  } catch (error) {
+    console.error('Error banning user:', error);
+    return false;
+  }
+}
+
+export async function unbanUser(userId) {
+  try {
+    await db.execute({
+      sql: 'UPDATE users SET is_banned = 0 WHERE id = ?',
+      args: [userId]
+    });
+    return true;
+  } catch (error) {
+    console.error('Error unbanning user:', error);
+    return false;
+  }
+}
+
+export async function isUserBanned(userId) {
+  const result = await db.execute({
+    sql: 'SELECT is_banned FROM users WHERE id = ?',
+    args: [userId]
+  });
+  return result.rows[0]?.is_banned === 1;
 }
 
 export function isOGPeriodActive() {
