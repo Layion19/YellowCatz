@@ -505,7 +505,7 @@
         <a href="gallery.html">Gallery</a>
         <a href="yellowgame.html">YellowGame</a>
         <a href="status.html">My Status</a>
-        <a href="/api/auth/logout">Logout</a>
+        <a href="/api/auth?action=logout">Logout</a>
         <div class="secret-cat" id="secretCat">😼</div>
     </nav>
 
@@ -829,7 +829,7 @@
             claimBtn.classList.remove('ready');
 
             try {
-                const response = await fetch('/api/badge/claim', {
+                const response = await fetch('/api/badge', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -872,7 +872,7 @@
 
         async function fetchUserData() {
             try {
-                const response = await fetch('/api/user/status', {
+                const response = await fetch('/api/user', {
                     credentials: 'include'
                 });
                 

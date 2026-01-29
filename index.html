@@ -440,7 +440,7 @@
         // Check authentication on page load
         async function checkAuth() {
             try {
-                const response = await fetch('/api/user/status', {
+                const response = await fetch('/api/user', {
                     credentials: 'include'
                 });
                 const data = await response.json();
@@ -466,7 +466,7 @@
             if (!isAuthenticated) return;
 
             try {
-                const response = await fetch('/api/badge/claim', {
+                const response = await fetch('/api/badge', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
