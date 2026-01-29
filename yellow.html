@@ -453,10 +453,10 @@ playBtn.onclick = async () => {
   }
 };
 
-document.getElementById('xBtn').onclick = () => location.href = '/api/auth/login';
+document.getElementById('xBtn').onclick = () => location.href = '/api/auth?action=login';
 
 /* ---------- STATUS + BADGES ---------- */
-fetch('/api/user/status')
+fetch('/api/user')
   .then(r => r.json())
   .then(d => {
     if (!d.authenticated) return;
