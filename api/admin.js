@@ -16,12 +16,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { password, action } = req.body;
+   const { password, action } = req.body;
 
-    // Vérification mot de passe admin
-    if (password !== process.env.ADMIN_PASSWORD) {
-      return res.status(401).json({ error: 'Invalid password' });
-    }
+// Vérifier le mot de passe UNIQUEMENT pour le login (stats initial)
+if (action === 'stats') {
+  if (password !== process.env.ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Invalid password' });
+  }
+}
+
 
     await initDatabase();
 
