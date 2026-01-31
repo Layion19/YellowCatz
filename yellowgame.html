@@ -21,6 +21,7 @@
             background-color: #1a1a1a;
             font-family: Arial, sans-serif;
             transition: background-color 1s ease;
+            overflow: hidden;
         }
 
         body.phase2 {
@@ -56,18 +57,30 @@
 
         /* ---------- SECRET ZONE ---------- */
         .secret-zone {
-            position: absolute;
-            bottom: 15%;
+            position: fixed;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
             width: 200px;
             height: 60px;
             cursor: pointer;
             /* Invisible */
         }
 
+        /* ---------- BOTTOM CONTENT (text + code) ---------- */
+        .bottom-content {
+            position: fixed;
+            bottom: 15%;
+            left: 0;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
         /* ---------- GAME TEXT ---------- */
         .game-text {
-            position: absolute;
-            bottom: 20%;
             font-family: 'Bebas Neue', sans-serif;
             font-size: 28px;
             letter-spacing: 4px;
@@ -75,6 +88,7 @@
             opacity: 0;
             transition: opacity 0.5s;
             text-align: center;
+            padding: 0 20px;
         }
 
         .game-text.visible {
@@ -97,8 +111,6 @@
 
         /* ---------- CODE INPUT ---------- */
         .code-container {
-            position: absolute;
-            bottom: 12%;
             display: none;
             flex-direction: column;
             align-items: center;
@@ -153,6 +165,27 @@
             font-size: 12px;
             color: #555;
             letter-spacing: 1px;
+        }
+
+        /* ---------- AUTH MESSAGE ---------- */
+        .auth-message {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 18px;
+            letter-spacing: 2px;
+            color: #ff4444;
+            opacity: 0;
+            transition: opacity 0.5s;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        .auth-message.visible {
+            opacity: 1;
+        }
+
+        .auth-message a {
+            color: #E8A000;
+            text-decoration: underline;
         }
 
         /* ---------- PHASE 2: CONTINUE ---------- */
@@ -221,6 +254,7 @@
             display: none !important;
         }
 
+        /* ---------- MOBILE RESPONSIVE ---------- */
         @media (max-width: 500px) {
             .error-code {
                 font-size: 72px;
@@ -236,8 +270,7 @@
             }
 
             .game-text {
-                font-size: 20px;
-                padding: 0 20px;
+                font-size: 18px;
             }
 
             .code-input {
@@ -246,9 +279,28 @@
                 font-size: 24px;
             }
 
+            .code-inputs {
+                gap: 6px;
+            }
+
+            .bottom-content {
+                bottom: 12%;
+                gap: 15px;
+            }
+
             .phase2-text {
-                font-size: 24px;
+                font-size: 22px;
                 padding: 0 20px;
+            }
+
+            .auth-message {
+                font-size: 14px;
+            }
+        }
+
+        @media (max-height: 600px) {
+            .bottom-content {
+                bottom: 8%;
             }
         }
     </style>
@@ -265,19 +317,27 @@
     <!-- SECRET CLICKABLE ZONE -->
     <div class="secret-zone" id="secretZone"></div>
 
-    <!-- GAME TEXT (appears after click) -->
-    <div class="game-text" id="gameText"></div>
+    <!-- BOTTOM CONTENT (text + code inputs together) -->
+    <div class="bottom-content" id="bottomContent">
+        <!-- GAME TEXT (appears after click) -->
+        <div class="game-text" id="gameText"></div>
 
-    <!-- CODE INPUT -->
-    <div class="code-container" id="codeContainer">
-        <div class="code-inputs">
-            <input type="text" class="code-input" maxlength="1" data-index="0">
-            <input type="text" class="code-input" maxlength="1" data-index="1">
-            <input type="text" class="code-input" maxlength="1" data-index="2">
-            <input type="text" class="code-input" maxlength="1" data-index="3">
-            <input type="text" class="code-input" maxlength="1" data-index="4">
+        <!-- AUTH MESSAGE (if not logged in) -->
+        <div class="auth-message" id="authMessage">
+            Connect on X first to play.
         </div>
-        <div class="code-hint">Enter the code</div>
+
+        <!-- CODE INPUT -->
+        <div class="code-container" id="codeContainer">
+            <div class="code-inputs">
+                <input type="text" class="code-input" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="0">
+                <input type="text" class="code-input" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="1">
+                <input type="text" class="code-input" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="2">
+                <input type="text" class="code-input" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="3">
+                <input type="text" class="code-input" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="4">
+            </div>
+            <div class="code-hint">Enter the code</div>
+        </div>
     </div>
 
     <!-- PHASE 2: CONTINUE QUESTION -->
@@ -296,6 +356,26 @@
         const SECRET_CODE = '48532';
         let gameStarted = false;
         let codeEntered = false;
+        let isAuthenticated = false;
+
+        // ============================================================
+        // CHECK AUTH ON LOAD
+        // ============================================================
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/user', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                isAuthenticated = data.authenticated === true;
+            } catch (error) {
+                console.log('Auth check failed');
+                isAuthenticated = false;
+            }
+        }
+
+        // Run auth check immediately
+        checkAuth();
 
         // ============================================================
         // TYPEWRITER EFFECT
@@ -327,6 +407,7 @@
         const gameText = document.getElementById('gameText');
         const codeContainer = document.getElementById('codeContainer');
         const errorContainer = document.getElementById('errorContainer');
+        const authMessage = document.getElementById('authMessage');
 
         secretZone.addEventListener('click', async () => {
             if (gameStarted) return;
@@ -335,7 +416,17 @@
             // Hide secret zone
             secretZone.style.display = 'none';
 
-            // Show game text with typewriter
+            // Check if authenticated
+            if (!isAuthenticated) {
+                // Show auth message
+                await typeWriter(gameText, 'The game has just begun.');
+                setTimeout(() => {
+                    authMessage.classList.add('visible');
+                }, 500);
+                return;
+            }
+
+            // User is authenticated - continue with game
             await typeWriter(gameText, 'The game has just begun.');
 
             // Show code inputs after delay
@@ -401,8 +492,7 @@
         async function startPhase2() {
             // Hide phase 1 elements
             errorContainer.classList.add('hidden');
-            gameText.classList.add('hidden');
-            codeContainer.classList.add('hidden');
+            document.getElementById('bottomContent').classList.add('hidden');
 
             // Change background
             document.body.classList.add('phase2');
