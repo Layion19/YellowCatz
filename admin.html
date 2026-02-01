@@ -565,7 +565,7 @@ function logout() {
 // API CALL
 // ============================================================
 async function apiCall(action, extraData = {}) {
-  const res = await fetch('/api/admin/stats', {
+  const res = await fetch('/api/admin', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password: adminPassword, action, ...extraData })
