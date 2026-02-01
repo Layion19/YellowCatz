@@ -249,6 +249,34 @@
             box-shadow: 0 0 30px rgba(0, 200, 83, 0.6);
         }
 
+        /* ---------- SPACE CAT ---------- */
+        .space-cat {
+            position: fixed;
+            bottom: -300px;
+            right: 15%;
+            width: 200px;
+            height: auto;
+            opacity: 0;
+            transition: bottom 2s ease-out, opacity 1s ease-in;
+            z-index: 10;
+        }
+
+        .space-cat.rising {
+            bottom: 50px;
+            opacity: 1;
+        }
+
+        @media (max-width: 500px) {
+            .space-cat {
+                width: 120px;
+                right: 5%;
+            }
+
+            .space-cat.rising {
+                bottom: 40px;
+            }
+        }
+
         /* ---------- HIDE ELEMENTS ---------- */
         .hidden {
             display: none !important;
@@ -348,6 +376,9 @@
             <button class="choice-btn green" id="btnGreen"></button>
         </div>
     </div>
+
+    <!-- SPACE CAT (appears in phase 2) -->
+    <img src="/images/yellowcatz-space.png" alt="" class="space-cat" id="spaceCat">
 
     <script>
         // ============================================================
@@ -501,16 +532,22 @@
             const phase2Container = document.getElementById('phase2Container');
             const phase2Text = document.getElementById('phase2Text');
             const choiceButtons = document.getElementById('choiceButtons');
+            const spaceCat = document.getElementById('spaceCat');
 
             phase2Container.classList.add('visible');
 
             // Typewriter effect for question
             await typeWriter(phase2Text, 'Do you want to continue playing?', 60);
 
-            // Show buttons after delay
+            // Space cat rises from bottom
+            setTimeout(() => {
+                spaceCat.classList.add('rising');
+            }, 300);
+
+            // Show buttons after space cat has risen
             setTimeout(() => {
                 choiceButtons.classList.add('visible');
-            }, 800);
+            }, 2500);
         }
 
         // ============================================================
