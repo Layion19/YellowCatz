@@ -38,6 +38,7 @@ resize();
 // MATRIX SETTINGS
 // ===============================
 const FONT_SIZE = 18;
+const TEXT_SIZE = 28; // Taille des phrases (plus grande)
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&@";
 const COLUMNS = () => Math.floor(canvas.width / FONT_SIZE);
 let drops = [];
@@ -83,15 +84,15 @@ function drawMatrix() {
 const messages = [
   { text: "WELCOME TO THE YELLOW MATRIX", y: 80,  xOffset: 0 },
 
-  { text: "NO PRESALE",                y: 170, xOffset: -140 },
-  { text: "NO TEAM ALLOCATION",        y: 210, xOffset: 90 },
-  { text: "NO INSIDERS",               y: 250, xOffset: -60 },
+  { text: "NO PRESALE",                y: 180, xOffset: -140 },
+  { text: "NO TEAM ALLOCATION",        y: 230, xOffset: 90 },
+  { text: "NO INSIDERS",               y: 280, xOffset: -60 },
 
-  { text: "DID NOT DO A PAID PROMO",    y: 310, xOffset: 140 },
-  { text: "DID NOT FAVOUR WHALES",      y: 350, xOffset: -150 },
+  { text: "DID NOT DO A PAID PROMO",    y: 350, xOffset: 140 },
+  { text: "DID NOT FAVOUR WHALES",      y: 400, xOffset: -150 },
 
-  { text: "WE ARE YOU",                y: 420, xOffset: 80 },
-  { text: "WE ARE YELLOWCATZ",          y: 460, xOffset: 0 }
+  { text: "WE ARE YOU",                y: 480, xOffset: 80 },
+  { text: "WE ARE YELLOWCATZ",          y: 530, xOffset: 0 }
 ];
 
 let frozenLetters = [];
@@ -108,12 +109,12 @@ function addLetter() {
   const msg = messages[msgIndex];
 
   const startX =
-    (canvas.width - msg.text.length * FONT_SIZE) / 2 +
+    (canvas.width - msg.text.length * TEXT_SIZE * 0.6) / 2 +
     (msg.xOffset || 0);
 
   frozenLetters.push({
     char: msg.text[letterIndex],
-    x: startX + letterIndex * FONT_SIZE,
+    x: startX + letterIndex * TEXT_SIZE * 0.6,
     y: msg.y
   });
 
@@ -130,7 +131,7 @@ function addLetter() {
 // ===============================
 function drawFrozenText() {
   ctx.fillStyle = YELLOW;
-  ctx.font = FONT_SIZE + "px monospace";
+  ctx.font = TEXT_SIZE + "px monospace";
 
   frozenLetters.forEach(l => {
     ctx.fillText(l.char, l.x, l.y);
