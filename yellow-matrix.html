@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Yellow Matrix</title>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  background: black;
+  overflow: hidden;
+}
+
+canvas {
+  display: block;
+}
+</style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+
+<script>
+// ===============================
+// CANVAS SETUP
+// ===============================
+const canvas = document.getElementById("matrix");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+// ===============================
+// MATRIX SETTINGS
+// ===============================
+const FONT_SIZE = 18;
+const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#$%&@";
+const COLUMNS = () => Math.floor(canvas.width / FONT_SIZE);
+let drops = [];
+
+// Yellow tone from your image
+const YELLOW = "#f5c400";
+
+// ===============================
+// INIT DROPS
+// ===============================
+function initDrops() {
+  drops = [];
+  for (let i = 0; i < COLUMNS(); i++) {
+    drops[i] = Math.random() * canvas.height;
+  }
+}
+initDrops();
+
+// ===============================
+// MATRIX RAIN
+// ===============================
+function drawMatrix() {
+  ctx.fillStyle = "rgba(0,0,0,0.08)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = YELLOW;
+  ctx.font = FONT_SIZE + "px monospace";
+
+  for (let i = 0; i < drops.length; i++) {
+    const char = CHARS[Math.floor(Math.random() * CHARS.length)];
+    ctx.fillText(char, i * FONT_SIZE, drops[i]);
+
+    if (drops[i] > canvas.height && Math.random() > 0.975) {
+      drops[i] = 0;
+    }
+    drops[i] += FONT_SIZE;
+  }
+}
+
+// ===============================
+// TEXT SEQUENCES
+// ===============================
+const messages = [
+  { text: "WELCOME TO THE YELLOW MATRIX", y: 80,  xOffset: 0 },
+
+  { text: "NO PRESALE",                y: 170, xOffset: -140 },
+  { text: "NO TEAM ALLOCATION",        y: 210, xOffset: 90 },
+  { text: "NO INSIDERS",               y: 250, xOffset: -60 },
+
+  { text: "DID NOT DO A PAID PROMO",    y: 310, xOffset: 140 },
+  { text: "DID NOT FAVOUR WHALES",      y: 350, xOffset: -150 },
+
+  { text: "WE ARE YOU",                y: 420, xOffset: 80 },
+  { text: "WE ARE YELLOWCATZ",          y: 460, xOffset: 0 }
+];
+
+let frozenLetters = [];
+let msgIndex = 0;
+let letterIndex = 0;
+let frameDelay = 0;
+
+// ===============================
+// ADD LETTER (FREEZE EFFECT)
+// ===============================
+function addLetter() {
+  if (msgIndex >= messages.length) return;
+
+  const msg = messages[msgIndex];
+
+  const startX =
+    (canvas.width - msg.text.length * FONT_SIZE) / 2 +
+    (msg.xOffset || 0);
+
+  frozenLetters.push({
+    char: msg.text[letterIndex],
+    x: startX + letterIndex * FONT_SIZE,
+    y: msg.y
+  });
+
+  letterIndex++;
+
+  if (letterIndex >= msg.text.length) {
+    letterIndex = 0;
+    msgIndex++;
+  }
+}
+
+// ===============================
+// DRAW FROZEN TEXT
+// ===============================
+function drawFrozenText() {
+  ctx.fillStyle = YELLOW;
+  ctx.font = FONT_SIZE + "px monospace";
+
+  frozenLetters.forEach(l => {
+    ctx.fillText(l.char, l.x, l.y);
+  });
+}
+
+// ===============================
+// MAIN LOOP
+// ===============================
+function animate() {
+  drawMatrix();
+  drawFrozenText();
+
+  frameDelay++;
+  if (frameDelay > 6) { // speed of letter appearance
+    addLetter();
+    frameDelay = 0;
+  }
+
+  requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+
+</body>
+</html>
