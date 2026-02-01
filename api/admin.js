@@ -6,63 +6,84 @@ const db = createClient({
   authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
-/**
- * Admin API - All admin actions
- * POST /api/admin
- */
+// ============================================================
+// ADMIN API — VERCEL SERVERLESS
+// POST /api/admin
+// ============================================================
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // ============================================================
+  // MANUAL BODY PARSING (REQUIRED)
+// ============================================================
+  let rawBody = '';
+  await new Promise((resolve) => {
+    req.on('data', chunk => {
+      rawBody += chunk;
+    });
+    req.on('end', resolve);
+  });
+
+  let body;
   try {
-    const { password, action } = req.body;
+    body = JSON.parse(rawBody || '{}');
+  } catch {
+    return res.status(400).json({ error: 'Invalid JSON body' });
+  }
 
-    // Vérification mot de passe admin (avec trim pour éviter les espaces)
-    const adminPassword = (process.env.ADMIN_PASSWORD || '').trim();
-    const inputPassword = (password || '').trim();
+  const { password, action } = body;
 
-    if (!adminPassword || inputPassword !== adminPassword) {
-      console.log('Password mismatch - input length:', inputPassword.length, 'expected length:', adminPassword.length);
-      return res.status(401).json({ error: 'Invalid password' });
-    }
+  if (!password || !action) {
+    return res.status(400).json({ error: 'Missing password or action' });
+  }
 
+  // ============================================================
+  // ADMIN PASSWORD CHECK
+  // ============================================================
+  const adminPassword = (process.env.ADMIN_PASSWORD || '').trim();
+  if (!adminPassword || password.trim() !== adminPassword) {
+    return res.status(401).json({ error: 'Invalid password' });
+  }
+
+  try {
     await initDatabase();
 
     // ============================================================
-    // STATS GLOBALES
+    // STATS
     // ============================================================
     if (action === 'stats') {
-      const totalUsers = await db.execute('SELECT COUNT(*) as count FROM users WHERE is_banned = 0');
-      const bannedUsers = await db.execute('SELECT COUNT(*) as count FROM users WHERE is_banned = 1');
-      
+      const totalUsers = await db.execute('SELECT COUNT(*) AS count FROM users WHERE is_banned = 0');
+      const bannedUsers = await db.execute('SELECT COUNT(*) AS count FROM users WHERE is_banned = 1');
+
       const badgeStats = await db.execute(`
-        SELECT badge_id, COUNT(*) as count 
-        FROM user_badges 
+        SELECT badge_id, COUNT(*) AS count
+        FROM user_badges
         GROUP BY badge_id
       `);
 
       const recentUsers = await db.execute(`
-        SELECT id, x_username, avatar_url, created_at, is_banned 
-        FROM users 
-        ORDER BY created_at DESC 
+        SELECT id, x_username, avatar_url, created_at, is_banned
+        FROM users
+        ORDER BY created_at DESC
         LIMIT 10
       `);
 
       return res.status(200).json({
-        totalUsers: totalUsers.rows[0].count,
-        bannedUsers: bannedUsers.rows[0].count,
+        totalUsers: totalUsers.rows[0]?.count || 0,
+        bannedUsers: bannedUsers.rows[0]?.count || 0,
         badgeStats: badgeStats.rows,
         recentUsers: recentUsers.rows
       });
     }
 
     // ============================================================
-    // USERS PAR BADGE
+    // USERS BY BADGE
     // ============================================================
     if (action === 'usersByBadge') {
-      const { badgeId } = req.body;
-      
+      const { badgeId } = body;
+
       const users = await db.execute({
         sql: `
           SELECT u.id, u.x_username, u.avatar_url, ub.unlocked_at, u.is_banned
@@ -78,38 +99,33 @@ export default async function handler(req, res) {
     }
 
     // ============================================================
-    // USERS AVEC X BADGES
+    // USERS WITH X BADGES
     // ============================================================
     if (action === 'usersWithAllBadges') {
-      const { minBadges } = req.body;
-      
+      const { minBadges = 10 } = body;
+
       const users = await db.execute({
         sql: `
-          SELECT u.id, u.x_username, u.avatar_url, COUNT(ub.badge_id) as total_badges, u.is_banned
+          SELECT u.id, u.x_username, u.avatar_url, COUNT(ub.badge_id) AS total_badges, u.is_banned
           FROM users u
           JOIN user_badges ub ON u.id = ub.user_id
           GROUP BY u.id
           HAVING total_badges >= ?
           ORDER BY total_badges DESC
         `,
-        args: [minBadges || 10]
+        args: [minBadges]
       });
 
       return res.status(200).json({ users: users.rows });
     }
 
     // ============================================================
-    // TOUS LES USERS
+    // ALL USERS
     // ============================================================
     if (action === 'allUsers') {
       const users = await db.execute(`
-        SELECT 
-          u.id,
-          u.x_username, 
-          u.avatar_url, 
-          u.created_at,
-          u.is_banned,
-          COUNT(ub.badge_id) as badge_count
+        SELECT u.id, u.x_username, u.avatar_url, u.created_at, u.is_banned,
+               COUNT(ub.badge_id) AS badge_count
         FROM users u
         LEFT JOIN user_badges ub ON u.id = ub.user_id
         GROUP BY u.id
@@ -120,36 +136,30 @@ export default async function handler(req, res) {
     }
 
     // ============================================================
-    // CHERCHER UN USER
+    // SEARCH USER
     // ============================================================
     if (action === 'searchUser') {
-      const { username } = req.body;
-      const cleanUsername = username.replace(/^@/, '');
-      
+      const clean = (body.username || '').replace(/^@/, '');
+
       const users = await db.execute({
         sql: `
-          SELECT 
-            u.id,
-            u.x_username, 
-            u.avatar_url, 
-            u.created_at,
-            u.is_banned
-          FROM users u
-          WHERE u.x_username LIKE ?
+          SELECT id, x_username, avatar_url, created_at, is_banned
+          FROM users
+          WHERE x_username LIKE ?
           LIMIT 20
         `,
-        args: [`%${cleanUsername}%`]
+        args: [`%${clean}%`]
       });
 
       return res.status(200).json({ users: users.rows });
     }
 
     // ============================================================
-    // DÉTAILS D'UN USER (avec ses badges)
+    // USER DETAILS
     // ============================================================
     if (action === 'userDetails') {
-      const { userId } = req.body;
-      
+      const { userId } = body;
+
       const user = await db.execute({
         sql: 'SELECT * FROM users WHERE id = ?',
         args: [userId]
@@ -159,9 +169,9 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'User not found' });
       }
 
-      const badges = await db.execute({
+      const userBadges = await db.execute({
         sql: `
-          SELECT ub.badge_id, ub.unlocked_at, b.badge_name, b.description
+          SELECT ub.badge_id, b.badge_name
           FROM user_badges ub
           JOIN badges b ON ub.badge_id = b.badge_id
           WHERE ub.user_id = ?
@@ -171,76 +181,54 @@ export default async function handler(req, res) {
 
       const allBadges = await db.execute('SELECT badge_id, badge_name FROM badges');
 
-      return res.status(200).json({ 
+      return res.status(200).json({
         user: user.rows[0],
-        userBadges: badges.rows,
+        userBadges: userBadges.rows,
         allBadges: allBadges.rows
       });
     }
 
     // ============================================================
-    // AJOUTER UN BADGE À UN USER
+    // ADD / REMOVE BADGE
     // ============================================================
-    if (action === 'addBadge') {
-      const { userId, badgeId } = req.body;
-      
-      await db.execute({
-        sql: 'INSERT OR IGNORE INTO user_badges (user_id, badge_id) VALUES (?, ?)',
-        args: [userId, badgeId]
-      });
+    if (action === 'addBadge' || action === 'removeBadge') {
+      const { userId, badgeId } = body;
 
-      return res.status(200).json({ success: true, message: `Badge ${badgeId} added to user ${userId}` });
+      if (action === 'addBadge') {
+        await db.execute({
+          sql: 'INSERT OR IGNORE INTO user_badges (user_id, badge_id) VALUES (?, ?)',
+          args: [userId, badgeId]
+        });
+      } else {
+        await db.execute({
+          sql: 'DELETE FROM user_badges WHERE user_id = ? AND badge_id = ?',
+          args: [userId, badgeId]
+        });
+      }
+
+      return res.status(200).json({ success: true });
     }
 
     // ============================================================
-    // RETIRER UN BADGE À UN USER
+    // BAN / UNBAN USER
     // ============================================================
-    if (action === 'removeBadge') {
-      const { userId, badgeId } = req.body;
-      
+    if (action === 'banUser' || action === 'unbanUser') {
+      const banned = action === 'banUser' ? 1 : 0;
       await db.execute({
-        sql: 'DELETE FROM user_badges WHERE user_id = ? AND badge_id = ?',
-        args: [userId, badgeId]
+        sql: 'UPDATE users SET is_banned = ? WHERE id = ?',
+        args: [banned, body.userId]
       });
 
-      return res.status(200).json({ success: true, message: `Badge ${badgeId} removed from user ${userId}` });
+      return res.status(200).json({ success: true });
     }
 
     // ============================================================
-    // BANNIR UN USER
-    // ============================================================
-    if (action === 'banUser') {
-      const { userId } = req.body;
-      
-      await db.execute({
-        sql: 'UPDATE users SET is_banned = 1 WHERE id = ?',
-        args: [userId]
-      });
-
-      return res.status(200).json({ success: true, message: `User ${userId} banned` });
-    }
-
-    // ============================================================
-    // DÉBANNIR UN USER
-    // ============================================================
-    if (action === 'unbanUser') {
-      const { userId } = req.body;
-      
-      await db.execute({
-        sql: 'UPDATE users SET is_banned = 0 WHERE id = ?',
-        args: [userId]
-      });
-
-      return res.status(200).json({ success: true, message: `User ${userId} unbanned` });
-    }
-
-    // ============================================================
-    // LISTE DES USERS BANNIS
+    // BANNED USERS
     // ============================================================
     if (action === 'bannedUsers') {
       const users = await db.execute(`
         SELECT id, x_username, avatar_url, created_at
-        FROM users 
+        FROM users
         WHERE is_banned = 1
         ORDER BY created_at DESC
       `);
@@ -250,8 +238,8 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ error: 'Invalid action' });
 
-  } catch (error) {
-    console.error('Admin API error:', error);
+  } catch (err) {
+    console.error('ADMIN API ERROR:', err);
     return res.status(500).json({ error: 'Server error' });
   }
 }
