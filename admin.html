@@ -483,6 +483,37 @@
     <div class="user-list" id="usersByBadge"></div>
   </div>
 
+<!-- USERS BY BADGE COUNT + EXPORT -->
+<div class="section">
+  <h2>🎯 Users by Badge Count</h2>
+
+  <div class="filter-row">
+    <select id="badgeCountMode">
+      <option value="exact">Exactly</option>
+      <option value="min">At least</option>
+    </select>
+
+    <select id="badgeCountValue">
+      <option value="1">1 badge</option>
+      <option value="3">3 badges</option>
+      <option value="4">4 badges</option>
+      <option value="6">6 badges</option>
+      <option value="8">8 badges</option>
+      <option value="10">10 badges</option>
+    </select>
+
+    <button class="btn btn-warning" onclick="loadUsersByBadgeCount()">
+      Search
+    </button>
+
+    <button class="btn btn-success" onclick="exportUsersByBadgeCountCSV()">
+      Export CSV
+    </button>
+  </div>
+
+  <div class="user-list" id="usersByBadgeCount"></div>
+</div>
+
   <!-- BANNED USERS -->
   <div class="section">
     <h2>🚫 Banned Users</h2>
@@ -783,6 +814,54 @@ document.getElementById('searchInput').addEventListener('keypress', (e) => {
 document.getElementById('userModal').addEventListener('click', (e) => {
   if (e.target.id === 'userModal') closeModal();
 });
+
+// ============================================================
+// USERS BY BADGE COUNT + CSV EXPORT
+// ============================================================
+
+let usersByBadgeCountCache = [];
+
+async function loadUsersByBadgeCount() {
+  const mode = document.getElementById('badgeCountMode').value;
+  const value = parseInt(document.getElementById('badgeCountValue').value, 10);
+
+  const data = await apiCall('usersWithAllBadges', {
+    minBadges: value,
+    mode
+  });
+
+  usersByBadgeCountCache = data.users || [];
+  renderUserList('usersByBadgeCount', usersByBadgeCountCache);
+}
+
+function exportUsersByBadgeCountCSV() {
+  if (!usersByBadgeCountCache.length) {
+    alert('No users to export');
+    return;
+  }
+
+  let csv = 'id,username,total_badges,is_banned\n';
+
+  usersByBadgeCountCache.forEach(u => {
+    csv += [
+      u.id,
+      u.x_username,
+      u.total_badges ?? '',
+      u.is_banned ? 1 : 0
+    ].join(',') + '\n';
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `users_badge_count_${Date.now()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 </script>
 </body>
 </html>
