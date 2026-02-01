@@ -67,9 +67,9 @@ export async function initDatabase() {
     },
     { 
       badge_id: 'badge_4', 
-      badge_name: '???', 
-      description: 'Mystery badge',
-      mission: '???',
+      badge_name: 'Reach the Moon', 
+      description: 'You reached the moon!',
+      mission: 'Complete the YellowGame challenge and click the green button',
       is_time_limited: 0 
     },
     { 

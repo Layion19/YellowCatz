@@ -471,7 +471,7 @@
         <option value="og">OG</option>
         <option value="badge_2">Badge 2 - Supporter</option>
         <option value="badge_3">Badge 3 - Yellow Army</option>
-        <option value="badge_4">Badge 4 - ???</option>
+        <option value="badge_4">Badge 4 - Reach the Moon</option>
         <option value="badge_5">Badge 5 - X Hunter</option>
         <option value="badge_6">Badge 6 - M Hunter</option>
         <option value="badge_7">Badge 7 - ???</option>
@@ -533,7 +533,7 @@ async function login() {
   const password = document.getElementById('passwordInput').value;
   
   try {
-    const res = await fetch('/api/admin', {
+    const res = await fetch('/api/admin/stats', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password, action: 'stats' })
@@ -565,7 +565,7 @@ function logout() {
 // API CALL
 // ============================================================
 async function apiCall(action, extraData = {}) {
-  const res = await fetch('/api/admin', {
+  const res = await fetch('/api/admin/stats', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password: adminPassword, action, ...extraData })

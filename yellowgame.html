@@ -24,7 +24,7 @@
             overflow: hidden;
         }
 
-        body.phase2 {
+        body.phase2, body.phase3 {
             background-color: #000;
         }
 
@@ -64,7 +64,6 @@
             width: 200px;
             height: 60px;
             cursor: pointer;
-            /* Invisible */
         }
 
         /* ---------- BOTTOM CONTENT (text + code) ---------- */
@@ -183,11 +182,6 @@
             opacity: 1;
         }
 
-        .auth-message a {
-            color: #E8A000;
-            text-decoration: underline;
-        }
-
         /* ---------- PHASE 2: CONTINUE ---------- */
         .phase2-container {
             display: none;
@@ -252,29 +246,73 @@
         /* ---------- SPACE CAT ---------- */
         .space-cat {
             position: fixed;
-            bottom: -300px;
-            right: 15%;
-            width: 200px;
+            bottom: -350px;
+            right: calc(50% - 180px);
+            width: 150px;
             height: auto;
             opacity: 0;
-            transition: bottom 2s ease-out, opacity 1s ease-in;
+            transition: bottom 5s ease-out, opacity 1s ease-in;
             z-index: 10;
+            pointer-events: none;
         }
 
         .space-cat.rising {
-            bottom: 50px;
+            bottom: 80px;
             opacity: 1;
         }
 
-        @media (max-width: 500px) {
-            .space-cat {
-                width: 120px;
-                right: 5%;
-            }
+        /* ---------- PHASE 3: DEXTOOLS CHART ---------- */
+        .phase3-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            height: 100vh;
+            padding: 20px;
+        }
 
-            .space-cat.rising {
-                bottom: 40px;
-            }
+        .phase3-container.visible {
+            display: flex;
+        }
+
+        .phase3-header {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            letter-spacing: 4px;
+            color: #E8A000;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            height: 70vh;
+            border: 2px solid #E8A000;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .chart-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .moon-cat {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 120px;
+            height: auto;
+            opacity: 0;
+            transition: opacity 1s ease-in;
+            z-index: 20;
+        }
+
+        .moon-cat.visible {
+            opacity: 1;
         }
 
         /* ---------- HIDE ELEMENTS ---------- */
@@ -324,6 +362,29 @@
             .auth-message {
                 font-size: 14px;
             }
+
+            .space-cat {
+                width: 100px;
+                right: calc(50% - 120px);
+            }
+
+            .space-cat.rising {
+                bottom: 60px;
+            }
+
+            .phase3-header {
+                font-size: 20px;
+            }
+
+            .chart-wrapper {
+                height: 60vh;
+            }
+
+            .moon-cat {
+                width: 80px;
+                bottom: 10px;
+                right: 10px;
+            }
         }
 
         @media (max-height: 600px) {
@@ -347,15 +408,10 @@
 
     <!-- BOTTOM CONTENT (text + code inputs together) -->
     <div class="bottom-content" id="bottomContent">
-        <!-- GAME TEXT (appears after click) -->
         <div class="game-text" id="gameText"></div>
-
-        <!-- AUTH MESSAGE (if not logged in) -->
         <div class="auth-message" id="authMessage">
             Connect on X first to play.
         </div>
-
-        <!-- CODE INPUT -->
         <div class="code-container" id="codeContainer">
             <div class="code-inputs">
                 <input type="text" class="code-input" maxlength="1" inputmode="numeric" pattern="[0-9]*" data-index="0">
@@ -380,25 +436,52 @@
     <!-- SPACE CAT (appears in phase 2) -->
     <img src="/images/yellowcatz-space.png" alt="" class="space-cat" id="spaceCat">
 
+    <!-- PHASE 3: DEXTOOLS CHART -->
+    <div class="phase3-container" id="phase3Container">
+        <div class="phase3-header">🌙 WELCOME TO THE MOON 🌙</div>
+        <div class="chart-wrapper">
+            <iframe id="dextoolsChart" src="" allow="clipboard-write"></iframe>
+        </div>
+    </div>
+
+    <!-- MOON CAT (appears in phase 3) -->
+    <img src="/images/yellowcatz-space.png" alt="" class="moon-cat" id="moonCat">
+
     <script>
         // ============================================================
         // CONFIG
         // ============================================================
         const SECRET_CODE = '48532';
+        const DEXTOOLS_URL = 'https://www.dextools.io/widget-chart/en/ether/pe-light/0x0000000000000000000000000000000000000000?theme=dark&chartType=1&chartResolution=30&drawingToolbars=false';
         let gameStarted = false;
-        let codeEntered = false;
         let isAuthenticated = false;
+        let hasBadge4 = false;
+        let userData = null;
 
         // ============================================================
-        // CHECK AUTH ON LOAD
+        // CHECK AUTH & BADGE ON LOAD
         // ============================================================
-        async function checkAuth() {
+        async function checkAuthAndBadge() {
             try {
                 const response = await fetch('/api/user', {
                     credentials: 'include'
                 });
                 const data = await response.json();
+                
                 isAuthenticated = data.authenticated === true;
+                userData = data;
+                
+                if (isAuthenticated && data.badges) {
+                    // Check if user has badge_4
+                    const badge4 = data.badges.find(b => b.id === 'badge_4');
+                    hasBadge4 = badge4 && badge4.unlocked;
+                }
+
+                // If user already has badge_4, skip directly to phase 3
+                if (hasBadge4) {
+                    skipToPhase3();
+                }
+
             } catch (error) {
                 console.log('Auth check failed');
                 isAuthenticated = false;
@@ -406,7 +489,19 @@
         }
 
         // Run auth check immediately
-        checkAuth();
+        checkAuthAndBadge();
+
+        // ============================================================
+        // SKIP TO PHASE 3 (for returning users with badge_4)
+        // ============================================================
+        function skipToPhase3() {
+            document.getElementById('errorContainer').classList.add('hidden');
+            document.getElementById('secretZone').classList.add('hidden');
+            document.getElementById('bottomContent').classList.add('hidden');
+            document.body.classList.add('phase3');
+            
+            showPhase3();
+        }
 
         // ============================================================
         // TYPEWRITER EFFECT
@@ -444,12 +539,9 @@
             if (gameStarted) return;
             gameStarted = true;
 
-            // Hide secret zone
             secretZone.style.display = 'none';
 
-            // Check if authenticated
             if (!isAuthenticated) {
-                // Show auth message
                 await typeWriter(gameText, 'The game has just begun.');
                 setTimeout(() => {
                     authMessage.classList.add('visible');
@@ -457,10 +549,8 @@
                 return;
             }
 
-            // User is authenticated - continue with game
             await typeWriter(gameText, 'The game has just begun.');
 
-            // Show code inputs after delay
             setTimeout(() => {
                 codeContainer.classList.add('visible');
                 document.querySelector('.code-input').focus();
@@ -473,21 +563,17 @@
         const codeInputs = document.querySelectorAll('.code-input');
 
         codeInputs.forEach((input, index) => {
-            // Only allow numbers
             input.addEventListener('input', (e) => {
                 const value = e.target.value.replace(/[^0-9]/g, '');
                 e.target.value = value;
 
-                // Auto-focus next input
                 if (value && index < codeInputs.length - 1) {
                     codeInputs[index + 1].focus();
                 }
 
-                // Check if all inputs are filled
                 checkCode();
             });
 
-            // Handle backspace
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Backspace' && !e.target.value && index > 0) {
                     codeInputs[index - 1].focus();
@@ -500,11 +586,9 @@
             
             if (enteredCode.length === 5) {
                 if (enteredCode === SECRET_CODE) {
-                    // SUCCESS!
                     codeInputs.forEach(i => i.classList.add('success'));
                     setTimeout(startPhase2, 1000);
                 } else {
-                    // WRONG CODE
                     codeInputs.forEach(i => {
                         i.classList.add('error');
                         setTimeout(() => {
@@ -521,14 +605,11 @@
         // PHASE 2: CONTINUE QUESTION
         // ============================================================
         async function startPhase2() {
-            // Hide phase 1 elements
             errorContainer.classList.add('hidden');
             document.getElementById('bottomContent').classList.add('hidden');
 
-            // Change background
             document.body.classList.add('phase2');
 
-            // Show phase 2 container
             const phase2Container = document.getElementById('phase2Container');
             const phase2Text = document.getElementById('phase2Text');
             const choiceButtons = document.getElementById('choiceButtons');
@@ -536,10 +617,9 @@
 
             phase2Container.classList.add('visible');
 
-            // Typewriter effect for question
             await typeWriter(phase2Text, 'Do you want to continue playing?', 60);
 
-            // Space cat rises from bottom
+            // Space cat rises slowly
             setTimeout(() => {
                 spaceCat.classList.add('rising');
             }, 300);
@@ -547,21 +627,68 @@
             // Show buttons after space cat has risen
             setTimeout(() => {
                 choiceButtons.classList.add('visible');
-            }, 2500);
+            }, 5500);
         }
 
         // ============================================================
-        // BUTTON HANDLERS (for future use)
+        // BUTTON HANDLERS
         // ============================================================
         document.getElementById('btnRed').addEventListener('click', () => {
-            // TODO: Red button action
-            console.log('Red button clicked');
+            // Red = Go back to index
+            window.location.href = '/index.html';
         });
 
-        document.getElementById('btnGreen').addEventListener('click', () => {
-            // TODO: Green button action
-            console.log('Green button clicked');
+        document.getElementById('btnGreen').addEventListener('click', async () => {
+            // Green = Reach the Moon!
+            
+            // Award badge_4
+            await claimBadge('badge_4');
+            
+            // Transition to phase 3
+            document.getElementById('phase2Container').classList.add('hidden');
+            document.getElementById('spaceCat').classList.add('hidden');
+            document.body.classList.remove('phase2');
+            document.body.classList.add('phase3');
+            
+            showPhase3();
         });
+
+        // ============================================================
+        // CLAIM BADGE
+        // ============================================================
+        async function claimBadge(badgeId) {
+            try {
+                const response = await fetch('/api/badge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ badgeId })
+                });
+                const data = await response.json();
+                console.log('Badge claimed:', data);
+            } catch (error) {
+                console.error('Badge claim error:', error);
+            }
+        }
+
+        // ============================================================
+        // PHASE 3: DEXTOOLS CHART
+        // ============================================================
+        function showPhase3() {
+            const phase3Container = document.getElementById('phase3Container');
+            const moonCat = document.getElementById('moonCat');
+            const dextoolsChart = document.getElementById('dextoolsChart');
+
+            // Load Dextools chart
+            dextoolsChart.src = DEXTOOLS_URL;
+
+            phase3Container.classList.add('visible');
+
+            // Show moon cat after a delay
+            setTimeout(() => {
+                moonCat.classList.add('visible');
+            }, 1500);
+        }
     </script>
 </body>
 </html>

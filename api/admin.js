@@ -16,15 +16,16 @@ export default async function handler(req, res) {
   }
 
   try {
-   const { password, action } = req.body;
+    const { password, action } = req.body;
 
-// Vérifier le mot de passe UNIQUEMENT pour le login (stats initial)
-if (action === 'stats') {
-  if (password !== process.env.ADMIN_PASSWORD) {
-    return res.status(401).json({ error: 'Invalid password' });
-  }
-}
+    // Vérification mot de passe admin (avec trim pour éviter les espaces)
+    const adminPassword = (process.env.ADMIN_PASSWORD || '').trim();
+    const inputPassword = (password || '').trim();
 
+    if (!adminPassword || inputPassword !== adminPassword) {
+      console.log('Password mismatch - input length:', inputPassword.length, 'expected length:', adminPassword.length);
+      return res.status(401).json({ error: 'Invalid password' });
+    }
 
     await initDatabase();
 
