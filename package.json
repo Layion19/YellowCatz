@@ -1,0 +1,17 @@
+{
+  "name": "yellowcatz",
+  "version": "1.0.0",
+  "description": "Yellow Catz - Yellow World",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Build complete'"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.5.6",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
