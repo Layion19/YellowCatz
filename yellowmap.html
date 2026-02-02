@@ -116,6 +116,20 @@
             color: #fff;
         }
 
+        /* ADDED: Secret Cat */
+        .secret-cat {
+            font-size: 14px;
+            margin: 25px auto 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.4;
+        }
+
+        .secret-cat:hover {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+
         /* Overlay */
         .overlay {
             position: fixed;
@@ -208,12 +222,16 @@
         <span></span>
     </div>
 
-    <!-- Sidebar -->
+    <!-- Sidebar (COMPLETED, NOTHING REMOVED) -->
     <nav class="sidebar" id="sidebar">
         <a href="index.html">Home</a>
+        <a href="yellow-matrix.html">Origins</a>
         <a href="about.html">About</a>
         <a href="yellowmap.html">YellowMap</a>
+        <a href="yellowgame.html">YellowGame</a>
         <a href="gallery.html">Gallery</a>
+        <a href="galleryv2.html">GalleryV2</a>
+        <div class="secret-cat" id="secretCat">😼</div>
     </nav>
 
     <!-- Overlay -->
@@ -309,7 +327,6 @@
         const bgMusic = document.getElementById('bgMusic');
         const musicBtn = document.getElementById('musicBtn');
 
-        // Check if music was playing
         window.addEventListener('load', () => {
             const wasPlaying = localStorage.getItem('musicPlaying') === 'true';
             const savedTime = parseFloat(localStorage.getItem('musicTime')) || 0;
@@ -325,12 +342,10 @@
             }
         });
 
-        // Save state before leaving page
         window.addEventListener('beforeunload', () => {
             localStorage.setItem('musicTime', bgMusic.currentTime);
         });
 
-        // Toggle music
         musicBtn.addEventListener('click', () => {
             if (bgMusic.paused) {
                 bgMusic.volume = 0.5;
@@ -360,6 +375,14 @@
             sidebar.classList.remove('active');
             overlay.classList.remove('active');
         });
+
+        // ADDED: Secret Cat
+        const secretCat = document.getElementById('secretCat');
+        if (secretCat) {
+            secretCat.addEventListener('click', () => {
+                window.location.href = 'yellow.html';
+            });
+        }
     </script>
 </body>
 </html>

@@ -116,6 +116,20 @@
             color: #fff;
         }
 
+        /* ADDED: Secret Cat */
+        .secret-cat {
+            font-size: 14px;
+            margin: 25px auto 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.4;
+        }
+
+        .secret-cat:hover {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+
         /* Overlay */
         .overlay {
             position: fixed;
@@ -208,12 +222,16 @@
         <span></span>
     </div>
 
-    <!-- Sidebar -->
+    <!-- Sidebar (COMPLETED, NOTHING REMOVED) -->
     <nav class="sidebar" id="sidebar">
         <a href="index.html">Home</a>
+        <a href="yellow-matrix.html">Origins</a>
         <a href="about.html">About</a>
         <a href="yellowmap.html">YellowMap</a>
+        <a href="yellowgame.html">YellowGame</a>
         <a href="gallery.html">Gallery</a>
+        <a href="galleryv2.html">GalleryV2</a>
+        <div class="secret-cat" id="secretCat">😼</div>
     </nav>
 
     <!-- Overlay -->
@@ -222,7 +240,7 @@
     <!-- Main Content -->
     <div class="content">
         <h1>The Story of Yellow Catz</h1>
-        
+
         <div class="section">
             <p>At the dawn of crypto chaos,<br>
             when charts were bleeding red<br>
@@ -230,19 +248,19 @@
         </div>
 
         <p><span class="highlight">A cat appeared.</span></p>
-        
+
         <div class="section">
             <p>No one knows where it came from.<br>
             Not a bull. Not a bear.<br>
             Just <span class="highlight">yellow</span>.</p>
         </div>
-        
+
         <div class="yellow-lines">
             🟡 Yellow like optimism when everything feels lost.<br>
             🟡 Yellow like the light after the blackout.<br>
             🟡 Yellow like those who stay calm while the system panics.
         </div>
-        
+
         <div class="section">
             <p>Yellow Catz doesn't chase trends.<br>
             It watches.<br>
@@ -270,9 +288,9 @@
         </div>
 
         <p>Just one idea:</p>
-        
+
         <p class="rule">Stay cool. Stay yellow.</p>
-        
+
         <p class="ending">Yellow Catz isn't here to save crypto.<br>
         It's here to remind us why we showed up in the first place <br>
         for the memes, the culture, and the community we build together.</p>
@@ -283,11 +301,10 @@
         const bgMusic = document.getElementById('bgMusic');
         const musicBtn = document.getElementById('musicBtn');
 
-        // Check if music was playing
         window.addEventListener('load', () => {
             const wasPlaying = localStorage.getItem('musicPlaying') === 'true';
             const savedTime = parseFloat(localStorage.getItem('musicTime')) || 0;
-            
+
             if (wasPlaying) {
                 bgMusic.currentTime = savedTime;
                 bgMusic.volume = 0.5;
@@ -299,12 +316,10 @@
             }
         });
 
-        // Save state before leaving page
         window.addEventListener('beforeunload', () => {
             localStorage.setItem('musicTime', bgMusic.currentTime);
         });
 
-        // Toggle music
         musicBtn.addEventListener('click', () => {
             if (bgMusic.paused) {
                 bgMusic.volume = 0.5;
@@ -334,6 +349,14 @@
             sidebar.classList.remove('active');
             overlay.classList.remove('active');
         });
+
+        // ADDED: Secret Cat
+        const secretCat = document.getElementById('secretCat');
+        if (secretCat) {
+            secretCat.addEventListener('click', () => {
+                window.location.href = 'yellow.html';
+            });
+        }
     </script>
 </body>
 </html>
