@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yellow World</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:#E8A000;
+  font-family:Arial,sans-serif;
+  overflow:hidden;
+}
+
+/* ---------- HAMBURGER MENU (same as index.html) ---------- */
+.menu-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  z-index: 1000;
+  display: none; /* Hidden until authenticated */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+
+.menu-btn span {
+  display: block;
+  width: 30px;
+  height: 3px;
+  background-color: #000;
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.menu-btn.active span:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 6px);
+}
+
+.menu-btn.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-btn.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(7px, -7px);
+}
+
+/* ---------- SIDEBAR (same as index.html) ---------- */
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: -300px;
+  width: 300px;
+  height: 100vh;
+  background-color: #000;
+  transition: right 0.3s ease;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  padding: 80px 30px 30px;
+}
+
+.sidebar.active {
+  right: 0;
+}
+
+.sidebar a {
+  color: #E8A000;
+  text-decoration: none;
+  font-size: 24px;
+  padding: 15px 0;
+  border-bottom: 1px solid #333;
+  transition: color 0.3s ease;
+}
+
+.sidebar a:hover {
+  color: #fff;
+}
+
+/* Secret Cat Emoji in sidebar */
+.secret-cat {
+  font-size: 14px;
+  margin: 25px auto 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0.4;
+}
+
+.secret-cat:hover {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+/* ---------- OVERLAY ---------- */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 998;
+}
+
+.overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ---------- USER BAR ---------- */
+#user-bar{
+  position:fixed;
+  top:20px;
+  left:20px;
+  display:none;
+  align-items:center;
+  gap:10px;
+  z-index:20;
+}
+
+#user-avatar{
+  width:36px;
+  height:36px;
+  border-radius:50%;
+}
+
+#user-name {
+  color: #8B5A00;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+#status-dot{
+  position:absolute;
+  bottom:0;
+  right:0;
+  width:8px;
+  height:8px;
+  background:#00c853;
+  border-radius:50%;
+  border:2px solid #E8A000;
+}
+
+/* ---------- MAIN ---------- */
+.container{
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+
+.play-btn{
+  width:80px;height:80px;border-radius:50%;
+  border:3px solid #8B5A00;
+  background:transparent;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:.5s;
+  z-index:2;
+}
+
+.play-btn.hidden{opacity:0;pointer-events:none;transform:scale(.8)}
+.play-btn svg{width:30px;height:30px;fill:#8B5A00;margin-left:5px}
+
+.text-container{
+  position:absolute;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  opacity:0;
+  transition:.5s;
+  pointer-events:none;
+}
+
+.text-container.visible{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.welcome-text{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:72px;
+  letter-spacing:12px;
+  color:#8B5A00;
+  margin-bottom:20px;
+}
+
+.enter-text{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:32px;
+  letter-spacing:4px;
+  color:#8B5A00;
+  margin-bottom:30px;
+}
+
+.small-text{
+  font-size:14px;
+  color:#8B5A00;
+  opacity:.7;
+  font-style:italic;
+}
+
+.cursor{
+  display:inline-block;
+  width:3px;
+  height:1em;
+  background:#8B5A00;
+  margin-left:2px;
+  animation:blink .7s infinite;
+}
+
+@keyframes blink{0%,50%{opacity:1}51%,100%{opacity:0}}
+
+.x-connect{
+  margin-top:50px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  opacity:0;
+  transform:translateY(20px);
+  transition:.8s;
+  pointer-events:none;
+}
+
+.x-connect.visible{opacity:1;transform:translateY(0);pointer-events:auto}
+
+.x-btn{
+  width:60px;height:60px;
+  border-radius:50%;
+  border:2px solid #8B5A00;
+  background:transparent;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.x-btn svg{width:28px;height:28px;fill:#8B5A00}
+
+.connect-text {
+  margin-top: 10px;
+  color: #8B5A00;
+  font-size: 12px;
+}
+
+/* ---------- BADGES ---------- */
+#badges-section{
+  display:none;
+  margin-top:40px;
+  text-align:center;
+}
+
+.badges-title{
+  font-size:14px;
+  letter-spacing:1px;
+  color:#8B5A00;
+}
+
+.badges-sub{
+  font-size:12px;
+  color:#8B5A00;
+  opacity:.7;
+  margin-bottom:20px;
+}
+
+#badges-grid{
+  display:flex;
+  justify-content:center;
+  gap:14px;
+  flex-wrap:wrap;
+}
+
+.badge{
+  width:46px;height:46px;
+  border-radius:50%;
+  background:#777;
+  opacity:.4;
+  cursor:pointer;
+  transition:.3s;
+}
+
+.badge.unlocked{
+  background:#FFD000;
+  opacity:1;
+}
+
+#badge-info{
+  margin-top:10px;
+  display:none;
+}
+
+#badge-name{
+  font-weight:bold;
+  color:#8B5A00;
+}
+
+#badge-description{
+  font-size:12px;
+  color:#8B5A00;
+  opacity:.7;
+}
+
+@media (max-width: 600px) {
+  .welcome-text {
+    font-size: 48px;
+    letter-spacing: 8px;
+  }
+  .enter-text {
+    font-size: 20px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- Hamburger Menu Button (same as index.html) -->
+<div class="menu-btn" id="menuBtn">
+  <span></span>
+  <span></span>
+  <span></span>
+</div>
+
+<!-- Sidebar (same as index.html) -->
+<nav class="sidebar" id="sidebar">
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="yellowmap.html">YellowMap</a>
+  <a href="gallery.html">Gallery</a>
+  <a href="status.html">My Status</a>
+  <a href="/api/auth/logout">Logout</a>
+  <div class="secret-cat" id="secretCat">😼</div>
+</nav>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay"></div>
+
+<!-- USER BAR -->
+<div id="user-bar">
+  <div style="position:relative">
+    <img id="user-avatar">
+    <span id="status-dot"></span>
+  </div>
+  <span id="user-name"></span>
+</div>
+
+<div class="container">
+  <button class="play-btn" id="playBtn">
+    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+  </button>
+
+  <div class="text-container" id="textContainer">
+    <div class="welcome-text" id="welcomeText"></div>
+    <div class="enter-text" id="enterText"></div>
+    <div class="small-text" id="smallText"></div>
+
+    <div class="x-connect" id="xConnect">
+      <button class="x-btn" id="xBtn">
+        <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231z"/></svg>
+      </button>
+      <span class="connect-text">Connect with X</span>
+    </div>
+
+    <section id="badges-section">
+      <p class="badges-title">Badges to collect in the Yellow World</p>
+      <p class="badges-sub">Some are obvious.<br>Some are hidden.<br>Some are not for everyone.</p>
+
+      <div id="badges-grid"></div>
+
+      <div id="badge-info">
+        <p id="badge-name"></p>
+        <p id="badge-description"></p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+const playBtn = document.getElementById('playBtn');
+const textContainer = document.getElementById('textContainer');
+const welcomeText = document.getElementById('welcomeText');
+const enterText = document.getElementById('enterText');
+const smallText = document.getElementById('smallText');
+const xConnect = document.getElementById('xConnect');
+const menuBtn = document.getElementById('menuBtn');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('overlay');
+
+let isAuthenticated = false;
+
+// Menu Toggle (same as index.html)
+menuBtn.addEventListener('click', () => {
+  menuBtn.classList.toggle('active');
+  sidebar.classList.toggle('active');
+  overlay.classList.toggle('active');
+});
+
+overlay.addEventListener('click', () => {
+  menuBtn.classList.remove('active');
+  sidebar.classList.remove('active');
+  overlay.classList.remove('active');
+});
+
+// Secret cat does nothing special on yellow.html (already here)
+document.getElementById('secretCat').addEventListener('click', () => {
+  // Already on yellow world
+});
+
+function typeWriter(el, text, speed) {
+  return new Promise(r => {
+    let i = 0;
+    function t() {
+      if (i < text.length) {
+        el.innerHTML = text.slice(0, i + 1) + '<span class="cursor"></span>';
+        i++;
+        setTimeout(t, speed);
+      } else {
+        el.innerHTML = text;
+        r();
+      }
+    }
+    t();
+  });
+}
+
+playBtn.onclick = async () => {
+  playBtn.classList.add('hidden');
+  textContainer.classList.add('visible');
+  await typeWriter(welcomeText, 'WELCOME', 120);
+  await typeWriter(enterText, 'Enter the Yellow World', 60);
+  await typeWriter(smallText, 'Not everyone needs to go further.', 40);
+  
+  // Show X connect button only if not authenticated
+  if (!isAuthenticated) {
+    xConnect.classList.add('visible');
+  }
+};
+
+document.getElementById('xBtn').onclick = () => location.href = '/api/auth?action=login';
+
+/* ---------- STATUS + BADGES ---------- */
+fetch('/api/user')
+  .then(r => r.json())
+  .then(d => {
+    if (!d.authenticated) return;
+
+    isAuthenticated = true;
+
+    // Show hamburger menu
+    document.getElementById('menuBtn').style.display = 'flex';
+
+    // Show user bar
+    document.getElementById('user-bar').style.display = 'flex';
+    document.getElementById('user-avatar').src = d.user.avatarUrl;
+    
+    // Fix: remove @ if already present, then add single @
+    const username = d.user.username.replace(/^@/, '');
+    document.getElementById('user-name').textContent = '@' + username;
+
+    // Hide X connect button since already connected
+    xConnect.style.display = 'none';
+
+    // Show badges section
+    document.getElementById('badges-section').style.display = 'block';
+
+    const grid = document.getElementById('badges-grid');
+    const info = document.getElementById('badge-info');
+    const name = document.getElementById('badge-name');
+    const desc = document.getElementById('badge-description');
+
+    const defs = [
+      { id: 'og', name: 'OG', desc: 'Early access – first 24 hours' },
+      { id: 'badge_2', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_3', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_4', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_5', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_6', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_7', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_8', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_9', name: '???', desc: 'Mystery badge' },
+      { id: 'badge_10', name: '???', desc: 'Mystery badge' }
+    ];
+
+    defs.forEach(b => {
+      const userBadge = d.badges.find(x => x.badge_id === b.id);
+      const unlocked = !!userBadge;
+      
+      const el = document.createElement('div');
+      el.className = 'badge' + (unlocked ? ' unlocked' : '');
+      el.onclick = () => {
+        info.style.display = 'block';
+        if (unlocked) {
+          name.textContent = userBadge.badge_name || b.name;
+          desc.textContent = userBadge.description || b.desc;
+        } else {
+          name.textContent = '???';
+          desc.textContent = 'This badge has not been unlocked yet';
+        }
+      };
+      grid.appendChild(el);
+    });
+  });
+</script>
+</body>
+</html>

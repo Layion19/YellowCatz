@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yellow World - Your Status</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: #E8A000;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        /* ---------- HAMBURGER MENU ---------- */
+        .menu-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .menu-btn span {
+            display: block;
+            width: 30px;
+            height: 3px;
+            background-color: #000;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+
+        .menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        /* ---------- SIDEBAR ---------- */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100vh;
+            background-color: #000;
+            transition: right 0.3s ease;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            padding: 80px 30px 30px;
+        }
+
+        .sidebar.active {
+            right: 0;
+        }
+
+        .sidebar a {
+            color: #E8A000;
+            text-decoration: none;
+            font-size: 24px;
+            padding: 15px 0;
+            border-bottom: 1px solid #333;
+            transition: color 0.3s ease;
+        }
+
+        .sidebar a:hover {
+            color: #fff;
+        }
+
+        .secret-cat {
+            font-size: 14px;
+            margin: 25px auto 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.4;
+        }
+
+        .secret-cat:hover {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+
+        /* ---------- OVERLAY ---------- */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 998;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* ---------- MAIN CONTENT ---------- */
+        .container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .page-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 36px;
+            letter-spacing: 4px;
+            color: #8B5A00;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .identity-card {
+            background-color: #000;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .identity-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #222;
+        }
+
+        .identity-row:last-child {
+            border-bottom: none;
+        }
+
+        .identity-label {
+            font-size: 12px;
+            letter-spacing: 2px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .identity-value {
+            font-size: 16px;
+            color: #E8A000;
+            font-weight: bold;
+        }
+
+        .identity-value.username {
+            font-size: 18px;
+        }
+
+        .badges-section {
+            background-color: #000;
+            border-radius: 16px;
+            padding: 25px;
+        }
+
+        .badges-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px;
+            letter-spacing: 3px;
+            color: #E8A000;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .badges-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .badge {
+            aspect-ratio: 1;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 14px;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .badge.locked {
+            background-color: #1a1a1a;
+            border: 2px solid #333;
+            color: #444;
+        }
+
+        .badge.locked:hover {
+            border-color: #E8A000;
+            transform: scale(1.05);
+        }
+
+        .badge.unlocked {
+            background-color: #E8A000;
+            border: 2px solid #8B5A00;
+            color: #000;
+            box-shadow: 0 0 15px rgba(232, 160, 0, 0.3);
+        }
+
+        .badge.unlocked:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(232, 160, 0, 0.5);
+        }
+
+        .badge-tooltip {
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #000;
+            border: 1px solid #333;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: 'Arial', sans-serif;
+            font-size: 11px;
+            letter-spacing: 0;
+            color: #888;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .badge-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-top-color: #333;
+        }
+
+        .badge:hover .badge-tooltip {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .badge-tooltip.unlocked-tip {
+            color: #E8A000;
+            border-color: #8B5A00;
+        }
+
+        .badge-tooltip.unlocked-tip::after {
+            border-top-color: #8B5A00;
+        }
+
+        .signal-message {
+            text-align: center;
+            font-size: 13px;
+            letter-spacing: 1px;
+            color: #555;
+            font-style: italic;
+        }
+
+        .back-btn {
+            display: block;
+            margin: 30px auto 0;
+            padding: 12px 30px;
+            background-color: transparent;
+            border: 2px solid #8B5A00;
+            border-radius: 30px;
+            color: #8B5A00;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 16px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background-color: #8B5A00;
+            color: #E8A000;
+        }
+
+        /* ---------- MISSION MODAL ---------- */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.open {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            border: 2px solid #333;
+        }
+
+        .modal-badge {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #E8A000;
+            margin: 0 auto 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 24px;
+            color: #000;
+        }
+
+        .modal-badge.locked {
+            background: #333;
+            color: #666;
+        }
+
+        .modal-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 28px;
+            color: #E8A000;
+            margin-bottom: 10px;
+        }
+
+        .modal-description {
+            color: #888;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .modal-mission {
+            background: #222;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .modal-mission-label {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .modal-mission-text {
+            color: #E8A000;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .mission-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 12px 25px;
+            background: transparent;
+            border: 2px solid #E8A000;
+            border-radius: 25px;
+            color: #E8A000;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .mission-link:hover {
+            background: #E8A000;
+            color: #000;
+        }
+
+        .claim-btn {
+            display: block;
+            width: 100%;
+            margin-top: 15px;
+            padding: 15px;
+            background: #333;
+            border: none;
+            border-radius: 10px;
+            color: #666;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: not-allowed;
+            transition: all 0.3s;
+        }
+
+        .claim-btn.ready {
+            background: #E8A000;
+            color: #000;
+            cursor: pointer;
+        }
+
+        .claim-btn.ready:hover {
+            background: #ffb700;
+        }
+
+        .claim-status {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .claim-status.error {
+            color: #ff4444;
+        }
+
+        .claim-status.success {
+            color: #00c853;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        .close-modal:hover {
+            color: #fff;
+        }
+
+        .modal-inner {
+            position: relative;
+        }
+
+        .modal-unlocked {
+            color: #00c853;
+            font-size: 16px;
+            margin-top: 15px;
+        }
+
+        .modal-unlocked span {
+            font-size: 24px;
+        }
+
+        @media (max-width: 400px) {
+            .badges-grid {
+                gap: 10px;
+            }
+
+            .badge {
+                font-size: 12px;
+            }
+
+            .page-title {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hamburger Menu Button -->
+    <div class="menu-btn" id="menuBtn">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="yellowmap.html">YellowMap</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="yellowgame.html">YellowGame</a>
+        <a href="status.html">My Status</a>
+        <a href="/api/auth?action=logout">Logout</a>
+        <div class="secret-cat" id="secretCat">😼</div>
+    </nav>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <div class="container">
+        <h1 class="page-title">Your Yellow Status</h1>
+
+        <div class="identity-card">
+            <div class="identity-row">
+                <span class="identity-label">Username</span>
+                <span class="identity-value username" id="username">Loading...</span>
+            </div>
+            <div class="identity-row">
+                <span class="identity-label">Join Date</span>
+                <span class="identity-value" id="joinDate">...</span>
+            </div>
+        </div>
+
+        <div class="badges-section">
+            <h2 class="badges-title">Badges</h2>
+            <div class="badges-grid" id="badgesGrid"></div>
+            <p class="signal-message">Click on a badge to see its mission.</p>
+        </div>
+
+        <button class="back-btn" id="backBtn">Exit Yellow World</button>
+    </div>
+
+    <!-- MISSION MODAL -->
+    <div class="modal" id="missionModal">
+        <div class="modal-content">
+            <div class="modal-inner">
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+                <div class="modal-badge" id="modalBadge">?</div>
+                <h3 class="modal-title" id="modalTitle">Badge Name</h3>
+                <p class="modal-description" id="modalDescription">Description</p>
+                
+                <div class="modal-mission" id="modalMission">
+                    <p class="modal-mission-label">Mission</p>
+                    <p class="modal-mission-text" id="modalMissionText">Mission details...</p>
+                    <a href="#" class="mission-link" id="missionLink" target="_blank" style="display:none;">Go to Twitter</a>
+                </div>
+
+                <button class="claim-btn" id="claimBtn" onclick="claimBadge()">Complete Mission First</button>
+                <p class="claim-status" id="claimStatus"></p>
+                
+                <div class="modal-unlocked" id="modalUnlocked" style="display:none;">
+                    <span>✓</span> Badge Unlocked!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // MENU TOGGLE
+        // ============================================================
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        menuBtn.addEventListener('click', () => {
+            menuBtn.classList.toggle('active');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            menuBtn.classList.remove('active');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
+        document.getElementById('secretCat').addEventListener('click', () => {
+            window.location.href = 'yellow.html';
+        });
+
+        // ============================================================
+        // BADGES DATA
+        // ============================================================
+        const badgesData = [
+            { 
+                id: 'og', 
+                name: 'OG', 
+                description: 'First 24 hours founder',
+                mission: 'Connect within the first 24 hours of launch.',
+                claimable: false,
+                link: null
+            },
+            { 
+                id: 'badge_2', 
+                name: 'Supporter', 
+                description: 'Community supporter',
+                mission: 'Like and RT the pinned tweet on our profile. Wait 30 seconds before claiming.',
+                claimable: true,
+                link: 'https://x.com/Yellowcatz_',
+                linkText: '🐦 Go to @Yellowcatz_'
+            },
+            { 
+                id: 'badge_3', 
+                name: 'Yellow Army', 
+                description: 'Spread the yellow',
+                mission: 'Post a tweet with your new PFP from the gallery and include #YELLOWCATZ. Wait 30 seconds before claiming.',
+                claimable: true,
+                link: 'https://twitter.com/intent/tweet?text=I%20joined%20the%20Yellow%20World%20%F0%9F%9F%A1%20%23YELLOWCATZ&url=https://yellowcatz.io',
+                linkText: '📝 Post your tweet'
+            },
+            { 
+                id: 'badge_4', 
+                name: '???', 
+                description: 'Mystery badge',
+                mission: '???',
+                claimable: false,
+                link: null
+            },
+            { 
+                id: 'badge_5', 
+                name: 'X Hunter', 
+                description: 'Found the X secret',
+                mission: 'Find and download the hidden YellowCatzX image on the home page. (Hint: look at the title...)',
+                claimable: false,
+                link: null
+            },
+            { 
+                id: 'badge_6', 
+                name: 'M Hunter', 
+                description: 'Found the M secret',
+                mission: 'Find and download the hidden YellowCatzM image on the home page. (Hint: something invisible...)',
+                claimable: false,
+                link: null
+            },
+            { 
+                id: 'badge_7', 
+                name: '???', 
+                description: 'Mystery badge',
+                mission: '???',
+                claimable: false,
+                link: null
+            },
+            { 
+                id: 'badge_8', 
+                name: '???', 
+                description: 'Mystery badge',
+                mission: '???',
+                claimable: false,
+                link: null
+            },
+            { 
+                id: 'badge_9', 
+                name: '???', 
+                description: 'Mystery badge',
+                mission: '???',
+                claimable: false,
+                link: null
+            },
+            { 
+                id: 'badge_10', 
+                name: '???', 
+                description: 'Mystery badge',
+                mission: '???',
+                claimable: false,
+                link: null
+            }
+        ];
+
+        let userBadges = [];
+        let currentBadge = null;
+        let linkClicked = false;
+        let linkClickTime = null;
+        const CLAIM_DELAY = 30000; // 30 seconds
+
+        // ============================================================
+        // RENDER BADGES
+        // ============================================================
+        function renderBadges() {
+            const grid = document.getElementById('badgesGrid');
+            grid.innerHTML = '';
+
+            badgesData.forEach(badge => {
+                const isUnlocked = userBadges.includes(badge.id);
+                
+                const el = document.createElement('div');
+                el.className = 'badge ' + (isUnlocked ? 'unlocked' : 'locked');
+                el.setAttribute('data-badge', badge.id);
+                el.onclick = () => openModal(badge.id);
+                
+                el.innerHTML = `
+                    <span>${isUnlocked ? badge.name : '?'}</span>
+                    <div class="badge-tooltip ${isUnlocked ? 'unlocked-tip' : ''}">${badge.description}</div>
+                `;
+                
+                grid.appendChild(el);
+            });
+        }
+
+        // ============================================================
+        // MODAL
+        // ============================================================
+        function openModal(badgeId) {
+            const badge = badgesData.find(b => b.id === badgeId);
+            if (!badge) return;
+
+            currentBadge = badge;
+            linkClicked = false;
+            linkClickTime = null;
+
+            const isUnlocked = userBadges.includes(badgeId);
+
+            // Update modal content
+            document.getElementById('modalBadge').textContent = isUnlocked ? badge.name : '?';
+            document.getElementById('modalBadge').className = 'modal-badge' + (isUnlocked ? '' : ' locked');
+            document.getElementById('modalTitle').textContent = isUnlocked ? badge.name : '???';
+            document.getElementById('modalDescription').textContent = badge.description;
+            document.getElementById('modalMissionText').textContent = badge.mission;
+
+            // Link button
+            const linkBtn = document.getElementById('missionLink');
+            if (badge.link && !isUnlocked) {
+                linkBtn.style.display = 'inline-block';
+                linkBtn.href = badge.link;
+                linkBtn.textContent = badge.linkText || 'Go';
+                linkBtn.onclick = () => {
+                    linkClicked = true;
+                    linkClickTime = Date.now();
+                    updateClaimButton();
+                };
+            } else {
+                linkBtn.style.display = 'none';
+            }
+
+            // Claim button
+            const claimBtn = document.getElementById('claimBtn');
+            const claimStatus = document.getElementById('claimStatus');
+            const unlockedMsg = document.getElementById('modalUnlocked');
+
+            if (isUnlocked) {
+                claimBtn.style.display = 'none';
+                document.getElementById('modalMission').style.display = 'none';
+                unlockedMsg.style.display = 'block';
+            } else {
+                claimBtn.style.display = 'block';
+                document.getElementById('modalMission').style.display = 'block';
+                unlockedMsg.style.display = 'none';
+                
+                if (badge.claimable) {
+                    claimBtn.textContent = 'Click the link first';
+                    claimBtn.classList.remove('ready');
+                } else {
+                    claimBtn.textContent = 'Cannot be claimed here';
+                    claimBtn.classList.remove('ready');
+                }
+            }
+
+            claimStatus.textContent = '';
+            claimStatus.className = 'claim-status';
+
+            document.getElementById('missionModal').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('missionModal').classList.remove('open');
+            currentBadge = null;
+        }
+
+        function updateClaimButton() {
+            if (!currentBadge || !currentBadge.claimable) return;
+
+            const claimBtn = document.getElementById('claimBtn');
+            const claimStatus = document.getElementById('claimStatus');
+
+            if (!linkClicked) {
+                claimBtn.textContent = 'Click the link first';
+                claimBtn.classList.remove('ready');
+                claimStatus.textContent = '';
+                return;
+            }
+
+            const elapsed = Date.now() - linkClickTime;
+            const remaining = Math.ceil((CLAIM_DELAY - elapsed) / 1000);
+
+            if (remaining > 0) {
+                claimBtn.textContent = `Wait ${remaining}s...`;
+                claimBtn.classList.remove('ready');
+                claimStatus.textContent = 'Complete the mission and wait...';
+                setTimeout(updateClaimButton, 1000);
+            } else {
+                claimBtn.textContent = "I've completed the mission";
+                claimBtn.classList.add('ready');
+                claimStatus.textContent = '';
+            }
+        }
+
+        // ============================================================
+        // CLAIM BADGE
+        // ============================================================
+        async function claimBadge() {
+            if (!currentBadge || !currentBadge.claimable) return;
+
+            const claimBtn = document.getElementById('claimBtn');
+            const claimStatus = document.getElementById('claimStatus');
+
+            // Check if link was clicked
+            if (!linkClicked) {
+                claimStatus.textContent = '⚠️ You must click the link first!';
+                claimStatus.className = 'claim-status error';
+                return;
+            }
+
+            // Check delay
+            const elapsed = Date.now() - linkClickTime;
+            if (elapsed < CLAIM_DELAY) {
+                const remaining = Math.ceil((CLAIM_DELAY - elapsed) / 1000);
+                claimStatus.textContent = `⚠️ Please wait ${remaining} more seconds`;
+                claimStatus.className = 'claim-status error';
+                return;
+            }
+
+            // Make API call
+            claimBtn.textContent = 'Claiming...';
+            claimBtn.classList.remove('ready');
+
+            try {
+                const response = await fetch('/api/badge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ badgeId: currentBadge.id })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    claimStatus.textContent = '🎉 Badge unlocked!';
+                    claimStatus.className = 'claim-status success';
+                    userBadges.push(currentBadge.id);
+                    renderBadges();
+                    
+                    setTimeout(() => {
+                        closeModal();
+                    }, 1500);
+                } else {
+                    claimStatus.textContent = '❌ ' + (data.error || 'Failed to claim badge');
+                    claimStatus.className = 'claim-status error';
+                    claimBtn.textContent = "I've completed the mission";
+                    claimBtn.classList.add('ready');
+                }
+            } catch (error) {
+                claimStatus.textContent = '❌ Connection error';
+                claimStatus.className = 'claim-status error';
+                claimBtn.textContent = "I've completed the mission";
+                claimBtn.classList.add('ready');
+            }
+        }
+
+        // ============================================================
+        // FETCH USER DATA
+        // ============================================================
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const options = { day: '2-digit', month: 'short', year: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        async function fetchUserData() {
+            try {
+                const response = await fetch('/api/user', {
+                    credentials: 'include'
+                });
+                
+                if (response.status === 401) {
+                    window.location.href = '/yellow.html';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user data');
+                }
+                
+                const userData = await response.json();
+                
+                if (!userData.authenticated) {
+                    window.location.href = '/yellow.html';
+                    return;
+                }
+                
+                // Update user info
+                const username = userData.user.username.replace(/^@/, '');
+                document.getElementById('username').textContent = '@' + username;
+                document.getElementById('joinDate').textContent = formatDate(userData.user.joinDate);
+                
+                // Store unlocked badges
+                userBadges = userData.badges
+                    .filter(b => b.unlocked)
+                    .map(b => b.id);
+                
+                // Render badges
+                renderBadges();
+                
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+                document.getElementById('username').textContent = 'Error';
+                document.getElementById('joinDate').textContent = 'Connection failed';
+                
+                setTimeout(() => {
+                    window.location.href = '/yellow.html';
+                }, 2000);
+            }
+        }
+
+        // ============================================================
+        // INIT
+        // ============================================================
+        document.getElementById('backBtn').addEventListener('click', () => {
+            window.location.href = '/api/auth/logout';
+        });
+
+        // Close modal on outside click
+        document.getElementById('missionModal').addEventListener('click', (e) => {
+            if (e.target.id === 'missionModal') closeModal();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchUserData();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yellow Cat - About</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: #E8A000;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 80px 20px 40px;
+        }
+
+        /* Music Button */
+        .music-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 3px solid #8B5A00;
+            background-color: transparent;
+            color: #8B5A00;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .music-btn:hover {
+            background-color: #8B5A00;
+            color: #E8A000;
+        }
+
+        /* Hamburger Menu */
+        .menu-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .menu-btn span {
+            display: block;
+            width: 30px;
+            height: 3px;
+            background-color: #000;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+
+        .menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        /* Sidebar Menu */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100vh;
+            background-color: #000;
+            transition: right 0.3s ease;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            padding: 80px 30px 30px;
+        }
+
+        .sidebar.active {
+            right: 0;
+        }
+
+        .sidebar a {
+            color: #E8A000;
+            text-decoration: none;
+            font-size: 24px;
+            padding: 15px 0;
+            border-bottom: 1px solid #333;
+            transition: color 0.3s ease;
+        }
+
+        .sidebar a:hover {
+            color: #fff;
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 998;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Content */
+        .content {
+            max-width: 700px;
+            background-color: #000;
+            padding: 40px;
+            border-radius: 20px;
+            color: #fff;
+        }
+
+        .content h1 {
+            font-size: 32px;
+            margin-bottom: 30px;
+            color: #E8A000;
+            text-align: center;
+        }
+
+        .content p {
+            font-size: 18px;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .content .highlight {
+            color: #E8A000;
+            font-weight: bold;
+        }
+
+        .content .yellow-lines {
+            color: #E8A000;
+            margin: 25px 0;
+            font-size: 18px;
+            line-height: 2;
+        }
+
+        .content .rule {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin: 30px 0;
+            color: #E8A000;
+        }
+
+        .content .ending {
+            font-style: italic;
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .content .section {
+            margin-bottom: 25px;
+        }
+
+        .content .italic {
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Music -->
+    <audio id="bgMusic" loop>
+        <source src="images/music.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Music Button -->
+    <button class="music-btn" id="musicBtn">▶</button>
+
+    <!-- Hamburger Menu Button -->
+    <div class="menu-btn" id="menuBtn">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="yellowmap.html">YellowMap</a>
+        <a href="gallery.html">Gallery</a>
+    </nav>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <h1>The Story of Yellow Catz</h1>
+        
+        <div class="section">
+            <p>At the dawn of crypto chaos,<br>
+            when charts were bleeding red<br>
+            and conviction was fading…</p>
+        </div>
+
+        <p><span class="highlight">A cat appeared.</span></p>
+        
+        <div class="section">
+            <p>No one knows where it came from.<br>
+            Not a bull. Not a bear.<br>
+            Just <span class="highlight">yellow</span>.</p>
+        </div>
+        
+        <div class="yellow-lines">
+            🟡 Yellow like optimism when everything feels lost.<br>
+            🟡 Yellow like the light after the blackout.<br>
+            🟡 Yellow like those who stay calm while the system panics.
+        </div>
+        
+        <div class="section">
+            <p>Yellow Catz doesn't chase trends.<br>
+            It watches.<br>
+            Black sunglasses on.<br>
+            Yellow hoodie zipped.<br>
+            Unmoved while the market shakes.</p>
+        </div>
+
+        <div class="section">
+            <p class="italic">This isn't a roadmap.<br>
+            This isn't a promise.<br>
+            This is a state of mind.</p>
+        </div>
+
+        <div class="section">
+            <p>Inspired by pop and cinematic culture,<br>
+            by stories of confinement, rebellion, and awakening,<br>
+            Yellow Catz plays with symbols, not rules.</p>
+        </div>
+
+        <div class="section">
+            <p>There's no noise here.<br>
+            No fake hype.<br>
+            No forced utility.</p>
+        </div>
+
+        <p>Just one idea:</p>
+        
+        <p class="rule">Stay cool. Stay yellow.</p>
+        
+        <p class="ending">Yellow Catz isn't here to save crypto.<br>
+        It's here to remind us why we showed up in the first place <br>
+        for the memes, the culture, and the community we build together.</p>
+    </div>
+
+    <script>
+        // Music Player with persistence
+        const bgMusic = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+
+        // Check if music was playing
+        window.addEventListener('load', () => {
+            const wasPlaying = localStorage.getItem('musicPlaying') === 'true';
+            const savedTime = parseFloat(localStorage.getItem('musicTime')) || 0;
+            
+            if (wasPlaying) {
+                bgMusic.currentTime = savedTime;
+                bgMusic.volume = 0.5;
+                bgMusic.play().then(() => {
+                    musicBtn.textContent = '❚❚';
+                }).catch(() => {
+                    musicBtn.textContent = '▶';
+                });
+            }
+        });
+
+        // Save state before leaving page
+        window.addEventListener('beforeunload', () => {
+            localStorage.setItem('musicTime', bgMusic.currentTime);
+        });
+
+        // Toggle music
+        musicBtn.addEventListener('click', () => {
+            if (bgMusic.paused) {
+                bgMusic.volume = 0.5;
+                bgMusic.play();
+                musicBtn.textContent = '❚❚';
+                localStorage.setItem('musicPlaying', 'true');
+            } else {
+                bgMusic.pause();
+                musicBtn.textContent = '▶';
+                localStorage.setItem('musicPlaying', 'false');
+            }
+        });
+
+        // Menu Toggle
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        menuBtn.addEventListener('click', () => {
+            menuBtn.classList.toggle('active');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            menuBtn.classList.remove('active');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+    </script>
+</body>
+</html>

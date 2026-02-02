@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yellow Cat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #E8A000;
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* Music Button */
+        .music-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 3px solid #8B5A00;
+            background-color: transparent;
+            color: #8B5A00;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .music-btn:hover {
+            background-color: #8B5A00;
+            color: #E8A000;
+        }
+
+        /* Hamburger Menu */
+        .menu-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .menu-btn span {
+            display: block;
+            width: 30px;
+            height: 3px;
+            background-color: #000;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+
+        .menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        /* Secret M button - BIGGER (30x30) - HIDDEN by default */
+        .secret-m {
+            position: fixed;
+            top: 33%;
+            right: 24px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: transparent;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            display: none; /* Hidden until authenticated */
+        }
+
+        .secret-m:hover {
+            background-color: rgba(212, 146, 0, 0.15);
+        }
+
+        /* Sidebar Menu */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100vh;
+            background-color: #000;
+            transition: right 0.3s ease;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            padding: 80px 30px 30px;
+        }
+
+        .sidebar.active {
+            right: 0;
+        }
+
+        .sidebar a {
+            color: #E8A000;
+            text-decoration: none;
+            font-size: 24px;
+            padding: 15px 0;
+            border-bottom: 1px solid #333;
+            transition: color 0.3s ease;
+        }
+
+        .sidebar a:hover {
+            color: #fff;
+        }
+
+        /* Secret Cat Emoji - Entry to Yellow World */
+        .secret-cat {
+            font-size: 14px;
+            margin: 25px auto 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.4;
+        }
+
+        .secret-cat:hover {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 998;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Main Content */
+        .main-content {
+            text-align: center;
+        }
+
+        /* Title Container */
+        .title-container {
+            font-family: 'Bebas Neue', sans-serif;
+            color: #8B5A00;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: stretch;
+        }
+
+        .line-left,
+        .line-right {
+            width: 3px;
+            background-color: #8B5A00;
+            margin: 0 15px;
+        }
+
+        .title-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .title-top {
+            font-size: 72px;
+            letter-spacing: 8px;
+            text-align: center;
+        }
+
+        /* Secret O button - no cursor pointer by default */
+        .secret-o {
+            cursor: default; /* Changed to pointer via JS when authenticated */
+            position: relative;
+            display: inline-block;
+        }
+
+        .secret-o::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background-color: #D49200;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .secret-o:hover::after {
+            opacity: 0.3;
+        }
+
+        .title-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .small-text {
+            font-size: 16px;
+            letter-spacing: 2px;
+            text-align: left;
+            margin-right: 8px;
+            line-height: 1.3;
+        }
+
+        .big-text {
+            font-size: 72px;
+            letter-spacing: 8px;
+        }
+
+        /* Cat Image Container */
+        .cat-container {
+            text-align: center;
+            position: relative;
+            display: inline-block;
+        }
+
+        .cat-image {
+            max-width: 500px;
+            width: 90vw;
+            height: auto;
+            transition: opacity 0.5s ease;
+        }
+
+        /* Bars Overlay */
+        .bars-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            transition: opacity 1s ease;
+            z-index: 10;
+        }
+
+        .bars-overlay img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .bars-overlay.hidden {
+            opacity: 0;
+        }
+
+        /* Twitter/X Link */
+        .social-link {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+
+        .social-link a {
+            display: block;
+            transition: all 0.3s ease;
+        }
+
+        .social-link a:hover svg {
+            fill: #000;
+        }
+
+        .social-link svg {
+            width: 28px;
+            height: 28px;
+            fill: #8B5A00;
+            transition: all 0.3s ease;
+        }
+
+        /* Badge Notification */
+        .badge-notification {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #000;
+            color: #E8A000;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .badge-notification.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 600px) {
+            .title-top {
+                font-size: 42px;
+                letter-spacing: 4px;
+            }
+            .big-text {
+                font-size: 42px;
+                letter-spacing: 4px;
+            }
+            .small-text {
+                font-size: 12px;
+                letter-spacing: 1px;
+            }
+            .line-left,
+            .line-right {
+                margin: 0 10px;
+            }
+            .secret-o::after {
+                width: 12px;
+                height: 12px;
+            }
+            .secret-m {
+                top: 35%;
+                right: 20px;
+                width: 24px;
+                height: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Music -->
+    <audio id="bgMusic" loop>
+        <source src="images/music.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Music Button -->
+    <button class="music-btn" id="musicBtn">▶</button>
+
+    <!-- Secret M Button -->
+    <div class="secret-m" id="secretM"></div>
+
+    <!-- Hamburger Menu Button -->
+    <div class="menu-btn" id="menuBtn">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <a href="index.html">Home</a>
+        <a href="yellow-matrix.html">Origins</a>
+        <a href="about.html">About</a>
+        <a href="yellowmap.html">YellowMap</a>
+        <a href="yellowgame.html">YellowGame</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="galleryv2.html">GalleryV2</a>
+        <!-- Secret Cat Emoji - Entry to Yellow World -->
+        <div class="secret-cat" id="secretCat">😼</div>
+    </nav>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="title-container">
+            <div class="line-left"></div>
+            <div class="title-text">
+                <div class="title-top">YELL<span class="secret-o" id="secretO">O</span>W</div>
+                <div class="title-bottom">
+                    <div class="small-text">
+                        <div>IS</div>
+                        <div>THE</div>
+                        <div>NEW</div>
+                    </div>
+                    <div class="big-text">CATZ</div>
+                </div>
+            </div>
+            <div class="line-right"></div>
+        </div>
+        <div class="cat-container">
+            <img src="images/Catz0.png" alt="Yellow Cat" class="cat-image" id="catImage">
+            <!-- Bars Overlay -->
+            <div class="bars-overlay" id="barsOverlay">
+                <img src="images/bar.png" alt="Bars">
+            </div>
+        </div>
+    </div>
+
+    <!-- Twitter/X Link -->
+    <div class="social-link">
+        <a href="https://x.com/Yellowcatz_" target="_blank" title="Follow us on X">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+        </a>
+    </div>
+
+    <!-- Badge Notification -->
+    <div class="badge-notification" id="badgeNotification">🎉 Badge unlocked!</div>
+
+    <!-- Hidden images for secret downloads -->
+    <img id="secretImageX" src="images/YellowCatzX.png" style="display: none;">
+    <img id="secretImageM" src="images/YellowCatzM.png" style="display: none;">
+
+    <script>
+        // ============================================================
+        // AUTH STATE
+        // ============================================================
+        let isAuthenticated = false;
+
+        // Check authentication on page load
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/user', {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (data.authenticated) {
+                    isAuthenticated = true;
+                    // Show secret elements for authenticated users
+                    document.getElementById('secretM').style.display = 'block';
+                    document.getElementById('secretO').style.cursor = 'pointer';
+                }
+            } catch (error) {
+                console.log('Auth check failed');
+            }
+        }
+
+        // Run auth check on load
+        checkAuth();
+
+        // ============================================================
+        // BADGE CLAIM FUNCTION
+        // ============================================================
+        async function claimBadge(badgeId) {
+            if (!isAuthenticated) return;
+
+            try {
+                const response = await fetch('/api/badge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ badgeId })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show notification
+                    const notification = document.getElementById('badgeNotification');
+                    notification.textContent = `🎉 Badge "${badgeId === 'badge_5' ? 'X Hunter' : 'M Hunter'}" unlocked!`;
+                    notification.classList.add('show');
+                    
+                    setTimeout(() => {
+                        notification.classList.remove('show');
+                    }, 3000);
+                }
+            } catch (error) {
+                console.log('Badge claim failed');
+            }
+        }
+
+        // ============================================================
+        // SECRET O DOWNLOAD + BADGE 5 (only if authenticated)
+        // ============================================================
+        const secretO = document.getElementById('secretO');
+        const secretImageX = document.getElementById('secretImageX');
+
+        secretO.addEventListener('click', () => {
+            // Block if not authenticated
+            if (!isAuthenticated) return;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = secretImageX.naturalWidth;
+            canvas.height = secretImageX.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(secretImageX, 0, 0);
+            
+            const link = document.createElement('a');
+            link.download = 'YellowCatzX.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+
+            // Claim badge 5 (X Hunter)
+            claimBadge('badge_5');
+        });
+
+        // ============================================================
+        // SECRET M DOWNLOAD + BADGE 6 (only if authenticated)
+        // ============================================================
+        const secretM = document.getElementById('secretM');
+        const secretImageM = document.getElementById('secretImageM');
+
+        secretM.addEventListener('click', () => {
+            // Block if not authenticated
+            if (!isAuthenticated) return;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = secretImageM.naturalWidth;
+            canvas.height = secretImageM.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(secretImageM, 0, 0);
+            
+            const link = document.createElement('a');
+            link.download = 'YellowCatzM.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+
+            // Claim badge 6 (M Hunter)
+            claimBadge('badge_6');
+        });
+
+        // ============================================================
+        // YELLOW WORLD ENTRY
+        // ============================================================
+        const secretCat = document.getElementById('secretCat');
+        secretCat.addEventListener('click', () => {
+            window.location.href = 'yellow.html';
+        });
+
+        // ============================================================
+        // MUSIC PLAYER
+        // ============================================================
+        const bgMusic = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+        const barsOverlay = document.getElementById('barsOverlay');
+        const catImage = document.getElementById('catImage');
+
+        // Image Rotation
+        const images = [
+            'images/Catz0.png',
+            'images/Catz1.png',
+            'images/Catz2.png',
+            'images/Catz3.png',
+            'images/Catz4.png'
+        ];
+
+        let currentIndex = 0;
+        let rotationInterval = null;
+        let hasStarted = false;
+
+        // Start image rotation
+        function startRotation() {
+            if (rotationInterval) return;
+            rotationInterval = setInterval(() => {
+                currentIndex = (currentIndex + 1) % images.length;
+                catImage.style.opacity = 0;
+                
+                setTimeout(() => {
+                    catImage.src = images[currentIndex];
+                    catImage.style.opacity = 1;
+                }, 300);
+            }, 3500);
+        }
+
+        // Toggle music
+        musicBtn.addEventListener('click', () => {
+            if (bgMusic.paused) {
+                bgMusic.volume = 0.5;
+                bgMusic.play();
+                musicBtn.textContent = '❚❚';
+                
+                // First time playing: remove bars and start rotation
+                if (!hasStarted) {
+                    hasStarted = true;
+                    barsOverlay.classList.add('hidden');
+                    startRotation();
+                }
+            } else {
+                bgMusic.pause();
+                musicBtn.textContent = '▶';
+            }
+        });
+
+        // ============================================================
+        // MENU TOGGLE
+        // ============================================================
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        menuBtn.addEventListener('click', () => {
+            menuBtn.classList.toggle('active');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            menuBtn.classList.remove('active');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+    </script>
+</body>
+</html>
