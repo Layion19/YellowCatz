@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yellow Cat - GalleryV2</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: #000;
+            font-family: 'Arial', sans-serif;
+            padding: 80px 20px 40px;
+        }
+
+        /* Music Button */
+        .music-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            border: 3px solid #E8A000;
+            background-color: transparent;
+            color: #E8A000;
+            font-size: 18px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .music-btn:hover {
+            background-color: #E8A000;
+            color: #000;
+        }
+
+        /* Hamburger Menu */
+        .menu-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .menu-btn span {
+            display: block;
+            width: 30px;
+            height: 3px;
+            background-color: #E8A000;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+
+        .menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        /* Sidebar Menu */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100vh;
+            background-color: #1a1a1a;
+            transition: right 0.3s ease;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            padding: 80px 30px 30px;
+        }
+
+        .sidebar.active {
+            right: 0;
+        }
+
+        .sidebar a {
+            color: #E8A000;
+            text-decoration: none;
+            font-size: 24px;
+            padding: 15px 0;
+            border-bottom: 1px solid #333;
+            transition: color 0.3s ease;
+        }
+
+        .sidebar a:hover {
+            color: #fff;
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 998;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Gallery Header */
+        .gallery-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .gallery-header h1 {
+            font-size: 36px;
+            color: #E8A000;
+        }
+
+        .gallery-header p {
+            font-size: 18px;
+            color: #E8A000;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+
+        /* Gallery Grid - Single column for banners */
+        .gallery {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .gallery-item {
+            background-color: #1a1a1a;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            border: 2px solid #333;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-5px);
+            border-color: #E8A000;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .gallery-item .info {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .gallery-item .name {
+            color: #E8A000;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .download-btn {
+            background-color: #E8A000;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .download-btn:hover {
+            background-color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Music -->
+    <audio id="bgMusic" loop>
+        <source src="images/music.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Music Button -->
+    <button class="music-btn" id="musicBtn">▶</button>
+
+    <!-- Hamburger Menu Button -->
+    <div class="menu-btn" id="menuBtn">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <a href="index.html">Home</a>
+        <a href="yellow-matrix.html">Origins</a>
+        <a href="about.html">About</a>
+        <a href="yellowmap.html">YellowMap</a>
+        <a href="yellowgame.html">YellowGame</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="galleryv2.html">GalleryV2</a>
+    </nav>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Gallery Header -->
+    <div class="gallery-header">
+        <h1>GalleryV2</h1>
+        <p>Banners for your Twitter/X profile</p>
+    </div>
+
+    <!-- Gallery Grid -->
+   
+   <div class="gallery">
+        <div class="gallery-item">
+            <img src="images/Prison.png" alt="Banners_0" id="img0">
+            <div class="info">
+                <span class="name">Banners_X</span>
+                <button class="download-btn" onclick="downloadImage('img0', 'Banners_0.png')">Download</button>
+            </div>
+        </div>
+
+       <div class="gallery">
+        <div class="gallery-item">
+            <img src="images/Strangers.png" alt="Banners_1" id="img1">
+            <div class="info">
+                <span class="name">Banners_1</span>
+                <button class="download-btn" onclick="downloadImage('img1', 'Banners_1.png')">Download</button>
+            </div>
+        </div>
+
+        <div class="gallery-item">
+            <img src="images/Wolv.png" alt="Banners_2" id="img2">
+            <div class="info">
+                <span class="name">Banners_2</span>
+                <button class="download-btn" onclick="downloadImage('img2', 'Banners_2.png')">Download</button>
+            </div>
+        </div>
+
+        <div class="gallery-item">
+            <img src="images/Kill.png" alt="Banners_3" id="img3">
+            <div class="info">
+                <span class="name">Banners_3</span>
+                <button class="download-btn" onclick="downloadImage('img3', 'Banners_3.png')">Download</button>
+            </div>
+        </div>
+
+        <div class="gallery-item">
+            <img src="images/INception.png" alt="Banners_4" id="img4">
+            <div class="info">
+                <span class="name">Banners_4</span>
+                <button class="download-btn" onclick="downloadImage('img4', 'Banners_4.png')">Download</button>
+            </div>
+        </div>
+
+        <div class="gallery-item">
+            <img src="images/TheGate.png" alt="Banners_5" id="img5">
+            <div class="info">
+                <span class="name">Banners_5</span>
+                <button class="download-btn" onclick="downloadImage('img5', 'Banners_5.png')">Download</button>
+            </div>
+        </div>
+
+        <div class="gallery-item">
+            <img src="images/MIB.png" alt="Banners_6" id="img6">
+            <div class="info">
+                <span class="name">Banners_6</span>
+                <button class="download-btn" onclick="downloadImage('img6', 'Banners_6.png')">Download</button>
+            </div>
+        </div>
+
+        <div class="gallery-item">
+            <img src="images/YellowSquid.png" alt="Banners_7" id="img7">
+            <div class="info">
+                <span class="name">Banners_7</span>
+                <button class="download-btn" onclick="downloadImage('img7', 'Banners_7.png')">Download</button>
+            </div>
+        </div>
+
+        <div class="gallery-item">
+            <img src="images/Whale.png" alt="Banners_8" id="img8">
+            <div class="info">
+                <span class="name">Banners_8</span>
+                <button class="download-btn" onclick="downloadImage('img8', 'Banners_8.png')">Download</button>
+            </div>
+        </div>
+
+        <div class="gallery-item">
+            <img src="images/FightCatz.png" alt="Banners_9" id="img9">
+            <div class="info">
+                <span class="name">Banners_9</span>
+                <button class="download-btn" onclick="downloadImage('img9', 'Banners_9.png')">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Music Player with persistence
+        const bgMusic = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicBtn');
+
+        // Check if music was playing
+        window.addEventListener('load', () => {
+            const wasPlaying = localStorage.getItem('musicPlaying') === 'true';
+            const savedTime = parseFloat(localStorage.getItem('musicTime')) || 0;
+            
+            if (wasPlaying) {
+                bgMusic.currentTime = savedTime;
+                bgMusic.volume = 0.5;
+                bgMusic.play().then(() => {
+                    musicBtn.textContent = '❚❚';
+                }).catch(() => {
+                    musicBtn.textContent = '▶';
+                });
+            }
+        });
+
+        // Save state before leaving page
+        window.addEventListener('beforeunload', () => {
+            localStorage.setItem('musicTime', bgMusic.currentTime);
+        });
+
+        // Toggle music
+        musicBtn.addEventListener('click', () => {
+            if (bgMusic.paused) {
+                bgMusic.volume = 0.5;
+                bgMusic.play();
+                musicBtn.textContent = '❚❚';
+                localStorage.setItem('musicPlaying', 'true');
+            } else {
+                bgMusic.pause();
+                musicBtn.textContent = '▶';
+                localStorage.setItem('musicPlaying', 'false');
+            }
+        });
+
+        // Menu Toggle
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        menuBtn.addEventListener('click', () => {
+            menuBtn.classList.toggle('active');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            menuBtn.classList.remove('active');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
+        // Download function
+        function downloadImage(imgId, fileName) {
+            const img = document.getElementById(imgId);
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
