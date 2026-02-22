@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yellow Cat - Enter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #E8A000;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+
+        /* Hamburger Menu */
+        .menu-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .menu-btn span {
+            display: block;
+            width: 30px;
+            height: 3px;
+            background-color: #000;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+
+        .menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        /* Sidebar Menu */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100vh;
+            background-color: #000;
+            transition: right 0.3s ease;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            padding: 80px 30px 30px;
+        }
+
+        .sidebar.active {
+            right: 0;
+        }
+
+        .sidebar a {
+            color: #E8A000;
+            text-decoration: none;
+            font-size: 24px;
+            padding: 15px 0;
+            border-bottom: 1px solid #333;
+            transition: color 0.3s ease;
+        }
+
+        .sidebar a:hover {
+            color: #fff;
+        }
+
+        .secret-cat {
+            font-size: 14px;
+            margin: 25px auto 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.4;
+        }
+
+        .secret-cat:hover {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 998;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Doors Container */
+        .doors-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            perspective: 1500px;
+        }
+
+        /* Single Door Wrapper */
+        .door-wrapper {
+            position: relative;
+            width: 220px;
+            height: 400px;
+        }
+
+        /* Door Frame (black background - hidden by default) */
+        .door-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Show black background when door is open */
+        .door-wrapper.open .door-frame {
+            opacity: 1;
+        }
+
+        .door-frame svg {
+            width: 80px;
+            height: 80px;
+            fill: #E8A000;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            pointer-events: none;
+        }
+
+        /* Enable clicking on icon only when door is open */
+        .door-wrapper.open .door-frame svg {
+            pointer-events: auto;
+        }
+
+        .door-frame svg:hover {
+            transform: scale(1.15);
+        }
+
+        /* Door (the image) */
+        .door {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            transition: transform 0.8s ease;
+            transform-style: preserve-3d;
+            transform-origin: right center;
+            cursor: pointer;
+        }
+
+        .door img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        /* Door open state - both open to the left */
+        .door-wrapper.open .door {
+            transform: rotateY(-110deg);
+        }
+
+        @media (max-width: 600px) {
+    .doors-container {
+        gap: 15px;
+    }
+
+    .door-wrapper {
+        width: 140px;
+        height: 250px;
+    }
+
+    .door-frame svg {
+        width: 50px;
+        height: 50px;
+    }
+}
+    </style>
+</head>
+<body>
+    <!-- Hamburger Menu Button -->
+    <div class="menu-btn" id="menuBtn">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <a href="index.html">Home</a>
+        <a href="yellow-matrix.html">Origins</a>
+        <a href="about.html">About</a>
+        <a href="yellowmap.html">YellowMap</a>
+        <a href="yellowgame.html">YellowGame</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="galleryv2.html">GalleryV2</a>
+        <a href="enter.html">Enter</a>
+        <div class="secret-cat" id="secretCat">😼</div>
+    </nav>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Doors -->
+    <div class="doors-container">
+        <!-- Left Door - Discord -->
+        <div class="door-wrapper" id="doorLeft">
+            <div class="door-frame">
+                <!-- Discord SVG -->
+                <svg id="discordIcon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+                </svg>
+            </div>
+            <div class="door" id="doorLeftPanel">
+                <img src="images/door.png" alt="Door">
+            </div>
+        </div>
+
+        <!-- Right Door - Telegram -->
+        <div class="door-wrapper" id="doorRight">
+            <div class="door-frame">
+                <!-- Telegram SVG -->
+                <svg id="telegramIcon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                </svg>
+            </div>
+            <div class="door" id="doorRightPanel">
+                <img src="images/door.png" alt="Door">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // LIENS
+        const DISCORD_LINK = 'https://discord.gg/dJgsZqFV7K';
+        const TELEGRAM_LINK = 'https://t.me/YellowCatzPortal';
+
+        // Door elements
+        const doorLeft = document.getElementById('doorLeft');
+        const doorRight = document.getElementById('doorRight');
+        const doorLeftPanel = document.getElementById('doorLeftPanel');
+        const doorRightPanel = document.getElementById('doorRightPanel');
+        const discordIcon = document.getElementById('discordIcon');
+        const telegramIcon = document.getElementById('telegramIcon');
+
+        // Click on left door panel → opens door
+        doorLeftPanel.addEventListener('click', () => {
+            doorLeft.classList.add('open');
+        });
+
+        // Click on right door panel → opens door
+        doorRightPanel.addEventListener('click', () => {
+            doorRight.classList.add('open');
+        });
+
+        // Click on Discord icon → redirect
+        discordIcon.addEventListener('click', () => {
+            window.open(DISCORD_LINK, '_blank');
+        });
+
+        // Click on Telegram icon → redirect
+        telegramIcon.addEventListener('click', () => {
+            window.open(TELEGRAM_LINK, '_blank');
+        });
+
+        // Click outside doors to close them
+        document.addEventListener('click', (e) => {
+            if (!doorLeft.contains(e.target)) {
+                doorLeft.classList.remove('open');
+            }
+            if (!doorRight.contains(e.target)) {
+                doorRight.classList.remove('open');
+            }
+        });
+
+        // Yellow World Entry
+        const secretCat = document.getElementById('secretCat');
+        secretCat.addEventListener('click', () => {
+            window.location.href = 'yellow.html';
+        });
+
+        // Menu Toggle
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        menuBtn.addEventListener('click', () => {
+            menuBtn.classList.toggle('active');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            menuBtn.classList.remove('active');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+    </script>
+</body>
+</html>
