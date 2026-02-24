@@ -91,6 +91,28 @@
             color: #fff;
         }
 
+        .sidebar a.active-page {
+            color: #fff;
+            position: relative;
+        }
+
+        .sidebar a.active-page::before {
+            content: '▸';
+            margin-right: 8px;
+        }
+
+        .sidebar .logout-link {
+            margin-top: auto;
+            color: #666;
+            font-size: 16px;
+            border-bottom: none;
+            padding-top: 20px;
+        }
+
+        .sidebar .logout-link:hover {
+            color: #ff4444;
+        }
+
         .secret-cat {
             font-size: 14px;
             margin: 25px auto 0;
@@ -174,6 +196,33 @@
             font-size: 18px;
         }
 
+        /* ---------- SESSION STATUS ---------- */
+        .session-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .session-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00c853;
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .session-text {
+            font-size: 11px;
+            color: #00c853;
+            letter-spacing: 1px;
+        }
+
+        /* ---------- BADGES ---------- */
         .badges-section {
             background-color: #000;
             border-radius: 16px;
@@ -200,14 +249,18 @@
             aspect-ratio: 1;
             border-radius: 50%;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 14px;
+            font-size: 13px;
             letter-spacing: 1px;
             transition: all 0.3s ease;
             position: relative;
             cursor: pointer;
+            line-height: 1.1;
+            text-align: center;
+            padding: 4px;
         }
 
         .badge.locked {
@@ -231,6 +284,18 @@
         .badge.unlocked:hover {
             transform: scale(1.1);
             box-shadow: 0 0 25px rgba(232, 160, 0, 0.5);
+        }
+
+        .badge-label {
+            font-size: 9px;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+            opacity: 0.7;
+        }
+
+        .badge.unlocked .badge-label {
+            opacity: 1;
+            color: #8B5A00;
         }
 
         .badge-tooltip {
@@ -283,6 +348,19 @@
             letter-spacing: 1px;
             color: #555;
             font-style: italic;
+        }
+
+        .badges-counter {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+        }
+
+        .badges-counter span {
+            color: #E8A000;
+            font-weight: bold;
         }
 
         .back-btn {
@@ -479,7 +557,7 @@
             }
 
             .badge {
-                font-size: 12px;
+                font-size: 11px;
             }
 
             .page-title {
@@ -500,12 +578,15 @@
     <!-- Sidebar -->
     <nav class="sidebar" id="sidebar">
         <a href="index.html">Home</a>
+        <a href="yellow-matrix.html">Origins</a>
         <a href="about.html">About</a>
         <a href="yellowmap.html">YellowMap</a>
-        <a href="gallery.html">Gallery</a>
         <a href="yellowgame.html">YellowGame</a>
-        <a href="status.html">My Status</a>
-        <a href="/api/auth?action=logout">Logout</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="galleryv2.html">GalleryV2</a>
+        <a href="enter.html">Enter</a>
+        <a href="status.html" class="active-page">My Status</a>
+        <a href="/api/auth/logout" class="logout-link">Logout</a>
         <div class="secret-cat" id="secretCat">😼</div>
     </nav>
 
@@ -524,15 +605,23 @@
                 <span class="identity-label">Join Date</span>
                 <span class="identity-value" id="joinDate">...</span>
             </div>
+            <div class="identity-row">
+                <span class="identity-label">Session</span>
+                <div class="session-status">
+                    <div class="session-dot"></div>
+                    <span class="session-text">CONNECTED</span>
+                </div>
+            </div>
         </div>
 
         <div class="badges-section">
             <h2 class="badges-title">Badges</h2>
+            <p class="badges-counter"><span id="badgeCount">0</span> / 10 unlocked</p>
             <div class="badges-grid" id="badgesGrid"></div>
             <p class="signal-message">Click on a badge to see its mission.</p>
         </div>
 
-        <button class="back-btn" id="backBtn">Exit Yellow World</button>
+        <button class="back-btn" id="backBtn">Back to Home</button>
     </div>
 
     <!-- MISSION MODAL -->
@@ -585,21 +674,58 @@
         });
 
         // ============================================================
-        // BADGES DATA
+        // SESSION PERSISTENCE - localStorage cache
+        // ============================================================
+        const SESSION_KEY = 'yellowcatz_session';
+        const SESSION_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+        function saveSession(userData) {
+            const session = {
+                data: userData,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+        }
+
+        function getSession() {
+            try {
+                const stored = localStorage.getItem(SESSION_KEY);
+                if (!stored) return null;
+                
+                const session = JSON.parse(stored);
+                // Check if session expired
+                if (Date.now() - session.timestamp > SESSION_EXPIRY) {
+                    localStorage.removeItem(SESSION_KEY);
+                    return null;
+                }
+                return session.data;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function clearSession() {
+            localStorage.removeItem(SESSION_KEY);
+        }
+
+        // ============================================================
+        // BADGES DATA (with real names & descriptions)
         // ============================================================
         const badgesData = [
             { 
                 id: 'og', 
                 name: 'OG', 
-                description: 'First 24 hours founder',
-                mission: 'Connect within the first 24 hours of launch.',
-                claimable: false,
+                emoji: '👑',
+                description: 'First 24 hours founder — The originals.',
+                mission: 'Be among the first to enter the Yellow World within 24 hours of launch. Click below to claim your OG status!',
+                claimable: true,
                 link: null
             },
             { 
                 id: 'badge_2', 
                 name: 'Supporter', 
-                description: 'Community supporter',
+                emoji: '💛',
+                description: 'Community supporter — You showed love.',
                 mission: 'Like and RT the pinned tweet on our profile. Wait 30 seconds before claiming.',
                 claimable: true,
                 link: 'https://x.com/Yellowcatz_',
@@ -608,7 +734,8 @@
             { 
                 id: 'badge_3', 
                 name: 'Yellow Army', 
-                description: 'Spread the yellow',
+                emoji: '⚡',
+                description: 'Spread the yellow — You rep the culture.',
                 mission: 'Post a tweet with your new PFP from the gallery and include #YELLOWCATZ. Wait 30 seconds before claiming.',
                 claimable: true,
                 link: 'https://twitter.com/intent/tweet?text=I%20joined%20the%20Yellow%20World%20%F0%9F%9F%A1%20%23YELLOWCATZ&url=https://yellowcatz.io',
@@ -616,16 +743,18 @@
             },
             { 
                 id: 'badge_4', 
-                name: '???', 
-                description: 'Mystery badge',
-                mission: '???',
+                name: 'Whisperer', 
+                emoji: '🤫',
+                description: 'The quiet ones know things.',
+                mission: 'This badge will reveal itself when the time is right...',
                 claimable: false,
                 link: null
             },
             { 
                 id: 'badge_5', 
                 name: 'X Hunter', 
-                description: 'Found the X secret',
+                emoji: '🔍',
+                description: 'Found the X secret — Sharp eyes.',
                 mission: 'Find and download the hidden YellowCatzX image on the home page. (Hint: look at the title...)',
                 claimable: false,
                 link: null
@@ -633,40 +762,45 @@
             { 
                 id: 'badge_6', 
                 name: 'M Hunter', 
-                description: 'Found the M secret',
+                emoji: '👻',
+                description: 'Found the M secret — Nothing is invisible to you.',
                 mission: 'Find and download the hidden YellowCatzM image on the home page. (Hint: something invisible...)',
                 claimable: false,
                 link: null
             },
             { 
                 id: 'badge_7', 
-                name: '???', 
-                description: 'Mystery badge',
-                mission: '???',
+                name: 'Explorer', 
+                emoji: '🗺️',
+                description: 'Traveled the Yellow Map.',
+                mission: 'Explore the YellowMap and discover all hidden locations.',
                 claimable: false,
                 link: null
             },
             { 
                 id: 'badge_8', 
-                name: '???', 
-                description: 'Mystery badge',
-                mission: '???',
+                name: 'Collector', 
+                emoji: '🎨',
+                description: 'Collected them all.',
+                mission: 'Download 5 different PFPs from the Gallery.',
                 claimable: false,
                 link: null
             },
             { 
                 id: 'badge_9', 
-                name: '???', 
-                description: 'Mystery badge',
-                mission: '???',
+                name: 'Night Owl', 
+                emoji: '🦉',
+                description: 'Some things only appear at night.',
+                mission: 'Visit the Yellow World between midnight and 4 AM.',
                 claimable: false,
                 link: null
             },
             { 
                 id: 'badge_10', 
-                name: '???', 
-                description: 'Mystery badge',
-                mission: '???',
+                name: 'Legend', 
+                emoji: '🏆',
+                description: 'The ultimate Yellow Catz member.',
+                mission: 'Unlock all other 9 badges to earn this one.',
                 claimable: false,
                 link: null
             }
@@ -694,12 +828,16 @@
                 el.onclick = () => openModal(badge.id);
                 
                 el.innerHTML = `
-                    <span>${isUnlocked ? badge.name : '?'}</span>
-                    <div class="badge-tooltip ${isUnlocked ? 'unlocked-tip' : ''}">${badge.description}</div>
+                    <span>${isUnlocked ? badge.emoji : '?'}</span>
+                    <span class="badge-label">${isUnlocked ? badge.name : '???'}</span>
+                    <div class="badge-tooltip ${isUnlocked ? 'unlocked-tip' : ''}">${isUnlocked ? badge.name + ' — ' + badge.description : 'Locked badge'}</div>
                 `;
                 
                 grid.appendChild(el);
             });
+
+            // Update counter
+            document.getElementById('badgeCount').textContent = userBadges.length;
         }
 
         // ============================================================
@@ -716,9 +854,9 @@
             const isUnlocked = userBadges.includes(badgeId);
 
             // Update modal content
-            document.getElementById('modalBadge').textContent = isUnlocked ? badge.name : '?';
+            document.getElementById('modalBadge').textContent = isUnlocked ? badge.emoji : '?';
             document.getElementById('modalBadge').className = 'modal-badge' + (isUnlocked ? '' : ' locked');
-            document.getElementById('modalTitle').textContent = isUnlocked ? badge.name : '???';
+            document.getElementById('modalTitle').textContent = badge.name;
             document.getElementById('modalDescription').textContent = badge.description;
             document.getElementById('modalMissionText').textContent = badge.mission;
 
@@ -751,11 +889,17 @@
                 document.getElementById('modalMission').style.display = 'block';
                 unlockedMsg.style.display = 'none';
                 
-                if (badge.claimable) {
+                if (badge.id === 'og') {
+                    // OG badge - directly claimable
+                    claimBtn.textContent = '👑 Claim OG Badge';
+                    claimBtn.classList.add('ready');
+                    linkClicked = true;
+                    linkClickTime = Date.now() - CLAIM_DELAY; // Skip wait
+                } else if (badge.claimable && badge.link) {
                     claimBtn.textContent = 'Click the link first';
                     claimBtn.classList.remove('ready');
                 } else {
-                    claimBtn.textContent = 'Cannot be claimed here';
+                    claimBtn.textContent = 'Cannot be claimed yet';
                     claimBtn.classList.remove('ready');
                 }
             }
@@ -773,6 +917,7 @@
 
         function updateClaimButton() {
             if (!currentBadge || !currentBadge.claimable) return;
+            if (currentBadge.id === 'og') return; // OG is always ready
 
             const claimBtn = document.getElementById('claimBtn');
             const claimStatus = document.getElementById('claimStatus');
@@ -793,7 +938,7 @@
                 claimStatus.textContent = 'Complete the mission and wait...';
                 setTimeout(updateClaimButton, 1000);
             } else {
-                claimBtn.textContent = "I've completed the mission";
+                claimBtn.textContent = "I've completed the mission ✓";
                 claimBtn.classList.add('ready');
                 claimStatus.textContent = '';
             }
@@ -803,25 +948,30 @@
         // CLAIM BADGE
         // ============================================================
         async function claimBadge() {
-            if (!currentBadge || !currentBadge.claimable) return;
+            if (!currentBadge) return;
+            
+            // Check if claimable
+            if (!currentBadge.claimable && currentBadge.id !== 'og') return;
 
             const claimBtn = document.getElementById('claimBtn');
             const claimStatus = document.getElementById('claimStatus');
 
-            // Check if link was clicked
-            if (!linkClicked) {
+            // Check if link was clicked (skip for OG)
+            if (currentBadge.id !== 'og' && !linkClicked) {
                 claimStatus.textContent = '⚠️ You must click the link first!';
                 claimStatus.className = 'claim-status error';
                 return;
             }
 
-            // Check delay
-            const elapsed = Date.now() - linkClickTime;
-            if (elapsed < CLAIM_DELAY) {
-                const remaining = Math.ceil((CLAIM_DELAY - elapsed) / 1000);
-                claimStatus.textContent = `⚠️ Please wait ${remaining} more seconds`;
-                claimStatus.className = 'claim-status error';
-                return;
+            // Check delay (skip for OG)
+            if (currentBadge.id !== 'og') {
+                const elapsed = Date.now() - linkClickTime;
+                if (elapsed < CLAIM_DELAY) {
+                    const remaining = Math.ceil((CLAIM_DELAY - elapsed) / 1000);
+                    claimStatus.textContent = `⚠️ Please wait ${remaining} more seconds`;
+                    claimStatus.className = 'claim-status error';
+                    return;
+                }
             }
 
             // Make API call
@@ -842,6 +992,16 @@
                     claimStatus.textContent = '🎉 Badge unlocked!';
                     claimStatus.className = 'claim-status success';
                     userBadges.push(currentBadge.id);
+                    
+                    // Update localStorage session
+                    const cached = getSession();
+                    if (cached) {
+                        const updatedBadges = cached.badges || [];
+                        updatedBadges.push({ id: currentBadge.id, unlocked: true });
+                        cached.badges = updatedBadges;
+                        saveSession(cached);
+                    }
+                    
                     renderBadges();
                     
                     setTimeout(() => {
@@ -850,19 +1010,19 @@
                 } else {
                     claimStatus.textContent = '❌ ' + (data.error || 'Failed to claim badge');
                     claimStatus.className = 'claim-status error';
-                    claimBtn.textContent = "I've completed the mission";
+                    claimBtn.textContent = currentBadge.id === 'og' ? '👑 Claim OG Badge' : "I've completed the mission";
                     claimBtn.classList.add('ready');
                 }
             } catch (error) {
                 claimStatus.textContent = '❌ Connection error';
                 claimStatus.className = 'claim-status error';
-                claimBtn.textContent = "I've completed the mission";
+                claimBtn.textContent = currentBadge.id === 'og' ? '👑 Claim OG Badge' : "I've completed the mission";
                 claimBtn.classList.add('ready');
             }
         }
 
         // ============================================================
-        // FETCH USER DATA
+        // FETCH USER DATA (with session persistence)
         // ============================================================
         function formatDate(dateStr) {
             const date = new Date(dateStr);
@@ -870,13 +1030,33 @@
             return date.toLocaleDateString('en-US', options);
         }
 
+        function applyUserData(userData) {
+            const username = userData.user.username.replace(/^@/, '');
+            document.getElementById('username').textContent = '@' + username;
+            document.getElementById('joinDate').textContent = formatDate(userData.user.joinDate);
+            
+            userBadges = userData.badges
+                .filter(b => b.unlocked)
+                .map(b => b.id);
+            
+            renderBadges();
+        }
+
         async function fetchUserData() {
+            // 1) Try to show cached data immediately (no flicker)
+            const cached = getSession();
+            if (cached && cached.authenticated) {
+                applyUserData(cached);
+            }
+
+            // 2) Fetch fresh data from API
             try {
                 const response = await fetch('/api/user', {
                     credentials: 'include'
                 });
                 
                 if (response.status === 401) {
+                    clearSession();
                     window.location.href = '/yellow.html';
                     return;
                 }
@@ -888,25 +1068,27 @@
                 const userData = await response.json();
                 
                 if (!userData.authenticated) {
+                    clearSession();
                     window.location.href = '/yellow.html';
                     return;
                 }
                 
-                // Update user info
-                const username = userData.user.username.replace(/^@/, '');
-                document.getElementById('username').textContent = '@' + username;
-                document.getElementById('joinDate').textContent = formatDate(userData.user.joinDate);
+                // Save to localStorage for persistence
+                saveSession(userData);
                 
-                // Store unlocked badges
-                userBadges = userData.badges
-                    .filter(b => b.unlocked)
-                    .map(b => b.id);
-                
-                // Render badges
-                renderBadges();
+                // Apply fresh data
+                applyUserData(userData);
                 
             } catch (error) {
                 console.error('Error fetching user data:', error);
+                
+                // If we have cached data, keep showing it
+                if (cached && cached.authenticated) {
+                    console.log('Using cached session data');
+                    return;
+                }
+                
+                // No cache, no API = redirect
                 document.getElementById('username').textContent = 'Error';
                 document.getElementById('joinDate').textContent = 'Connection failed';
                 
@@ -920,7 +1102,7 @@
         // INIT
         // ============================================================
         document.getElementById('backBtn').addEventListener('click', () => {
-            window.location.href = '/api/auth/logout';
+            window.location.href = 'index.html';
         });
 
         // Close modal on outside click

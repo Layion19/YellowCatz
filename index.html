@@ -83,7 +83,7 @@
             transform: rotate(-45deg) translate(7px, -7px);
         }
 
-        /* Secret M button - BIGGER (30x30) - HIDDEN by default */
+        /* Secret M button */
         .secret-m {
             position: fixed;
             top: 33%;
@@ -95,7 +95,7 @@
             cursor: pointer;
             z-index: 1000;
             transition: all 0.3s ease;
-            display: none; /* Hidden until authenticated */
+            display: none;
         }
 
         .secret-m:hover {
@@ -134,7 +134,37 @@
             color: #fff;
         }
 
-        /* Secret Cat Emoji - Entry to Yellow World */
+        .sidebar a.active-page {
+            color: #fff;
+        }
+
+        .sidebar a.active-page::before {
+            content: '▸';
+            margin-right: 8px;
+        }
+
+        /* Dynamic auth links - hidden by default */
+        .sidebar .auth-link {
+            display: none;
+        }
+
+        .sidebar .auth-link.visible {
+            display: block;
+        }
+
+        .sidebar .logout-link {
+            margin-top: auto;
+            color: #666;
+            font-size: 16px;
+            border-bottom: none;
+            padding-top: 20px;
+        }
+
+        .sidebar .logout-link:hover {
+            color: #ff4444;
+        }
+
+        /* Secret Cat Emoji */
         .secret-cat {
             font-size: 14px;
             margin: 25px auto 0;
@@ -199,9 +229,8 @@
             text-align: center;
         }
 
-        /* Secret O button - no cursor pointer by default */
         .secret-o {
-            cursor: default; /* Changed to pointer via JS when authenticated */
+            cursor: default;
             position: relative;
             display: inline-block;
         }
@@ -377,7 +406,7 @@
 
     <!-- Sidebar -->
     <nav class="sidebar" id="sidebar">
-        <a href="index.html">Home</a>
+        <a href="index.html" class="active-page">Home</a>
         <a href="yellow-matrix.html">Origins</a>
         <a href="about.html">About</a>
         <a href="yellowmap.html">YellowMap</a>
@@ -385,7 +414,9 @@
         <a href="gallery.html">Gallery</a>
         <a href="galleryv2.html">GalleryV2</a>
         <a href="enter.html">Enter</a>
-        <!-- Secret Cat Emoji - Entry to Yellow World -->
+        <!-- These appear only when authenticated -->
+        <a href="status.html" class="auth-link" id="statusLink">My Status</a>
+        <a href="/api/auth/logout" class="auth-link logout-link" id="logoutLink">Logout</a>
         <div class="secret-cat" id="secretCat">😼</div>
     </nav>
 
@@ -411,7 +442,6 @@
         </div>
         <div class="cat-container">
             <img src="images/Catz0.png" alt="Yellow Cat" class="cat-image" id="catImage">
-            <!-- Bars Overlay -->
             <div class="bars-overlay" id="barsOverlay">
                 <img src="images/bar.png" alt="Bars">
             </div>
@@ -436,11 +466,55 @@
 
     <script>
         // ============================================================
+        // SESSION PERSISTENCE
+        // ============================================================
+        const SESSION_KEY = 'yellowcatz_session';
+        const SESSION_EXPIRY = 7 * 24 * 60 * 60 * 1000;
+
+        function getSession() {
+            try {
+                const stored = localStorage.getItem(SESSION_KEY);
+                if (!stored) return null;
+                const session = JSON.parse(stored);
+                if (Date.now() - session.timestamp > SESSION_EXPIRY) {
+                    localStorage.removeItem(SESSION_KEY);
+                    return null;
+                }
+                return session.data;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function saveSession(userData) {
+            localStorage.setItem(SESSION_KEY, JSON.stringify({
+                data: userData,
+                timestamp: Date.now()
+            }));
+        }
+
+        // ============================================================
         // AUTH STATE
         // ============================================================
         let isAuthenticated = false;
 
-        // Check authentication on page load
+        function showAuthenticatedUI() {
+            isAuthenticated = true;
+            // Show secret elements
+            document.getElementById('secretM').style.display = 'block';
+            document.getElementById('secretO').style.cursor = 'pointer';
+            // Show auth-only sidebar links
+            document.getElementById('statusLink').classList.add('visible');
+            document.getElementById('logoutLink').classList.add('visible');
+        }
+
+        // Check cached session first (instant)
+        const cached = getSession();
+        if (cached && cached.authenticated) {
+            showAuthenticatedUI();
+        }
+
+        // Then verify with API
         async function checkAuth() {
             try {
                 const response = await fetch('/api/user', {
@@ -449,17 +523,14 @@
                 const data = await response.json();
                 
                 if (data.authenticated) {
-                    isAuthenticated = true;
-                    // Show secret elements for authenticated users
-                    document.getElementById('secretM').style.display = 'block';
-                    document.getElementById('secretO').style.cursor = 'pointer';
+                    saveSession(data);
+                    showAuthenticatedUI();
                 }
             } catch (error) {
-                console.log('Auth check failed');
+                console.log('Auth check failed, using cached state');
             }
         }
 
-        // Run auth check on load
         checkAuth();
 
         // ============================================================
@@ -479,7 +550,6 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    // Show notification
                     const notification = document.getElementById('badgeNotification');
                     notification.textContent = `🎉 Badge "${badgeId === 'badge_5' ? 'X Hunter' : 'M Hunter'}" unlocked!`;
                     notification.classList.add('show');
@@ -494,13 +564,12 @@
         }
 
         // ============================================================
-        // SECRET O DOWNLOAD + BADGE 5 (only if authenticated)
+        // SECRET O DOWNLOAD + BADGE 5
         // ============================================================
         const secretO = document.getElementById('secretO');
         const secretImageX = document.getElementById('secretImageX');
 
         secretO.addEventListener('click', () => {
-            // Block if not authenticated
             if (!isAuthenticated) return;
 
             const canvas = document.createElement('canvas');
@@ -514,18 +583,16 @@
             link.href = canvas.toDataURL('image/png');
             link.click();
 
-            // Claim badge 5 (X Hunter)
             claimBadge('badge_5');
         });
 
         // ============================================================
-        // SECRET M DOWNLOAD + BADGE 6 (only if authenticated)
+        // SECRET M DOWNLOAD + BADGE 6
         // ============================================================
         const secretM = document.getElementById('secretM');
         const secretImageM = document.getElementById('secretImageM');
 
         secretM.addEventListener('click', () => {
-            // Block if not authenticated
             if (!isAuthenticated) return;
 
             const canvas = document.createElement('canvas');
@@ -539,15 +606,13 @@
             link.href = canvas.toDataURL('image/png');
             link.click();
 
-            // Claim badge 6 (M Hunter)
             claimBadge('badge_6');
         });
 
         // ============================================================
         // YELLOW WORLD ENTRY
         // ============================================================
-        const secretCat = document.getElementById('secretCat');
-        secretCat.addEventListener('click', () => {
+        document.getElementById('secretCat').addEventListener('click', () => {
             window.location.href = 'yellow.html';
         });
 
@@ -559,7 +624,6 @@
         const barsOverlay = document.getElementById('barsOverlay');
         const catImage = document.getElementById('catImage');
 
-        // Image Rotation
         const images = [
             'images/Catz0.png',
             'images/Catz1.png',
@@ -572,7 +636,6 @@
         let rotationInterval = null;
         let hasStarted = false;
 
-        // Start image rotation
         function startRotation() {
             if (rotationInterval) return;
             rotationInterval = setInterval(() => {
@@ -586,14 +649,12 @@
             }, 3500);
         }
 
-        // Toggle music
         musicBtn.addEventListener('click', () => {
             if (bgMusic.paused) {
                 bgMusic.volume = 0.5;
                 bgMusic.play();
                 musicBtn.textContent = '❚❚';
                 
-                // First time playing: remove bars and start rotation
                 if (!hasStarted) {
                     hasStarted = true;
                     barsOverlay.classList.add('hidden');

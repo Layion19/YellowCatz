@@ -4,7 +4,8 @@ import {
   getUserByXId,
   awardBadge,
   getUserBadges,
-  isUserBanned
+  isUserBanned,
+  isOGPeriodActive
 } from './lib/db.js';
 
 /**
@@ -45,14 +46,21 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing badgeId' });
     }
 
-    // 5️⃣ Liste des badges claimables via cette API
-    const claimableBadges = ['badge_2', 'badge_3', 'badge_4', 'badge_5', 'badge_6'];
+    // 5️⃣ OG badge — vérifier la fenêtre 24h
+    if (badgeId === 'og') {
+      if (!isOGPeriodActive()) {
+        return res.status(400).json({ error: 'OG badge period has ended. You missed it.' });
+      }
+    }
+
+    // 6️⃣ Liste des badges claimables via cette API
+    const claimableBadges = ['og', 'badge_2', 'badge_3', 'badge_4', 'badge_5', 'badge_6'];
 
     if (!claimableBadges.includes(badgeId)) {
       return res.status(400).json({ error: 'This badge cannot be claimed here' });
     }
 
-    // 6️⃣ Vérifier si l'utilisateur a déjà ce badge
+    // 7️⃣ Vérifier si l'utilisateur a déjà ce badge
     const userBadges = await getUserBadges(user.id);
     const alreadyHasBadge = userBadges.some(b => b.badge_id === badgeId);
 
@@ -60,7 +68,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Badge already claimed' });
     }
 
-    // 7️⃣ Attribuer le badge
+    // 8️⃣ Attribuer le badge
     await awardBadge(user.id, badgeId);
 
     return res.status(200).json({

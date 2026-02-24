@@ -3,6 +3,7 @@ import {
   initDatabase,
   getUserByXId,
   getUserBadges,
+  awardBadge,
   isOGPeriodActive
 } from './lib/db.js';
 
@@ -40,7 +41,18 @@ export default async function handler(req, res) {
     const badges = await getUserBadges(user.id);
     const unlockedBadgeIds = badges.map(b => b.badge_id);
 
-    // 4️⃣ Réponse clean
+    // 4️⃣ Rattrapage OG — pour ceux déjà connectés qui visitent pendant la fenêtre 24h
+    if (isOGPeriodActive() && !unlockedBadgeIds.includes('og')) {
+      try {
+        await awardBadge(user.id, 'og');
+        unlockedBadgeIds.push('og');
+        console.log(`OG badge catchup for @${user.x_username}`);
+      } catch (e) {
+        console.error('OG catchup failed:', e);
+      }
+    }
+
+    // 5️⃣ Réponse clean
     return res.status(200).json({
       authenticated: true,
       user: {

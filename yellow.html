@@ -19,7 +19,7 @@ body{
   overflow:hidden;
 }
 
-/* ---------- HAMBURGER MENU (same as index.html) ---------- */
+/* ---------- HAMBURGER MENU ---------- */
 .menu-btn {
   position: fixed;
   top: 20px;
@@ -56,7 +56,7 @@ body{
   transform: rotate(-45deg) translate(7px, -7px);
 }
 
-/* ---------- SIDEBAR (same as index.html) ---------- */
+/* ---------- SIDEBAR ---------- */
 .sidebar {
   position: fixed;
   top: 0;
@@ -88,7 +88,28 @@ body{
   color: #fff;
 }
 
-/* Secret Cat Emoji in sidebar */
+.sidebar a.active-page {
+  color: #fff;
+  position: relative;
+}
+
+.sidebar a.active-page::before {
+  content: '▸';
+  margin-right: 8px;
+}
+
+.sidebar .logout-link {
+  margin-top: auto;
+  color: #666;
+  font-size: 16px;
+  border-bottom: none;
+  padding-top: 20px;
+}
+
+.sidebar .logout-link:hover {
+  color: #ff4444;
+}
+
 .secret-cat {
   font-size: 14px;
   margin: 25px auto 0;
@@ -265,12 +286,17 @@ body{
   display:none;
   margin-top:40px;
   text-align:center;
+  width: 100%;
+  max-width: 500px;
+  padding: 0 20px;
 }
 
 .badges-title{
-  font-size:14px;
-  letter-spacing:1px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size:18px;
+  letter-spacing:2px;
   color:#8B5A00;
+  margin-bottom: 5px;
 }
 
 .badges-sub{
@@ -280,41 +306,115 @@ body{
   margin-bottom:20px;
 }
 
+.badges-counter {
+  font-size: 13px;
+  color: #8B5A00;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+.badges-counter span {
+  color: #000;
+}
+
 #badges-grid{
-  display:flex;
-  justify-content:center;
-  gap:14px;
-  flex-wrap:wrap;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  max-width: 350px;
+  margin: 0 auto;
 }
 
 .badge{
-  width:46px;height:46px;
+  aspect-ratio: 1;
   border-radius:50%;
-  background:#777;
-  opacity:.4;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   cursor:pointer;
   transition:.3s;
+  font-size: 18px;
+  position: relative;
+}
+
+.badge.locked {
+  background: #b8860b;
+  opacity: 0.3;
+  border: 2px solid #8B5A00;
+}
+
+.badge.locked:hover {
+  opacity: 0.5;
+  transform: scale(1.05);
 }
 
 .badge.unlocked{
   background:#FFD000;
   opacity:1;
+  border: 2px solid #8B5A00;
+  box-shadow: 0 0 10px rgba(255, 208, 0, 0.4);
+}
+
+.badge.unlocked:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 20px rgba(255, 208, 0, 0.6);
+}
+
+.badge-name {
+  font-size: 7px;
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.5px;
+  margin-top: 1px;
+  color: #8B5A00;
+}
+
+.badge.locked .badge-name {
+  color: #666;
 }
 
 #badge-info{
-  margin-top:10px;
+  margin-top:15px;
   display:none;
+  background: rgba(0,0,0,0.1);
+  padding: 12px 20px;
+  border-radius: 10px;
 }
 
 #badge-name{
   font-weight:bold;
   color:#8B5A00;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 1px;
 }
 
 #badge-description{
   font-size:12px;
   color:#8B5A00;
-  opacity:.7;
+  opacity:.8;
+  margin-top: 4px;
+}
+
+.view-status-btn {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 25px;
+  background: transparent;
+  border: 2px solid #8B5A00;
+  border-radius: 25px;
+  color: #8B5A00;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 14px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+}
+
+.view-status-btn:hover {
+  background: #8B5A00;
+  color: #E8A000;
 }
 
 @media (max-width: 600px) {
@@ -325,27 +425,38 @@ body{
   .enter-text {
     font-size: 20px;
   }
+  #badges-grid {
+    gap: 8px;
+    max-width: 280px;
+  }
+  .badge {
+    font-size: 14px;
+  }
 }
 </style>
 </head>
 
 <body>
 
-<!-- Hamburger Menu Button (same as index.html) -->
+<!-- Hamburger Menu Button -->
 <div class="menu-btn" id="menuBtn">
   <span></span>
   <span></span>
   <span></span>
 </div>
 
-<!-- Sidebar (same as index.html) -->
+<!-- Sidebar -->
 <nav class="sidebar" id="sidebar">
   <a href="index.html">Home</a>
+  <a href="yellow-matrix.html">Origins</a>
   <a href="about.html">About</a>
   <a href="yellowmap.html">YellowMap</a>
+  <a href="yellowgame.html">YellowGame</a>
   <a href="gallery.html">Gallery</a>
+  <a href="galleryv2.html">GalleryV2</a>
+  <a href="enter.html">Enter</a>
   <a href="status.html">My Status</a>
-  <a href="/api/auth/logout">Logout</a>
+  <a href="/api/auth/logout" class="logout-link">Logout</a>
   <div class="secret-cat" id="secretCat">😼</div>
 </nav>
 
@@ -379,8 +490,9 @@ body{
     </div>
 
     <section id="badges-section">
-      <p class="badges-title">Badges to collect in the Yellow World</p>
-      <p class="badges-sub">Some are obvious.<br>Some are hidden.<br>Some are not for everyone.</p>
+      <p class="badges-title">Your Yellow Badges</p>
+      <p class="badges-counter"><span id="badgeCountYellow">0</span> / 10 collected</p>
+      <p class="badges-sub">Some are obvious. Some are hidden.<br>Some are not for everyone.</p>
 
       <div id="badges-grid"></div>
 
@@ -388,6 +500,8 @@ body{
         <p id="badge-name"></p>
         <p id="badge-description"></p>
       </div>
+
+      <a href="status.html" class="view-status-btn">View Full Status →</a>
     </section>
   </div>
 </div>
@@ -405,7 +519,51 @@ const overlay = document.getElementById('overlay');
 
 let isAuthenticated = false;
 
-// Menu Toggle (same as index.html)
+// ============================================================
+// SESSION PERSISTENCE
+// ============================================================
+const SESSION_KEY = 'yellowcatz_session';
+const SESSION_EXPIRY = 7 * 24 * 60 * 60 * 1000;
+
+function getSession() {
+    try {
+        const stored = localStorage.getItem(SESSION_KEY);
+        if (!stored) return null;
+        const session = JSON.parse(stored);
+        if (Date.now() - session.timestamp > SESSION_EXPIRY) {
+            localStorage.removeItem(SESSION_KEY);
+            return null;
+        }
+        return session.data;
+    } catch (e) {
+        return null;
+    }
+}
+
+function saveSession(userData) {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({
+        data: userData,
+        timestamp: Date.now()
+    }));
+}
+
+// ============================================================
+// BADGE DEFINITIONS (synced with status.html)
+// ============================================================
+const badgesData = [
+    { id: 'og', name: 'OG', emoji: '👑', desc: 'First 24 hours founder' },
+    { id: 'badge_2', name: 'Supporter', emoji: '💛', desc: 'Community supporter' },
+    { id: 'badge_3', name: 'Yellow Army', emoji: '⚡', desc: 'Spread the yellow' },
+    { id: 'badge_4', name: 'Whisperer', emoji: '🤫', desc: 'The quiet ones know things' },
+    { id: 'badge_5', name: 'X Hunter', emoji: '🔍', desc: 'Found the X secret' },
+    { id: 'badge_6', name: 'M Hunter', emoji: '👻', desc: 'Found the M secret' },
+    { id: 'badge_7', name: 'Explorer', emoji: '🗺️', desc: 'Traveled the Yellow Map' },
+    { id: 'badge_8', name: 'Collector', emoji: '🎨', desc: 'Collected them all' },
+    { id: 'badge_9', name: 'Night Owl', emoji: '🦉', desc: 'Some things only appear at night' },
+    { id: 'badge_10', name: 'Legend', emoji: '🏆', desc: 'The ultimate member' }
+];
+
+// Menu Toggle
 menuBtn.addEventListener('click', () => {
   menuBtn.classList.toggle('active');
   sidebar.classList.toggle('active');
@@ -418,7 +576,6 @@ overlay.addEventListener('click', () => {
   overlay.classList.remove('active');
 });
 
-// Secret cat does nothing special on yellow.html (already here)
 document.getElementById('secretCat').addEventListener('click', () => {
   // Already on yellow world
 });
@@ -455,12 +612,48 @@ playBtn.onclick = async () => {
 
 document.getElementById('xBtn').onclick = () => location.href = '/api/auth?action=login';
 
-/* ---------- STATUS + BADGES ---------- */
-fetch('/api/user')
-  .then(r => r.json())
-  .then(d => {
-    if (!d.authenticated) return;
+/* ---------- RENDER BADGES ---------- */
+function renderYellowBadges(userBadgeIds) {
+    const grid = document.getElementById('badges-grid');
+    const info = document.getElementById('badge-info');
+    const nameEl = document.getElementById('badge-name');
+    const descEl = document.getElementById('badge-description');
+    
+    grid.innerHTML = '';
 
+    let unlockedCount = 0;
+
+    badgesData.forEach(b => {
+        const unlocked = userBadgeIds.includes(b.id);
+        if (unlocked) unlockedCount++;
+        
+        const el = document.createElement('div');
+        el.className = 'badge ' + (unlocked ? 'unlocked' : 'locked');
+        
+        el.innerHTML = `
+            <span>${unlocked ? b.emoji : '?'}</span>
+            <span class="badge-name">${unlocked ? b.name : '???'}</span>
+        `;
+        
+        el.onclick = () => {
+            info.style.display = 'block';
+            if (unlocked) {
+                nameEl.textContent = b.emoji + ' ' + b.name;
+                descEl.textContent = b.desc;
+            } else {
+                nameEl.textContent = '🔒 ???';
+                descEl.textContent = 'This badge has not been unlocked yet';
+            }
+        };
+        
+        grid.appendChild(el);
+    });
+
+    document.getElementById('badgeCountYellow').textContent = unlockedCount;
+}
+
+/* ---------- AUTH CHECK + BADGES ---------- */
+function showAuthenticatedState(data) {
     isAuthenticated = true;
 
     // Show hamburger menu
@@ -468,10 +661,9 @@ fetch('/api/user')
 
     // Show user bar
     document.getElementById('user-bar').style.display = 'flex';
-    document.getElementById('user-avatar').src = d.user.avatarUrl;
+    document.getElementById('user-avatar').src = data.user.avatarUrl;
     
-    // Fix: remove @ if already present, then add single @
-    const username = d.user.username.replace(/^@/, '');
+    const username = data.user.username.replace(/^@/, '');
     document.getElementById('user-name').textContent = '@' + username;
 
     // Hide X connect button since already connected
@@ -480,42 +672,33 @@ fetch('/api/user')
     // Show badges section
     document.getElementById('badges-section').style.display = 'block';
 
-    const grid = document.getElementById('badges-grid');
-    const info = document.getElementById('badge-info');
-    const name = document.getElementById('badge-name');
-    const desc = document.getElementById('badge-description');
+    // Get unlocked badge IDs
+    const userBadgeIds = data.badges
+        .filter(b => b.unlocked)
+        .map(b => b.id || b.badge_id);
 
-    const defs = [
-      { id: 'og', name: 'OG', desc: 'Early access – first 24 hours' },
-      { id: 'badge_2', name: '???', desc: 'Mystery badge' },
-      { id: 'badge_3', name: '???', desc: 'Mystery badge' },
-      { id: 'badge_4', name: '???', desc: 'Mystery badge' },
-      { id: 'badge_5', name: '???', desc: 'Mystery badge' },
-      { id: 'badge_6', name: '???', desc: 'Mystery badge' },
-      { id: 'badge_7', name: '???', desc: 'Mystery badge' },
-      { id: 'badge_8', name: '???', desc: 'Mystery badge' },
-      { id: 'badge_9', name: '???', desc: 'Mystery badge' },
-      { id: 'badge_10', name: '???', desc: 'Mystery badge' }
-    ];
+    renderYellowBadges(userBadgeIds);
+}
 
-    defs.forEach(b => {
-      const userBadge = d.badges.find(x => x.badge_id === b.id);
-      const unlocked = !!userBadge;
-      
-      const el = document.createElement('div');
-      el.className = 'badge' + (unlocked ? ' unlocked' : '');
-      el.onclick = () => {
-        info.style.display = 'block';
-        if (unlocked) {
-          name.textContent = userBadge.badge_name || b.name;
-          desc.textContent = userBadge.description || b.desc;
-        } else {
-          name.textContent = '???';
-          desc.textContent = 'This badge has not been unlocked yet';
-        }
-      };
-      grid.appendChild(el);
-    });
+// Check cached session first
+const cached = getSession();
+if (cached && cached.authenticated) {
+    showAuthenticatedState(cached);
+}
+
+// Then fetch fresh data
+fetch('/api/user', { credentials: 'include' })
+  .then(r => r.json())
+  .then(d => {
+    if (!d.authenticated) return;
+    
+    // Save to localStorage
+    saveSession(d);
+    
+    showAuthenticatedState(d);
+  })
+  .catch(err => {
+    console.log('API check failed, using cached data if available');
   });
 </script>
 </body>

@@ -14,6 +14,7 @@ import {
   createUser,
   updateUser,
   awardBadge,
+  getUserBadges,
   isOGPeriodActive
 } from './lib/db.js';
 
@@ -151,12 +152,9 @@ async function handleCallback(req, res) {
 
     const existingUser = await getUserByXId(xUser.data.id);
     let user;
-    let isNewUser = false;
 
     if (!existingUser) {
       // Nouvel utilisateur
-      isNewUser = true;
-
       const userId = await createUser(
         xUser.data.id,
         xUser.data.username,
@@ -184,9 +182,21 @@ async function handleCallback(req, res) {
       };
     }
 
-    // Badge OG
-    if (isNewUser && isOGPeriodActive()) {
-      await awardBadge(user.id, 'og');
+    // ============================================================
+    // OG BADGE — Pour TOUT utilisateur connecté pendant la fenêtre 24h
+    // (nouveaux ET existants)
+    // ============================================================
+    if (isOGPeriodActive()) {
+      try {
+        const userBadges = await getUserBadges(user.id);
+        const hasOG = userBadges.some(b => b.badge_id === 'og');
+        if (!hasOG) {
+          await awardBadge(user.id, 'og');
+          console.log(`OG badge auto-awarded to @${user.x_username}`);
+        }
+      } catch (e) {
+        console.error('OG auto-award failed:', e);
+      }
     }
 
     // Création session utilisateur
