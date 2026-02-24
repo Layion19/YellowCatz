@@ -414,9 +414,8 @@
         <a href="gallery.html">Gallery</a>
         <a href="galleryv2.html">GalleryV2</a>
         <a href="enter.html">Enter</a>
-        <!-- These appear only when authenticated -->
+        <!-- Appears only when authenticated -->
         <a href="status.html" class="auth-link" id="statusLink">My Status</a>
-        <a href="/api/auth/logout" class="auth-link logout-link" id="logoutLink">Logout</a>
         <div class="secret-cat" id="secretCat">😼</div>
     </nav>
 
@@ -505,7 +504,6 @@
             document.getElementById('secretO').style.cursor = 'pointer';
             // Show auth-only sidebar links
             document.getElementById('statusLink').classList.add('visible');
-            document.getElementById('logoutLink').classList.add('visible');
         }
 
         // Check cached session first (instant)
