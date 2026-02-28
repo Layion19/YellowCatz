@@ -717,7 +717,6 @@
                 if (!stored) return null;
                 
                 const session = JSON.parse(stored);
-                // Check if session expired
                 if (Date.now() - session.timestamp > SESSION_EXPIRY) {
                     localStorage.removeItem(SESSION_KEY);
                     return null;
@@ -733,7 +732,7 @@
         }
 
         // ============================================================
-        // BADGES DATA (with real names & descriptions)
+        // BADGES DATA
         // ============================================================
         const badgesData = [
             { 
@@ -741,7 +740,7 @@
                 name: 'OG', 
                 emoji: '👑',
                 description: 'First 24 hours founder — The originals.',
-                mission: 'Be among the first to enter the Yellow World within 24 hours of launch. Click below to claim your OG status!',
+                mission: 'Be among the first to enter the Yellow World within 24 hours of launch.',
                 claimable: true,
                 link: null
             },
@@ -767,10 +766,10 @@
             },
             { 
                 id: 'badge_4', 
-                name: 'Whisperer', 
-                emoji: '🤫',
-                description: 'The quiet ones know things.',
-                mission: 'This badge will reveal itself when the time is right...',
+                name: 'Reach the Moon', 
+                emoji: '🚀',
+                description: 'You reached the moon — A true explorer.',
+                mission: 'Complete the YellowGame challenge and click the green button when you reach the moon.',
                 claimable: false,
                 link: null
             },
@@ -794,28 +793,31 @@
             },
             { 
                 id: 'badge_7', 
-                name: 'Explorer', 
-                emoji: '🗺️',
-                description: 'Traveled the Yellow Map.',
-                mission: 'Explore the YellowMap and discover all hidden locations.',
-                claimable: false,
-                link: null
+                name: 'Doorkeeper', 
+                emoji: '🚪',
+                description: 'You entered the portal — Welcome inside.',
+                mission: 'Join our Telegram community through the Enter page.',
+                claimable: true,
+                link: 'https://t.me/YellowCatzPortal',
+                linkText: '📲 Join Telegram'
             },
             { 
                 id: 'badge_8', 
-                name: 'Collector', 
-                emoji: '🎨',
-                description: 'Collected them all.',
-                mission: 'Download 5 different PFPs from the Gallery.',
-                claimable: false,
-                link: null
+                name: 'Ambassador', 
+                emoji: '🎙️',
+                description: 'You brought the crew — True leader.',
+                mission: 'Invite at least 3 new members to join the Yellow Army on Discord. Share the link, grow the community, then come back to claim.',
+                claimable: true,
+                link: 'https://discord.gg/dJgsZqFV7K',
+                linkText: '🎮 Share Discord Link',
+                delay: 3600000
             },
             { 
                 id: 'badge_9', 
-                name: 'Night Owl', 
-                emoji: '🦉',
-                description: 'Some things only appear at night.',
-                mission: 'Visit the Yellow World between midnight and 4 AM.',
+                name: '???', 
+                emoji: '❓',
+                description: 'Mystery badge.',
+                mission: '🚧 Not live yet... Stay tuned!',
                 claimable: false,
                 link: null
             },
@@ -824,7 +826,7 @@
                 name: 'Legend', 
                 emoji: '🏆',
                 description: 'The ultimate Yellow Catz member.',
-                mission: 'Unlock all other 9 badges to earn this one.',
+                mission: '🚧 Not live yet... Unlock all badges to earn this one.',
                 claimable: false,
                 link: null
             }
@@ -834,7 +836,7 @@
         let currentBadge = null;
         let linkClicked = false;
         let linkClickTime = null;
-        const CLAIM_DELAY = 30000; // 30 seconds
+        const DEFAULT_DELAY = 30000; // 30 seconds
 
         // ============================================================
         // RENDER BADGES
@@ -860,7 +862,6 @@
                 grid.appendChild(el);
             });
 
-            // Update counter
             document.getElementById('badgeCount').textContent = userBadges.length;
         }
 
@@ -877,14 +878,12 @@
 
             const isUnlocked = userBadges.includes(badgeId);
 
-            // Update modal content
             document.getElementById('modalBadge').textContent = isUnlocked ? badge.emoji : '?';
             document.getElementById('modalBadge').className = 'modal-badge' + (isUnlocked ? '' : ' locked');
             document.getElementById('modalTitle').textContent = badge.name;
             document.getElementById('modalDescription').textContent = badge.description;
             document.getElementById('modalMissionText').textContent = badge.mission;
 
-            // Link button
             const linkBtn = document.getElementById('missionLink');
             if (badge.link && !isUnlocked) {
                 linkBtn.style.display = 'inline-block';
@@ -899,7 +898,6 @@
                 linkBtn.style.display = 'none';
             }
 
-            // Claim button
             const claimBtn = document.getElementById('claimBtn');
             const claimStatus = document.getElementById('claimStatus');
             const unlockedMsg = document.getElementById('modalUnlocked');
@@ -914,11 +912,10 @@
                 unlockedMsg.style.display = 'none';
                 
                 if (badge.id === 'og') {
-                    // OG badge - directly claimable
                     claimBtn.textContent = '👑 Claim OG Badge';
                     claimBtn.classList.add('ready');
                     linkClicked = true;
-                    linkClickTime = Date.now() - CLAIM_DELAY; // Skip wait
+                    linkClickTime = Date.now() - (badge.delay || DEFAULT_DELAY);
                 } else if (badge.claimable && badge.link) {
                     claimBtn.textContent = 'Click the link first';
                     claimBtn.classList.remove('ready');
@@ -941,10 +938,12 @@
 
         function updateClaimButton() {
             if (!currentBadge || !currentBadge.claimable) return;
-            if (currentBadge.id === 'og') return; // OG is always ready
+            if (currentBadge.id === 'og') return;
 
             const claimBtn = document.getElementById('claimBtn');
             const claimStatus = document.getElementById('claimStatus');
+
+            const delay = currentBadge.delay || DEFAULT_DELAY;
 
             if (!linkClicked) {
                 claimBtn.textContent = 'Click the link first';
@@ -954,12 +953,18 @@
             }
 
             const elapsed = Date.now() - linkClickTime;
-            const remaining = Math.ceil((CLAIM_DELAY - elapsed) / 1000);
+            const remaining = delay - elapsed;
 
             if (remaining > 0) {
-                claimBtn.textContent = `Wait ${remaining}s...`;
+                if (delay > 60000) {
+                    claimBtn.textContent = 'Not ready yet...';
+                    claimStatus.textContent = 'Come back later after sharing';
+                } else {
+                    const secs = Math.ceil(remaining / 1000);
+                    claimBtn.textContent = `Wait ${secs}s...`;
+                    claimStatus.textContent = 'Complete the mission and wait...';
+                }
                 claimBtn.classList.remove('ready');
-                claimStatus.textContent = 'Complete the mission and wait...';
                 setTimeout(updateClaimButton, 1000);
             } else {
                 claimBtn.textContent = "I've completed the mission ✓";
@@ -973,32 +978,33 @@
         // ============================================================
         async function claimBadge() {
             if (!currentBadge) return;
-            
-            // Check if claimable
             if (!currentBadge.claimable && currentBadge.id !== 'og') return;
 
             const claimBtn = document.getElementById('claimBtn');
             const claimStatus = document.getElementById('claimStatus');
 
-            // Check if link was clicked (skip for OG)
+            const delay = currentBadge.delay || DEFAULT_DELAY;
+
             if (currentBadge.id !== 'og' && !linkClicked) {
                 claimStatus.textContent = '⚠️ You must click the link first!';
                 claimStatus.className = 'claim-status error';
                 return;
             }
 
-            // Check delay (skip for OG)
             if (currentBadge.id !== 'og') {
                 const elapsed = Date.now() - linkClickTime;
-                if (elapsed < CLAIM_DELAY) {
-                    const remaining = Math.ceil((CLAIM_DELAY - elapsed) / 1000);
-                    claimStatus.textContent = `⚠️ Please wait ${remaining} more seconds`;
+                if (elapsed < delay) {
+                    if (delay > 60000) {
+                        claimStatus.textContent = '⚠️ Not ready yet. Come back later!';
+                    } else {
+                        const remaining = Math.ceil((delay - elapsed) / 1000);
+                        claimStatus.textContent = `⚠️ Please wait ${remaining} more seconds`;
+                    }
                     claimStatus.className = 'claim-status error';
                     return;
                 }
             }
 
-            // Make API call
             claimBtn.textContent = 'Claiming...';
             claimBtn.classList.remove('ready');
 
@@ -1017,7 +1023,6 @@
                     claimStatus.className = 'claim-status success';
                     userBadges.push(currentBadge.id);
                     
-                    // Update localStorage session
                     const cached = getSession();
                     if (cached) {
                         const updatedBadges = cached.badges || [];
@@ -1046,7 +1051,7 @@
         }
 
         // ============================================================
-        // FETCH USER DATA (with session persistence)
+        // FETCH USER DATA
         // ============================================================
         function formatDate(dateStr) {
             const date = new Date(dateStr);
@@ -1067,13 +1072,11 @@
         }
 
         async function fetchUserData() {
-            // 1) Try to show cached data immediately (no flicker)
             const cached = getSession();
             if (cached && cached.authenticated) {
                 applyUserData(cached);
             }
 
-            // 2) Fetch fresh data from API
             try {
                 const response = await fetch('/api/user', {
                     credentials: 'include'
@@ -1097,22 +1100,17 @@
                     return;
                 }
                 
-                // Save to localStorage for persistence
                 saveSession(userData);
-                
-                // Apply fresh data
                 applyUserData(userData);
                 
             } catch (error) {
                 console.error('Error fetching user data:', error);
                 
-                // If we have cached data, keep showing it
                 if (cached && cached.authenticated) {
                     console.log('Using cached session data');
                     return;
                 }
                 
-                // No cache, no API = redirect
                 document.getElementById('username').textContent = 'Error';
                 document.getElementById('joinDate').textContent = 'Connection failed';
                 
@@ -1129,7 +1127,6 @@
             window.location.href = 'index.html';
         });
 
-        // Close modal on outside click
         document.getElementById('missionModal').addEventListener('click', (e) => {
             if (e.target.id === 'missionModal') closeModal();
         });

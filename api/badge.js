@@ -54,7 +54,7 @@ export default async function handler(req, res) {
     }
 
     // 6️⃣ Liste des badges claimables via cette API
-    const claimableBadges = ['og', 'badge_2', 'badge_3', 'badge_4', 'badge_5', 'badge_6'];
+    const claimableBadges = ['og', 'badge_2', 'badge_3', 'badge_4', 'badge_5', 'badge_6', 'badge_7', 'badge_8'];
 
     if (!claimableBadges.includes(badgeId)) {
       return res.status(400).json({ error: 'This badge cannot be claimed here' });

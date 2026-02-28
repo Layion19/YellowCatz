@@ -88,30 +88,30 @@ export async function initDatabase() {
     },
     { 
       badge_id: 'badge_7', 
-      badge_name: '???', 
-      description: 'Mystery badge',
-      mission: '???',
+      badge_name: 'Doorkeeper', 
+      description: 'Joined the Telegram portal',
+      mission: 'Join our Telegram community',
       is_time_limited: 0 
     },
     { 
       badge_id: 'badge_8', 
-      badge_name: '???', 
-      description: 'Mystery badge',
-      mission: '???',
+      badge_name: 'Ambassador', 
+      description: 'Invited 3+ friends to Discord',
+      mission: 'Invite at least 3 new members to Discord',
       is_time_limited: 0 
     },
     { 
       badge_id: 'badge_9', 
       badge_name: '???', 
       description: 'Mystery badge',
-      mission: '???',
+      mission: 'Not live yet...',
       is_time_limited: 0 
     },
     { 
       badge_id: 'badge_10', 
-      badge_name: '???', 
-      description: 'Mystery badge',
-      mission: '???',
+      badge_name: 'Legend', 
+      description: 'The ultimate Yellow Catz member',
+      mission: 'Unlock all other badges',
       is_time_limited: 0 
     },
   ];
@@ -141,7 +141,6 @@ export async function getUserById(userId) {
 }
 
 export async function getUserByUsername(username) {
-  // Remove @ if present
   const cleanUsername = username.replace(/^@/, '');
   const result = await db.execute({
     sql: 'SELECT * FROM users WHERE x_username = ?',
