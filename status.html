@@ -732,6 +732,22 @@
         }
 
         // ============================================================
+        // BADGE CLICK PERSISTENCE (pour les délais longs)
+        // ============================================================
+        function getSavedClickTime(badgeId) {
+            const saved = localStorage.getItem(`badge_click_${badgeId}`);
+            return saved ? parseInt(saved, 10) : null;
+        }
+
+        function saveClickTime(badgeId) {
+            localStorage.setItem(`badge_click_${badgeId}`, Date.now().toString());
+        }
+
+        function clearClickTime(badgeId) {
+            localStorage.removeItem(`badge_click_${badgeId}`);
+        }
+
+        // ============================================================
         // BADGES DATA
         // ============================================================
         const badgesData = [
@@ -878,6 +894,13 @@
 
             const isUnlocked = userBadges.includes(badgeId);
 
+            // Vérifier si on a un clic sauvegardé pour ce badge
+            const savedTime = getSavedClickTime(badgeId);
+            if (savedTime) {
+                linkClicked = true;
+                linkClickTime = savedTime;
+            }
+
             document.getElementById('modalBadge').textContent = isUnlocked ? badge.emoji : '?';
             document.getElementById('modalBadge').className = 'modal-badge' + (isUnlocked ? '' : ' locked');
             document.getElementById('modalTitle').textContent = badge.name;
@@ -892,6 +915,7 @@
                 linkBtn.onclick = () => {
                     linkClicked = true;
                     linkClickTime = Date.now();
+                    saveClickTime(badgeId); // Sauvegarder dans localStorage
                     updateClaimButton();
                 };
             } else {
@@ -917,8 +941,21 @@
                     linkClicked = true;
                     linkClickTime = Date.now() - (badge.delay || DEFAULT_DELAY);
                 } else if (badge.claimable && badge.link) {
-                    claimBtn.textContent = 'Click the link first';
-                    claimBtn.classList.remove('ready');
+                    // Vérifier si le délai est déjà passé (grâce au localStorage)
+                    if (savedTime) {
+                        const delay = badge.delay || DEFAULT_DELAY;
+                        const elapsed = Date.now() - savedTime;
+                        if (elapsed >= delay) {
+                            claimBtn.textContent = "I've completed the mission ✓";
+                            claimBtn.classList.add('ready');
+                        } else {
+                            claimBtn.classList.remove('ready');
+                            updateClaimButton();
+                        }
+                    } else {
+                        claimBtn.textContent = 'Click the link first';
+                        claimBtn.classList.remove('ready');
+                    }
                 } else {
                     claimBtn.textContent = 'Cannot be claimed yet';
                     claimBtn.classList.remove('ready');
@@ -957,8 +994,8 @@
 
             if (remaining > 0) {
                 if (delay > 60000) {
-                    claimBtn.textContent = 'Not ready yet...';
-                    claimStatus.textContent = 'Come back later after sharing';
+                    claimBtn.textContent = 'Verification in progress...';
+                    claimStatus.textContent = 'Check back later';
                 } else {
                     const secs = Math.ceil(remaining / 1000);
                     claimBtn.textContent = `Wait ${secs}s...`;
@@ -995,7 +1032,7 @@
                 const elapsed = Date.now() - linkClickTime;
                 if (elapsed < delay) {
                     if (delay > 60000) {
-                        claimStatus.textContent = '⚠️ Not ready yet. Come back later!';
+                        claimStatus.textContent = '⚠️ Verification still in progress...';
                     } else {
                         const remaining = Math.ceil((delay - elapsed) / 1000);
                         claimStatus.textContent = `⚠️ Please wait ${remaining} more seconds`;
@@ -1022,6 +1059,7 @@
                     claimStatus.textContent = '🎉 Badge unlocked!';
                     claimStatus.className = 'claim-status success';
                     userBadges.push(currentBadge.id);
+                    clearClickTime(currentBadge.id); // Nettoyer le localStorage
                     
                     const cached = getSession();
                     if (cached) {
