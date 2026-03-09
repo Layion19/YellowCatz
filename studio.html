@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YellowCatz Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: repeating-linear-gradient(
+                45deg,
+                #E8A000,
+                #E8A000 20px,
+                #F4B400 20px,
+                #F4B400 40px
+            );
+            font-family: 'Poppins', sans-serif;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        /* ============================================================
+           HAMBURGER MENU (same as index.html)
+           ============================================================ */
+        .menu-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .menu-btn span {
+            display: block;
+            width: 30px;
+            height: 3px;
+            background-color: #000;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
+
+        .menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
+        .menu-btn.active {
+            background-color: #000;
+            border-radius: 0;
+            padding: 20px;
+            top: 0;
+            right: 0;
+        }
+
+        .menu-btn.active span {
+            background-color: #E8A000;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100vh;
+            background-color: #000;
+            transition: right 0.3s ease;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            padding: 80px 30px 30px;
+        }
+
+        .sidebar.active {
+            right: 0;
+        }
+
+        .sidebar a {
+            color: #E8A000;
+            text-decoration: none;
+            font-size: 24px;
+            padding: 15px 0;
+            border-bottom: 1px solid #333;
+            transition: color 0.3s ease;
+        }
+
+        .sidebar a:hover {
+            color: #fff;
+        }
+
+        .sidebar a.active-page {
+            color: #fff;
+        }
+
+        .sidebar a.active-page::before {
+            content: '▸';
+            margin-right: 8px;
+        }
+
+        .sidebar .auth-link {
+            display: none;
+        }
+
+        .sidebar .auth-link.visible {
+            display: block;
+        }
+
+        .secret-cat {
+            font-size: 16px;
+            margin: 25px auto 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: catPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes catPulse {
+            0%, 100% {
+                opacity: 0.4;
+                transform: scale(1);
+                filter: brightness(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.15);
+                filter: brightness(1.3);
+            }
+        }
+
+        .secret-cat:hover {
+            animation: none;
+            opacity: 1;
+            transform: scale(1.3);
+            filter: brightness(1.5);
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 998;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* ============================================================
+           STUDIO STYLES
+           ============================================================ */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 35px;
+            padding: 15px 20px;
+            background: #000;
+            border-radius: 15px;
+        }
+
+        .header-logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .header-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .header-text h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 24px;
+            color: #fff;
+        }
+
+        .header-text h1 span {
+            color: #E8A000;
+        }
+
+        .header-text p {
+            font-size: 11px;
+            color: #888;
+            letter-spacing: 3px;
+        }
+
+        .header-stars {
+            margin-left: auto;
+            font-size: 20px;
+        }
+
+        .mode-selection {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 15px;
+            background: #fff;
+            border: 3px solid #000;
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .mode-btn span {
+            font-size: 24px;
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 0 #000;
+        }
+
+        .mode-btn.active {
+            background: #E8A000;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 0 #000;
+        }
+
+        .section {
+            background: #FFF9E6;
+            border: 3px solid #000;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-subtitle {
+            color: #666;
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+
+        .upload-wrapper {
+            display: flex;
+            justify-content: center;
+        }
+
+        .upload-zone {
+            background: #FFF3CC;
+            border: 2px dashed #000;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .upload-zone.mode-pfp {
+            width: 180px;
+            height: 180px;
+        }
+
+        .upload-zone.mode-banner {
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 3 / 1;
+        }
+
+        .upload-zone:hover {
+            background: #FFE999;
+        }
+
+        .upload-zone.has-image {
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            border-style: solid;
+            cursor: default;
+            background: transparent;
+            aspect-ratio: unset;
+        }
+
+        .upload-content {
+            text-align: center;
+            padding: 20px 15px;
+        }
+
+        .upload-icon {
+            font-size: 35px;
+            margin-bottom: 8px;
+        }
+
+        .upload-text {
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .upload-hint {
+            color: #888;
+            font-size: 10px;
+            margin-top: 4px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .canvas-container {
+            position: relative;
+            display: none;
+            line-height: 0;
+        }
+
+        .canvas-container.visible {
+            display: inline-block;
+        }
+
+        #mainCanvas {
+            display: block;
+            border-radius: 8px;
+        }
+
+        #mainCanvas.mode-pfp {
+            width: 400px;
+            max-width: 90vw;
+            height: auto;
+        }
+
+        #mainCanvas.mode-banner {
+            width: 100%;
+            max-width: 700px;
+            height: auto;
+        }
+
+        .sticker-edit-panel {
+            display: none;
+            background: #000;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 12px;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .sticker-edit-panel.visible {
+            display: block;
+        }
+
+        .sticker-edit-panel h3 {
+            color: #E8A000;
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .slider-group {
+            margin-bottom: 12px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            color: #fff;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .slider-label span {
+            color: #E8A000;
+            font-weight: 700;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #333;
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #E8A000;
+            cursor: pointer;
+            border: 2px solid #fff;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #E8A000;
+            cursor: pointer;
+            border: 2px solid #fff;
+        }
+
+        .edit-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .edit-btn {
+            flex: 1;
+            padding: 10px 8px;
+            border: none;
+            border-radius: 20px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .edit-btn.duplicate {
+            background: #E8A000;
+            color: #000;
+        }
+
+        .edit-btn.reverse {
+            background: #fff;
+            color: #000;
+        }
+
+        .edit-btn.delete {
+            background: #ff4444;
+            color: #fff;
+            flex: 0.7;
+        }
+
+        .edit-btn:hover {
+            opacity: 0.9;
+        }
+
+        .action-buttons {
+            display: none;
+            gap: 10px;
+            margin-top: 15px;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .action-buttons.visible {
+            display: flex;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #000;
+            border-radius: 25px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .action-btn.primary {
+            background: #E8A000;
+            color: #000;
+        }
+
+        .action-btn.secondary {
+            background: #fff;
+            color: #000;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 0 #000;
+        }
+
+        .editor-section {
+            display: none;
+        }
+
+        .editor-section.visible {
+            display: block;
+        }
+
+        .stickers-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 5px;
+            max-height: 120px;
+            overflow-y: auto;
+            padding: 5px 0;
+        }
+
+        .sticker-item {
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 6px;
+            padding: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            aspect-ratio: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .sticker-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 0 #000;
+        }
+
+        .sticker-item img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        #instructionsSection .section-subtitle {
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .status-msg {
+            text-align: center;
+            padding: 8px;
+            margin-top: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            display: none;
+        }
+
+        .status-msg.visible {
+            display: block;
+        }
+
+        .status-msg.success {
+            background: #4CAF50;
+            color: #fff;
+        }
+
+        .status-msg.error {
+            background: #ff4444;
+            color: #fff;
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                margin-bottom: 25px;
+            }
+
+            .header-text h1 {
+                font-size: 20px;
+            }
+
+            .stickers-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+
+            .mode-btn {
+                padding: 12px;
+                font-size: 12px;
+            }
+
+            .mode-btn span {
+                font-size: 20px;
+            }
+
+            .upload-zone.mode-pfp {
+                width: 150px;
+                height: 150px;
+            }
+
+            #mainCanvas.mode-pfp {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            #mainCanvas.mode-banner {
+                width: 100%;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hamburger Menu Button -->
+    <div class="menu-btn" id="menuBtn">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <a href="index.html">Home</a>
+        <a href="yellow-matrix.html">Origins</a>
+        <a href="about.html">About</a>
+        <a href="yellowmap.html">YellowMap</a>
+        <a href="yellowgame.html">YellowGame</a>
+        <a href="studio.html" class="active-page">YellowStudio</a>
+        <a href="gallery.html">Gallery</a>
+        <a href="galleryv2.html">GalleryV2</a>
+        <a href="enter.html">Enter</a>
+        <a href="status.html" class="auth-link" id="statusLink">My Status</a>
+        <div class="secret-cat" id="secretCat">😼</div>
+    </nav>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Studio Content -->
+    <div class="header">
+        <div class="header-logo">
+            <img src="images/studiocatz.png" alt="YellowCatz Studio">
+        </div>
+        <div class="header-text">
+            <h1>Yellow<span>C</span>atz <span>Studio</span></h1>
+            <p>SNAP • SNIP • STICK</p>
+        </div>
+        <div class="header-stars">⭐✨🌟</div>
+    </div>
+
+    <div class="mode-selection">
+        <button class="mode-btn active" data-mode="pfp" onclick="selectMode('pfp')">
+            <span>👤</span>
+            PFP
+        </button>
+        <button class="mode-btn" data-mode="banner" onclick="selectMode('banner')">
+            <span>🖼️</span>
+            Banner
+        </button>
+    </div>
+
+    <div class="section" id="uploadSection">
+        <h2 class="section-title">📸 Upload Your Photo</h2>
+        <p class="section-subtitle">Click or drag & drop an image</p>
+        
+        <div class="upload-wrapper">
+            <div class="upload-zone mode-pfp" id="uploadZone" onclick="handleUploadClick(event)">
+                <div class="upload-content" id="uploadContent">
+                    <div class="upload-icon">📷</div>
+                    <div class="upload-text">Upload a Photo</div>
+                    <div class="upload-hint">Click or drag & drop</div>
+                </div>
+                <div class="canvas-container" id="canvasContainer">
+                    <canvas id="mainCanvas" class="mode-pfp"></canvas>
+                </div>
+            </div>
+        </div>
+        <input type="file" id="fileInput" accept="image/*" onchange="handleImageUpload(event)">
+
+        <div class="sticker-edit-panel" id="stickerEditPanel">
+            <h3>🎨 Edit Sticker</h3>
+            
+            <div class="slider-group">
+                <div class="slider-label">
+                    <label>↻ Rotation</label>
+                    <span id="rotationValue">0°</span>
+                </div>
+                <input type="range" class="slider" id="rotationSlider" min="0" max="360" value="0" oninput="updateRotation(this.value)">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-label">
+                    <label>⊕ Size</label>
+                    <span id="sizeValue">100%</span>
+                </div>
+                <input type="range" class="slider" id="sizeSlider" min="20" max="500" value="100" oninput="updateSize(this.value)">
+            </div>
+
+            <div class="edit-buttons">
+                <button class="edit-btn duplicate" onclick="duplicateSticker()">📋 Duplicate</button>
+                <button class="edit-btn reverse" onclick="reverseSticker()">🔄 Reverse</button>
+                <button class="edit-btn delete" onclick="deleteSticker()">🗑️</button>
+            </div>
+        </div>
+
+        <div class="status-msg" id="statusMsg"></div>
+
+        <div class="action-buttons" id="actionButtons">
+            <button class="action-btn secondary" onclick="changePhoto()">
+                📁 Change
+            </button>
+            <button class="action-btn primary" id="mainActionBtn" onclick="handleMainAction()">
+                ⬇️ Download
+            </button>
+        </div>
+    </div>
+
+    <div class="section editor-section" id="stickersSection">
+        <h2 class="section-title">⭐ Stickers</h2>
+        <p class="section-subtitle">Tap to add, drag to move</p>
+        
+        <div class="stickers-grid" id="stickersGrid"></div>
+    </div>
+
+    <div class="section editor-section" id="instructionsSection">
+        <h2 class="section-title">💡 Tips</h2>
+        <p class="section-subtitle">
+            • Tap a sticker to add it • Drag to move • Use sliders to edit • Save then Download!
+        </p>
+    </div>
+
+    <script>
+        // ============================================================
+        // HAMBURGER MENU
+        // ============================================================
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        menuBtn.addEventListener('click', () => {
+            menuBtn.classList.toggle('active');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+
+        overlay.addEventListener('click', () => {
+            menuBtn.classList.remove('active');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
+        // Secret cat
+        document.getElementById('secretCat').addEventListener('click', () => {
+            window.location.href = 'yellow.html';
+        });
+
+        // Auth check for status link
+        (async function() {
+            try {
+                const SESSION_KEY = 'yellowcatz_session';
+                const stored = localStorage.getItem(SESSION_KEY);
+                if (stored) {
+                    const session = JSON.parse(stored);
+                    if (session.data && session.data.authenticated) {
+                        document.getElementById('statusLink').classList.add('visible');
+                    }
+                }
+                const response = await fetch('/api/user', { credentials: 'include' });
+                const data = await response.json();
+                if (data.authenticated) {
+                    document.getElementById('statusLink').classList.add('visible');
+                }
+            } catch (e) {}
+        })();
+
+        // ============================================================
+        // STUDIO APP
+        // ============================================================
+        const STICKER_COUNT = 50;
+        const BANNER_WIDTH = 1500;
+        const BANNER_HEIGHT = 500;
+
+        let currentMode = 'pfp';
+        let uploadedImage = null;
+        let uploadedImageDataURL = null;
+        let placedStickers = [];
+        let selectedSticker = null;
+        let stickerIdCounter = 0;
+        let canvasWidth = 0;
+        let canvasHeight = 0;
+
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const uploadZone = document.getElementById('uploadZone');
+
+        // ============================================================
+        // MODE
+        // ============================================================
+        function selectMode(mode) {
+            currentMode = mode;
+            
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+
+            uploadZone.classList.remove('mode-pfp', 'mode-banner');
+            uploadZone.classList.add(`mode-${mode}`);
+
+            canvas.classList.remove('mode-pfp', 'mode-banner');
+            canvas.classList.add(`mode-${mode}`);
+
+            if (uploadedImage) {
+                setupCanvas();
+                redrawCanvas();
+            }
+        }
+
+        // ============================================================
+        // UPLOAD
+        // ============================================================
+        function handleUploadClick(event) {
+            if (!uploadZone.classList.contains('has-image')) {
+                document.getElementById('fileInput').click();
+            }
+        }
+
+        function changePhoto() {
+            if (placedStickers.length > 0) {
+                if (!confirm('You have stickers on your image. Change photo will remove them. Continue?')) {
+                    return;
+                }
+            }
+            document.getElementById('fileInput').click();
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                uploadedImageDataURL = e.target.result;
+                const img = new Image();
+                img.onload = () => {
+                    uploadedImage = img;
+                    placedStickers = [];
+                    selectedSticker = null;
+                    hideStickerPanel();
+                    hideStatus();
+                    updateMainButton();
+                    setupCanvas();
+                    showEditor();
+                };
+                img.src = uploadedImageDataURL;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setupCanvas() {
+            if (!uploadedImage) return;
+
+            if (currentMode === 'pfp') {
+                const size = Math.min(uploadedImage.width, uploadedImage.height);
+                canvas.width = size;
+                canvas.height = size;
+            } else {
+                canvas.width = BANNER_WIDTH;
+                canvas.height = BANNER_HEIGHT;
+            }
+
+            canvasWidth = canvas.width;
+            canvasHeight = canvas.height;
+
+            redrawCanvas();
+        }
+
+        function showEditor() {
+            document.getElementById('uploadContent').style.display = 'none';
+            document.getElementById('canvasContainer').classList.add('visible');
+            document.getElementById('actionButtons').classList.add('visible');
+            uploadZone.classList.add('has-image');
+            
+            document.querySelectorAll('.editor-section').forEach(el => {
+                el.classList.add('visible');
+            });
+
+            loadStickers();
+        }
+
+        // ============================================================
+        // DRAW
+        // ============================================================
+        function redrawCanvas() {
+            if (!uploadedImage) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const imgRatio = uploadedImage.width / uploadedImage.height;
+            const canvasRatio = canvas.width / canvas.height;
+            let drawWidth, drawHeight, offsetX, offsetY;
+
+            if (imgRatio > canvasRatio) {
+                drawHeight = canvas.height;
+                drawWidth = uploadedImage.width * (canvas.height / uploadedImage.height);
+                offsetX = (canvas.width - drawWidth) / 2;
+                offsetY = 0;
+            } else {
+                drawWidth = canvas.width;
+                drawHeight = uploadedImage.height * (canvas.width / uploadedImage.width);
+                offsetX = 0;
+                offsetY = (canvas.height - drawHeight) / 2;
+            }
+
+            ctx.drawImage(uploadedImage, offsetX, offsetY, drawWidth, drawHeight);
+
+            placedStickers.forEach(sticker => {
+                ctx.save();
+                ctx.translate(sticker.x + sticker.width / 2, sticker.y + sticker.height / 2);
+                ctx.rotate(sticker.rotation * Math.PI / 180);
+                if (sticker.reversed) ctx.scale(-1, 1);
+                ctx.drawImage(sticker.img, -sticker.width / 2, -sticker.height / 2, sticker.width, sticker.height);
+                
+                if (sticker === selectedSticker) {
+                    ctx.strokeStyle = '#E8A000';
+                    ctx.lineWidth = 4;
+                    ctx.setLineDash([10, 5]);
+                    ctx.strokeRect(-sticker.width / 2 - 5, -sticker.height / 2 - 5, sticker.width + 10, sticker.height + 10);
+                }
+                ctx.restore();
+            });
+        }
+
+        // ============================================================
+        // STICKERS
+        // ============================================================
+        function loadStickers() {
+            const grid = document.getElementById('stickersGrid');
+            grid.innerHTML = '';
+
+            for (let i = 1; i <= STICKER_COUNT; i++) {
+                const item = document.createElement('div');
+                item.className = 'sticker-item';
+                item.onclick = () => addSticker(i);
+                item.innerHTML = `<img src="images/sticker${i}.png" alt="Sticker ${i}" onerror="this.parentElement.style.display='none'">`;
+                grid.appendChild(item);
+            }
+        }
+
+        function addSticker(index) {
+            const img = new Image();
+            img.onload = () => {
+                const baseSize = Math.min(canvas.width, canvas.height) * 0.15;
+                const ratio = img.width / img.height;
+
+                const sticker = {
+                    id: stickerIdCounter++,
+                    img: img,
+                    stickerIndex: index,
+                    x: canvas.width / 2 - baseSize / 2,
+                    y: canvas.height / 2 - baseSize / 2,
+                    width: ratio > 1 ? baseSize : baseSize * ratio,
+                    height: ratio > 1 ? baseSize / ratio : baseSize,
+                    baseWidth: ratio > 1 ? baseSize : baseSize * ratio,
+                    baseHeight: ratio > 1 ? baseSize / ratio : baseSize,
+                    rotation: 0,
+                    scale: 100,
+                    reversed: false
+                };
+
+                placedStickers.push(sticker);
+                selectSticker(sticker);
+                redrawCanvas();
+            };
+            img.src = `images/sticker${index}.png`;
+        }
+
+        function selectSticker(sticker) {
+            selectedSticker = sticker;
+            showStickerPanel();
+            
+            document.getElementById('rotationSlider').value = sticker.rotation;
+            document.getElementById('rotationValue').textContent = `${Math.round(sticker.rotation)}°`;
+            document.getElementById('sizeSlider').value = sticker.scale;
+            document.getElementById('sizeValue').textContent = `${Math.round(sticker.scale)}%`;
+            
+            redrawCanvas();
+            updateMainButton();
+        }
+
+        function deselectSticker() {
+            selectedSticker = null;
+            hideStickerPanel();
+            redrawCanvas();
+            updateMainButton();
+        }
+
+        function showStickerPanel() {
+            document.getElementById('stickerEditPanel').classList.add('visible');
+        }
+
+        function hideStickerPanel() {
+            document.getElementById('stickerEditPanel').classList.remove('visible');
+        }
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('statusMsg');
+            el.textContent = msg;
+            el.className = 'status-msg visible ' + type;
+            setTimeout(() => el.classList.remove('visible'), 3000);
+        }
+
+        function hideStatus() {
+            document.getElementById('statusMsg').classList.remove('visible');
+        }
+
+        // ============================================================
+        // BOUTON PRINCIPAL — Save ou Download
+        // ============================================================
+        function updateMainButton() {
+            const btn = document.getElementById('mainActionBtn');
+            if (selectedSticker || placedStickers.length > 0) {
+                btn.innerHTML = '💾 Save';
+            } else {
+                btn.innerHTML = '⬇️ Download';
+            }
+        }
+
+        function handleMainAction() {
+            if (selectedSticker || placedStickers.length > 0) {
+                saveImage();
+            } else {
+                downloadImage();
+            }
+        }
+
+        // ============================================================
+        // Convertir une Image en data URL propre
+        // ============================================================
+        function imageToDataURL(img) {
+            const c = document.createElement('canvas');
+            c.width = img.naturalWidth || img.width;
+            c.height = img.naturalHeight || img.height;
+            c.getContext('2d').drawImage(img, 0, 0);
+            return c.toDataURL('image/png');
+        }
+
+        // ============================================================
+        // SAVE — Fusionne image + stickers via data URLs propres
+        // ============================================================
+        function saveImage() {
+            if (placedStickers.length === 0) {
+                deselectSticker();
+                return;
+            }
+
+            selectedSticker = null;
+            hideStickerPanel();
+
+            try {
+                const stickerDataURLs = placedStickers.map(s => imageToDataURL(s.img));
+
+                const stickerInfos = placedStickers.map((s, i) => ({
+                    dataURL: stickerDataURLs[i],
+                    x: s.x,
+                    y: s.y,
+                    width: s.width,
+                    height: s.height,
+                    rotation: s.rotation,
+                    reversed: s.reversed
+                }));
+
+                let loaded = 0;
+                const total = stickerInfos.length;
+                const cleanImgs = [];
+
+                stickerInfos.forEach((info, i) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        cleanImgs[i] = img;
+                        loaded++;
+                        if (loaded === total) finalizeSave(stickerInfos, cleanImgs);
+                    };
+                    img.onerror = () => {
+                        cleanImgs[i] = null;
+                        loaded++;
+                        if (loaded === total) finalizeSave(stickerInfos, cleanImgs);
+                    };
+                    img.src = info.dataURL;
+                });
+
+            } catch (e) {
+                console.error('Save error:', e);
+                showStatus('✗ Save failed — try again', 'error');
+            }
+        }
+
+        function finalizeSave(stickerInfos, cleanImgs) {
+            try {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvasWidth;
+                tempCanvas.height = canvasHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+
+                const bgImg = new Image();
+                bgImg.onload = () => {
+                    const imgRatio = bgImg.width / bgImg.height;
+                    const canvasRatio = canvasWidth / canvasHeight;
+                    let drawWidth, drawHeight, offsetX, offsetY;
+
+                    if (imgRatio > canvasRatio) {
+                        drawHeight = canvasHeight;
+                        drawWidth = bgImg.width * (canvasHeight / bgImg.height);
+                        offsetX = (canvasWidth - drawWidth) / 2;
+                        offsetY = 0;
+                    } else {
+                        drawWidth = canvasWidth;
+                        drawHeight = bgImg.height * (canvasWidth / bgImg.width);
+                        offsetX = 0;
+                        offsetY = (canvasHeight - drawHeight) / 2;
+                    }
+
+                    tempCtx.drawImage(bgImg, offsetX, offsetY, drawWidth, drawHeight);
+
+                    stickerInfos.forEach((info, i) => {
+                        const img = cleanImgs[i];
+                        if (!img) return;
+                        tempCtx.save();
+                        tempCtx.translate(info.x + info.width / 2, info.y + info.height / 2);
+                        tempCtx.rotate(info.rotation * Math.PI / 180);
+                        if (info.reversed) tempCtx.scale(-1, 1);
+                        tempCtx.drawImage(img, -info.width / 2, -info.height / 2, info.width, info.height);
+                        tempCtx.restore();
+                    });
+
+                    const mergedDataURL = tempCanvas.toDataURL('image/png');
+
+                    const newImg = new Image();
+                    newImg.onload = () => {
+                        uploadedImage = newImg;
+                        uploadedImageDataURL = mergedDataURL;
+                        placedStickers = [];
+                        selectedSticker = null;
+                        redrawCanvas();
+                        updateMainButton();
+                        showStatus('✓ Image saved! Ready to download.', 'success');
+                    };
+                    newImg.src = mergedDataURL;
+                };
+                bgImg.src = uploadedImageDataURL;
+
+            } catch (e) {
+                console.error('Finalize save error:', e);
+                showStatus('✗ Save failed', 'error');
+            }
+        }
+
+        // ============================================================
+        // DOWNLOAD
+        // ============================================================
+        function downloadImage() {
+            if (!uploadedImage) {
+                alert('Please upload an image first!');
+                return;
+            }
+
+            try {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvasWidth;
+                tempCanvas.height = canvasHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+
+                const bgImg = new Image();
+                bgImg.onload = () => {
+                    const imgRatio = bgImg.width / bgImg.height;
+                    const canvasRatio = canvasWidth / canvasHeight;
+                    let drawWidth, drawHeight, offsetX, offsetY;
+
+                    if (imgRatio > canvasRatio) {
+                        drawHeight = canvasHeight;
+                        drawWidth = bgImg.width * (canvasHeight / bgImg.height);
+                        offsetX = (canvasWidth - drawWidth) / 2;
+                        offsetY = 0;
+                    } else {
+                        drawWidth = canvasWidth;
+                        drawHeight = bgImg.height * (canvasWidth / bgImg.width);
+                        offsetX = 0;
+                        offsetY = (canvasHeight - drawHeight) / 2;
+                    }
+
+                    tempCtx.drawImage(bgImg, offsetX, offsetY, drawWidth, drawHeight);
+
+                    try {
+                        const dataURL = tempCanvas.toDataURL('image/png');
+                        const link = document.createElement('a');
+                        link.download = `yellowcatz_${currentMode}_${canvasWidth}x${canvasHeight}_${Date.now()}.png`;
+                        link.href = dataURL;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        showStatus('✓ Download started!', 'success');
+                    } catch (e) {
+                        console.error('toDataURL error:', e);
+                        showStatus('✗ Download failed', 'error');
+                    }
+                };
+                bgImg.src = uploadedImageDataURL;
+
+            } catch (e) {
+                console.error('Download error:', e);
+                showStatus('✗ Download failed — try again', 'error');
+            }
+        }
+
+        // ============================================================
+        // CONTROLS
+        // ============================================================
+        function updateRotation(value) {
+            if (!selectedSticker) return;
+            selectedSticker.rotation = parseFloat(value);
+            document.getElementById('rotationValue').textContent = `${Math.round(value)}°`;
+            redrawCanvas();
+        }
+
+        function updateSize(value) {
+            if (!selectedSticker) return;
+            const scale = parseFloat(value) / 100;
+            selectedSticker.scale = parseFloat(value);
+            
+            const centerX = selectedSticker.x + selectedSticker.width / 2;
+            const centerY = selectedSticker.y + selectedSticker.height / 2;
+            
+            selectedSticker.width = selectedSticker.baseWidth * scale;
+            selectedSticker.height = selectedSticker.baseHeight * scale;
+            
+            selectedSticker.x = centerX - selectedSticker.width / 2;
+            selectedSticker.y = centerY - selectedSticker.height / 2;
+            
+            document.getElementById('sizeValue').textContent = `${Math.round(value)}%`;
+            redrawCanvas();
+        }
+
+        function duplicateSticker() {
+            if (!selectedSticker) return;
+            
+            const newSticker = {
+                id: stickerIdCounter++,
+                img: selectedSticker.img,
+                stickerIndex: selectedSticker.stickerIndex,
+                x: selectedSticker.x + 30,
+                y: selectedSticker.y + 30,
+                width: selectedSticker.width,
+                height: selectedSticker.height,
+                baseWidth: selectedSticker.baseWidth,
+                baseHeight: selectedSticker.baseHeight,
+                rotation: selectedSticker.rotation,
+                scale: selectedSticker.scale,
+                reversed: selectedSticker.reversed
+            };
+            
+            placedStickers.push(newSticker);
+            selectSticker(newSticker);
+            redrawCanvas();
+        }
+
+        function reverseSticker() {
+            if (!selectedSticker) return;
+            selectedSticker.reversed = !selectedSticker.reversed;
+            redrawCanvas();
+        }
+
+        function deleteSticker() {
+            if (!selectedSticker) return;
+            placedStickers = placedStickers.filter(s => s !== selectedSticker);
+            deselectSticker();
+            redrawCanvas();
+        }
+
+        // ============================================================
+        // DRAG
+        // ============================================================
+        let isDragging = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        function findStickerAt(x, y) {
+            for (let i = placedStickers.length - 1; i >= 0; i--) {
+                const s = placedStickers[i];
+                if (x >= s.x && x <= s.x + s.width && y >= s.y && y <= s.y + s.height) {
+                    return s;
+                }
+            }
+            return null;
+        }
+
+        canvas.addEventListener('mousedown', handleCanvasDown);
+        canvas.addEventListener('touchstart', handleCanvasDown, { passive: false });
+        canvas.addEventListener('mousemove', handleCanvasMove);
+        canvas.addEventListener('touchmove', handleCanvasMove, { passive: false });
+        canvas.addEventListener('mouseup', handleCanvasUp);
+        canvas.addEventListener('touchend', handleCanvasUp);
+        canvas.addEventListener('mouseleave', handleCanvasUp);
+
+        function handleCanvasDown(e) {
+            e.preventDefault();
+            const pos = getPos(e);
+            const sticker = findStickerAt(pos.x, pos.y);
+
+            if (sticker) {
+                isDragging = true;
+                dragOffsetX = pos.x - sticker.x;
+                dragOffsetY = pos.y - sticker.y;
+
+                placedStickers = placedStickers.filter(s => s !== sticker);
+                placedStickers.push(sticker);
+                
+                selectSticker(sticker);
+            } else {
+                deselectSticker();
+            }
+        }
+
+        function handleCanvasMove(e) {
+            if (!isDragging || !selectedSticker) return;
+            e.preventDefault();
+            const pos = getPos(e);
+            selectedSticker.x = pos.x - dragOffsetX;
+            selectedSticker.y = pos.y - dragOffsetY;
+            redrawCanvas();
+        }
+
+        function handleCanvasUp() {
+            isDragging = false;
+        }
+
+        // ============================================================
+        // DRAG & DROP FILE
+        // ============================================================
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (!uploadZone.classList.contains('has-image')) {
+                uploadZone.style.background = '#FFE999';
+            }
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.style.background = '';
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.style.background = '';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageUpload({ target: { files: [file] } });
+            }
+        });
+    </script>
+</body>
+</html>
