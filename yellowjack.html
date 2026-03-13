@@ -304,10 +304,10 @@ async function showAuthenticatedUI() {
 
 const cached = getSession();
 if (cached && cached.authenticated) {
-    twName = cached.username || cached.name || cached.displayName || 'Player';
-    twPfp = cached.profileImage || cached.avatar_url || '';
-    twId = cached.id || '';
-    myUserId = cached.id;
+    // /api/user returns { user: { username, avatarUrl } }
+    const u = cached.user || {};
+    twName = (u.username || '').replace(/^@/, '') || 'Player';
+    twPfp = u.avatarUrl || '';
     showAuthenticatedUI();
 }
 
@@ -316,10 +316,9 @@ async function checkAuth() {
         const r = await fetch('/api/user', { credentials: 'include' });
         const d = await r.json();
         if (d.authenticated) {
-            twName = d.username || d.name || d.displayName || 'Player';
-            twPfp = d.profileImage || d.avatar_url || '';
-            twId = d.id || '';
-            myUserId = d.id;
+            const u = d.user || {};
+            twName = (u.username || '').replace(/^@/, '') || 'Player';
+            twPfp = u.avatarUrl || '';
             saveSession(d);
             showAuthenticatedUI();
         }
