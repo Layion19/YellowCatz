@@ -99,7 +99,7 @@
         .music-btn{background:transparent;border:none;color:var(--gold);font-size:12px;cursor:pointer;padding:3px;transition:transform .2s}
         .music-btn:hover{transform:scale(1.2)}
         .music-btn.play-btn{background:var(--gold);color:#000;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:10px}
-        .volume-slider{width:50px;height:3px;-webkit-appearance:none;background:#444;border-radius:2px;cursor:pointer}
+        .volume-slider{width:50px;height:3px;-webkit-appearance:none;appearance:none;background:#444;border-radius:2px;cursor:pointer}
         .volume-slider::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:10px;background:var(--gold);border-radius:50%;cursor:pointer}
         
         .chat-zone{position:fixed;top:55px;left:15px;width:220px;max-height:180px;overflow-y:auto;z-index:100;scrollbar-width:thin;scrollbar-color:var(--gold-dark) transparent}
@@ -752,7 +752,11 @@ function loadTableImg(tableId) {
 
 function resize() {
     const vw = window.innerWidth, vh = window.innerHeight;
-    cv.width = vw; cv.height = vh; W = vw; H = vh;
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = vw * dpr; cv.height = vh * dpr;
+    cv.style.width = vw + 'px'; cv.style.height = vh + 'px';
+    cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    W = vw; H = vh;
     if (!tLoaded || !tImg) { dx = 0; dy = 0; dw = W; dh = H; return; }
     const ir = tImg.width / tImg.height, cr = W / H;
     if (cr > ir) { dh = H; dw = dh * ir; dx = (W - dw) / 2; dy = 0; } 
@@ -782,6 +786,7 @@ function render() {
     
     drawSeats();
     drawDealerCards();
+    drawHandPanel();
     drawActions();
     
     // Play card sound for each new card appearing during deal animation
@@ -837,7 +842,7 @@ function drawSeats() {
             const displayChips = (isMe && myChips.length > 0 && (!seatData.chips || seatData.chips.length === 0))
                 ? myChips : (seatData.chips || []);
             if (displayChips.length > 0) {
-                const cr = Math.max(dw * 0.012, 10);
+                const cr = Math.max(dw * (isMobile ? 0.008 : 0.012), isMobile ? 7 : 10);
                 displayChips.forEach((v, ci) => {
                     const c = CC[v] || CC[5], cy = sy - ci * 3 - cr - 5;
                     cx.save();
@@ -860,8 +865,10 @@ function drawSeats() {
             
             // Cards — staggered deal animation
             if (seatData.hand && seatData.hand.length > 0) {
-                const cw = Math.max(Math.min(dw * 0.035, 40), 28), ch = cw * 1.42, g = cw * 0.15;
-                const cy = sy - ch - dw * 0.03;
+                const mobileScale = isMobile ? 0.7 : 1;
+                const cw = Math.max(Math.min(dw * 0.035 * mobileScale, 40), isMobile ? 20 : 28);
+                const ch = cw * 1.42, g = cw * 0.15;
+                const cy = sy - ch - dw * (isMobile ? 0.02 : 0.03);
                 
                 // Determine how many cards to show (stagger animation)
                 let visibleCount = seatData.hand.length;
@@ -907,48 +914,53 @@ function drawSeats() {
                     else if (v > 21) cx.fillStyle = '#e74c3c';
                     else if (v === 21) cx.fillStyle = '#2ecc71';
                     else cx.fillStyle = 'rgba(0,0,0,.7)';
-                    const badgeW = hasBJ ? 38 : 30;
-                    roundRect(cx, sx - badgeW/2, cy - 28, badgeW, 22, 11); cx.fill();
-                    cx.font = '900 ' + Math.max(dw * 0.014, 11) + 'px Poppins';
+                    const badgeW = isMobile ? (hasBJ ? 28 : 22) : (hasBJ ? 38 : 30);
+                    const badgeH = isMobile ? 16 : 22;
+                    const badgeY = cy - (isMobile ? 20 : 28);
+                    roundRect(cx, sx - badgeW/2, badgeY, badgeW, badgeH, badgeH/2); cx.fill();
+                    cx.font = '900 ' + (isMobile ? Math.max(dw * 0.012, 8) : Math.max(dw * 0.014, 11)) + 'px Poppins';
                     cx.fillStyle = hasBJ ? '#000' : '#fff';
                     cx.textAlign = 'center';
-                    cx.fillText(hasBJ ? 'BJ' : (seatData.status === 'bust' ? 'BUST' : v), sx, cy - 12);
+                    cx.fillText(hasBJ ? 'BJ' : (seatData.status === 'bust' ? 'BUST' : v), sx, badgeY + badgeH - (isMobile ? 3 : 5));
                     cx.restore();
                 }
             }
             
             // Name tag
             cx.save();
-            const fontSize = Math.max(dw * 0.012, 9);
+            const fontSize = isMobile ? Math.max(dw * 0.009, 7) : Math.max(dw * 0.012, 9);
             cx.font = '700 ' + fontSize + 'px Poppins';
             const nm = seatData.username || 'Player';
-            const tw = cx.measureText(nm).width;
-            const tW = tw + 16, tH = fontSize + 8;
-            const tX = sx - tW / 2, tY = sy + sr + 8;
+            const nmTrunc = isMobile && nm.length > 8 ? nm.slice(0, 7) + '…' : nm;
+            const tw = cx.measureText(nmTrunc).width;
+            const tW = tw + (isMobile ? 10 : 16), tH = fontSize + (isMobile ? 5 : 8);
+            const tX = sx - tW / 2, tY = sy + sr + (isMobile ? 4 : 8);
             
             cx.fillStyle = isMe ? 'rgba(232,160,0,0.9)' : 'rgba(0,0,0,0.85)';
             if (isActive) { cx.shadowColor = isMe ? '#2ecc71' : G; cx.shadowBlur = 15; }
-            roundRect(cx, tX, tY, tW, tH, 5); cx.fill();
+            roundRect(cx, tX, tY, tW, tH, 4); cx.fill();
             cx.shadowBlur = 0;
             cx.fillStyle = isMe ? '#000' : G;
             cx.textAlign = 'center';
-            cx.fillText(nm, sx, tY + tH - 4);
+            cx.fillText(nmTrunc, sx, tY + tH - (isMobile ? 2 : 4));
             
-            // PFP
-            const pfpR = Math.max(sr * 0.6, 10), pfpY = tY + tH + pfpR + 4;
-            cx.beginPath(); cx.arc(sx, pfpY, pfpR, 0, Math.PI * 2);
-            cx.fillStyle = 'rgba(0,0,0,.6)'; cx.fill();
-            cx.strokeStyle = isMe ? G : '#555'; cx.lineWidth = 2; cx.stroke();
-            
-            const pfpImg = pfpCache[seatData.avatar];
-            if (pfpImg && pfpImg.complete) {
-                cx.save();
-                cx.beginPath(); cx.arc(sx, pfpY, pfpR - 2, 0, Math.PI * 2); cx.clip();
-                cx.drawImage(pfpImg, sx - pfpR + 2, pfpY - pfpR + 2, (pfpR - 2) * 2, (pfpR - 2) * 2);
-                cx.restore();
-            } else {
-                cx.font = pfpR + 'px sans-serif'; cx.fillStyle = '#666'; cx.textAlign = 'center';
-                cx.fillText('👤', sx, pfpY + pfpR * 0.35);
+            // PFP — hide on mobile to save space
+            if (!isMobile) {
+                const pfpR = Math.max(sr * 0.6, 10), pfpY = tY + tH + pfpR + 4;
+                cx.beginPath(); cx.arc(sx, pfpY, pfpR, 0, Math.PI * 2);
+                cx.fillStyle = 'rgba(0,0,0,.6)'; cx.fill();
+                cx.strokeStyle = isMe ? G : '#555'; cx.lineWidth = 2; cx.stroke();
+                
+                const pfpImg = pfpCache[seatData.avatar];
+                if (pfpImg && pfpImg.complete) {
+                    cx.save();
+                    cx.beginPath(); cx.arc(sx, pfpY, pfpR - 2, 0, Math.PI * 2); cx.clip();
+                    cx.drawImage(pfpImg, sx - pfpR + 2, pfpY - pfpR + 2, (pfpR - 2) * 2, (pfpR - 2) * 2);
+                    cx.restore();
+                } else {
+                    cx.font = pfpR + 'px sans-serif'; cx.fillStyle = '#666'; cx.textAlign = 'center';
+                    cx.fillText('👤', sx, pfpY + pfpR * 0.35);
+                }
             }
             
             if (isActive) {
@@ -965,7 +977,9 @@ function drawDealerCards() {
     if (!tableState || !tableState.dealerHand || tableState.dealerHand.length === 0) return;
     
     const dcx = dx + DPO.x * dw, dcy = dy + DPO.y * dh;
-    const cw = Math.max(Math.min(dw * 0.045, 50), 35), ch = cw * 1.42, g = cw * 0.2;
+    const mobileScale = isMobile ? 0.75 : 1;
+    const cw = Math.max(Math.min(dw * 0.045 * mobileScale, 50), isMobile ? 26 : 35);
+    const ch = cw * 1.42, g = cw * 0.2;
     const hand = tableState.dealerHand;
     
     // Stagger: dealer cards appear after all player cards
@@ -1017,6 +1031,75 @@ function drawDealerCards() {
             cx.restore();
         }
     }
+}
+
+// ============================================================
+// HAND PANEL — top-right, shows my cards + dealer cards
+// ============================================================
+function drawHandPanel() {
+    if (!tableState || !tableState.dealerHand || tableState.dealerHand.length === 0) return;
+    
+    const mySeatData = mySeat !== null ? tableState.seats.find(s => s.seatIndex === mySeat) : null;
+    if (!mySeatData || !mySeatData.hand || mySeatData.hand.length === 0) return;
+    
+    const panelX = W - (isMobile ? 140 : 180);
+    const panelY = 50;
+    const cw = isMobile ? 24 : 32, ch = cw * 1.42, g = 4;
+    const panelW = isMobile ? 130 : 170;
+    const labelFs = isMobile ? 8 : 10;
+    const valueFs = isMobile ? 12 : 15;
+    
+    // Panel background
+    cx.save();
+    cx.fillStyle = 'rgba(0,0,0,0.75)';
+    roundRect(cx, panelX - 10, panelY - 5, panelW, ch * 2 + 65, 10);
+    cx.fill();
+    
+    // --- DEALER ---
+    cx.font = '700 ' + labelFs + 'px Poppins';
+    cx.fillStyle = '#888';
+    cx.textAlign = 'left';
+    cx.fillText('DEALER', panelX, panelY + 8);
+    
+    // Dealer value
+    const dealerVisible = tableState.dealerHand.filter(c => c.rank !== '?');
+    const dv = handValue(dealerVisible);
+    const showFull = tableState.phase === 'done' || tableState.phase === 'dealer';
+    cx.font = '900 ' + valueFs + 'px Poppins';
+    cx.fillStyle = G;
+    cx.textAlign = 'right';
+    cx.fillText(showFull ? dv : dv + '+?', panelX + panelW - 15, panelY + 10);
+    
+    // Dealer cards
+    const dCardY = panelY + 15;
+    tableState.dealerHand.forEach((c, i) => {
+        const x = panelX + i * (cw + g);
+        if (c.rank === '?') cardBack(cx, x, dCardY, cw, ch);
+        else cardFace(cx, c, x, dCardY, cw, ch);
+    });
+    
+    // --- YOU ---
+    const youY = dCardY + ch + 10;
+    cx.font = '700 ' + labelFs + 'px Poppins';
+    cx.fillStyle = G;
+    cx.textAlign = 'left';
+    cx.fillText('YOU', panelX, youY + 8);
+    
+    // My value
+    const mv = handValue(mySeatData.hand);
+    const myBJ = mySeatData.hand.length === 2 && mv === 21;
+    cx.font = '900 ' + valueFs + 'px Poppins';
+    cx.fillStyle = mv > 21 ? '#e74c3c' : myBJ ? GOLD_BJ : '#fff';
+    cx.textAlign = 'right';
+    cx.fillText(myBJ ? 'BJ' : mv, panelX + panelW - 15, youY + 10);
+    
+    // My cards
+    const mCardY = youY + 15;
+    mySeatData.hand.forEach((c, i) => {
+        cardFace(cx, c, panelX + i * (cw + g), mCardY, cw, ch);
+    });
+    
+    cx.restore();
 }
 
 function drawActions() {
