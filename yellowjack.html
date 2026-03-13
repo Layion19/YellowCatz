@@ -289,9 +289,8 @@ function saveSession(userData) {
     localStorage.setItem(SK, JSON.stringify({ data: userData, timestamp: Date.now() }));
 }
 
-document.getElementById('loginCat').addEventListener('click', () => {
-    window.location.href = '/api/auth/twitter';
-});
+document.getElementById('xBtn').onclick = () => location.href = '/api/auth?action=login';  // ← correct
+
 
 async function showAuthenticatedUI() {
     isAuth = true;
