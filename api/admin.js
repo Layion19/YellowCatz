@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
   // ============================================================
   // MANUAL BODY PARSING (REQUIRED)
-// ============================================================
+  // ============================================================
   let rawBody = '';
   await new Promise((resolve) => {
     req.on('data', chunk => {
@@ -234,6 +234,131 @@ export default async function handler(req, res) {
       `);
 
       return res.status(200).json({ users: users.rows });
+    }
+
+    // ============================================================
+    // YELLOWJACK STATS
+    // ============================================================
+    if (action === 'yellowjackStats') {
+      const totalPlayers = await db.execute('SELECT COUNT(*) as count FROM yellowjack_players');
+      const blockedPlayers = await db.execute('SELECT COUNT(*) as count FROM yellowjack_players WHERE is_blocked = 1');
+      const totals = await db.execute('SELECT SUM(total_won) as won, SUM(total_lost) as lost, SUM(games_played) as games FROM yellowjack_players');
+      
+      const topPlayers = await db.execute(`
+        SELECT yj.*, u.x_username, u.avatar_url 
+        FROM yellowjack_players yj
+        INNER JOIN users u ON yj.user_id = u.id
+        WHERE yj.is_blocked = 0
+        ORDER BY yj.points DESC
+        LIMIT 20
+      `);
+      
+      const recentPlayers = await db.execute(`
+        SELECT yj.*, u.x_username, u.avatar_url 
+        FROM yellowjack_players yj
+        INNER JOIN users u ON yj.user_id = u.id
+        ORDER BY yj.last_played DESC
+        LIMIT 20
+      `);
+      
+      const blockedList = await db.execute(`
+        SELECT yj.*, u.x_username, u.avatar_url 
+        FROM yellowjack_players yj
+        INNER JOIN users u ON yj.user_id = u.id
+        WHERE yj.is_blocked = 1
+      `);
+
+      return res.status(200).json({
+        totalPlayers: totalPlayers.rows[0]?.count || 0,
+        blockedPlayers: blockedPlayers.rows[0]?.count || 0,
+        totalWon: totals.rows[0]?.won || 0,
+        totalLost: totals.rows[0]?.lost || 0,
+        totalGames: totals.rows[0]?.games || 0,
+        topPlayers: topPlayers.rows,
+        recentPlayers: recentPlayers.rows,
+        blockedList: blockedList.rows
+      });
+    }
+
+    // ============================================================
+    // YELLOWJACK SEARCH PLAYER
+    // ============================================================
+    if (action === 'yellowjackSearchPlayer') {
+      const clean = (body.username || '').replace(/^@/, '');
+      
+      const players = await db.execute({
+        sql: `
+          SELECT yj.*, u.x_username, u.avatar_url 
+          FROM yellowjack_players yj
+          INNER JOIN users u ON yj.user_id = u.id
+          WHERE u.x_username LIKE ?
+          LIMIT 20
+        `,
+        args: [`%${clean}%`]
+      });
+
+      return res.status(200).json({ players: players.rows });
+    }
+
+    // ============================================================
+    // YELLOWJACK PLAYER DETAILS
+    // ============================================================
+    if (action === 'yellowjackPlayerDetails') {
+      const { userId } = body;
+      
+      const player = await db.execute({
+        sql: `
+          SELECT yj.*, u.x_username, u.avatar_url 
+          FROM yellowjack_players yj
+          INNER JOIN users u ON yj.user_id = u.id
+          WHERE yj.user_id = ?
+        `,
+        args: [userId]
+      });
+
+      return res.status(200).json({ player: player.rows[0] });
+    }
+
+    // ============================================================
+    // YELLOWJACK SET POINTS
+    // ============================================================
+    if (action === 'yellowjackSetPoints') {
+      const { userId, points } = body;
+      
+      await db.execute({
+        sql: 'UPDATE yellowjack_players SET points = ? WHERE user_id = ?',
+        args: [points, userId]
+      });
+
+      return res.status(200).json({ success: true, message: `Points set to ${points}` });
+    }
+
+    // ============================================================
+    // YELLOWJACK BLOCK PLAYER
+    // ============================================================
+    if (action === 'yellowjackBlockPlayer') {
+      const { userId } = body;
+      
+      await db.execute({
+        sql: 'UPDATE yellowjack_players SET is_blocked = 1 WHERE user_id = ?',
+        args: [userId]
+      });
+
+      return res.status(200).json({ success: true, message: 'Player blocked from YellowJack' });
+    }
+
+    // ============================================================
+    // YELLOWJACK UNBLOCK PLAYER
+    // ============================================================
+    if (action === 'yellowjackUnblockPlayer') {
+      const { userId } = body;
+      
+      await db.execute({
+        sql: 'UPDATE yellowjack_players SET is_blocked = 0 WHERE user_id = ?',
+        args: [userId]
+      });
+
+      return res.status(200).json({ success: true, message: 'Player unblocked' });
     }
 
     return res.status(400).json({ error: 'Invalid action' });

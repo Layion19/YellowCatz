@@ -71,6 +71,44 @@
       margin-bottom: 30px;
     }
 
+    /* TABS */
+    .main-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #333;
+      padding-bottom: 10px;
+    }
+
+    .main-tab {
+      padding: 12px 25px;
+      background: #2a2a2a;
+      border: none;
+      border-radius: 8px 8px 0 0;
+      color: #888;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .main-tab:hover {
+      background: #3a3a3a;
+      color: #fff;
+    }
+
+    .main-tab.active {
+      background: #E8A000;
+      color: #1a1a1a;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
     /* STATS CARDS */
     .stats-grid {
       display: grid;
@@ -101,6 +139,10 @@
 
     .stat-card.banned .number {
       color: #ff4444;
+    }
+
+    .stat-card.green .number {
+      color: #2ecc71;
     }
 
     /* SECTIONS */
@@ -382,6 +424,23 @@
       font-size: 14px;
     }
 
+    /* INPUT FIELD */
+    .input-field {
+      width: 100%;
+      padding: 12px;
+      background: #3a3a3a;
+      border: 1px solid #555;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .input-field:focus {
+      border-color: #E8A000;
+      outline: none;
+    }
+
     /* LOGOUT */
     .logout-btn {
       position: fixed;
@@ -409,6 +468,66 @@
       color: #00c853;
       margin-top: 10px;
     }
+
+    /* YELLOWJACK PLAYER CARD */
+    .player-card {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 15px;
+      border-bottom: 1px solid #3a3a3a;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .player-card:hover {
+      background: #3a3a3a;
+    }
+
+    .player-card img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+    }
+
+    .player-card .info {
+      flex: 1;
+    }
+
+    .player-card .username {
+      font-weight: bold;
+      color: #E8A000;
+      font-size: 16px;
+    }
+
+    .player-card .stats {
+      font-size: 12px;
+      color: #888;
+      display: flex;
+      gap: 15px;
+      margin-top: 4px;
+    }
+
+    .player-card .stats span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .player-card .points {
+      font-weight: bold;
+      font-size: 18px;
+      color: #2ecc71;
+    }
+
+    .player-card.blocked {
+      opacity: 0.5;
+      background: rgba(255, 68, 68, 0.1);
+    }
+
+    .player-card.blocked .username {
+      color: #ff4444;
+    }
   </style>
 </head>
 <body>
@@ -427,107 +546,162 @@
   
   <h1>🐱 YELLOW ADMIN DASHBOARD</h1>
 
-  <!-- STATS CARDS -->
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="number" id="totalUsers">-</div>
-      <div class="label">Total Users</div>
+  <!-- MAIN TABS -->
+  <div class="main-tabs">
+    <button class="main-tab active" onclick="switchMainTab('badges')">🏅 Badges & Users</button>
+    <button class="main-tab" onclick="switchMainTab('yellowjack')">🃏 YellowJack</button>
+  </div>
+
+  <!-- BADGES TAB -->
+  <div class="tab-content active" id="tab-badges">
+    <!-- STATS CARDS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="number" id="totalUsers">-</div>
+        <div class="label">Total Users</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="ogBadges">-</div>
+        <div class="label">OG Badges</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="totalBadges">-</div>
+        <div class="label">Badges Given</div>
+      </div>
+      <div class="stat-card banned">
+        <div class="number" id="bannedCount">-</div>
+        <div class="label">Banned</div>
+      </div>
     </div>
-    <div class="stat-card">
-      <div class="number" id="ogBadges">-</div>
-      <div class="label">OG Badges</div>
+
+    <!-- SEARCH USER -->
+    <div class="section">
+      <h2>🔍 Search User</h2>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Enter username (e.g. Yellowcatz_)">
+        <button onclick="searchUser()">Search</button>
+      </div>
+      <div class="user-list" id="searchResults"></div>
     </div>
-    <div class="stat-card">
-      <div class="number" id="totalBadges">-</div>
-      <div class="label">Badges Given</div>
+
+    <!-- BADGE STATS -->
+    <div class="section">
+      <h2>📊 Badges Distribution</h2>
+      <div id="badgeStats"></div>
     </div>
-    <div class="stat-card banned">
-      <div class="number" id="bannedCount">-</div>
-      <div class="label">Banned</div>
+
+    <!-- USERS BY BADGE -->
+    <div class="section">
+      <h2>👥 Users by Badge</h2>
+      <div class="filter-row">
+        <select id="badgeSelect" onchange="loadUsersByBadge()">
+          <option value="og">OG</option>
+          <option value="badge_2">Badge 2 - Supporter</option>
+          <option value="badge_3">Badge 3 - Yellow Army</option>
+          <option value="badge_4">Badge 4 - Reach the Moon</option>
+          <option value="badge_5">Badge 5 - X Hunter</option>
+          <option value="badge_6">Badge 6 - M Hunter</option>
+          <option value="badge_7">Badge 7 - Doorkeeper</option>
+          <option value="badge_8">Badge 8 - Ambassador</option>
+          <option value="badge_9">Badge 9 - ???</option>
+          <option value="badge_10">Badge 10 - Legend</option>
+        </select>
+      </div>
+      <div class="user-list" id="usersByBadge"></div>
+    </div>
+
+    <!-- USERS BY BADGE COUNT + EXPORT -->
+    <div class="section">
+      <h2>🎯 Users by Badge Count</h2>
+      <div class="filter-row">
+        <select id="badgeCountMode">
+          <option value="exact">Exactly</option>
+          <option value="min">At least</option>
+        </select>
+        <select id="badgeCountValue">
+          <option value="1">1 badge</option>
+          <option value="3">3 badges</option>
+          <option value="4">4 badges</option>
+          <option value="6">6 badges</option>
+          <option value="8">8 badges</option>
+          <option value="10">10 badges</option>
+        </select>
+        <button class="btn btn-warning" onclick="loadUsersByBadgeCount()">Search</button>
+        <button class="btn btn-success" onclick="exportUsersByBadgeCountCSV()">Export CSV</button>
+      </div>
+      <div class="user-list" id="usersByBadgeCount"></div>
+    </div>
+
+    <!-- BANNED USERS -->
+    <div class="section">
+      <h2>🚫 Banned Users</h2>
+      <div class="user-list" id="bannedUsers"></div>
+    </div>
+
+    <!-- RECENT USERS -->
+    <div class="section">
+      <h2>🕐 Recent Users</h2>
+      <div class="user-list" id="recentUsers"></div>
     </div>
   </div>
 
-  <!-- SEARCH USER -->
-  <div class="section">
-    <h2>🔍 Search User</h2>
-    <div class="search-box">
-      <input type="text" id="searchInput" placeholder="Enter username (e.g. Yellowcatz_)">
-      <button onclick="searchUser()">Search</button>
+  <!-- YELLOWJACK TAB -->
+  <div class="tab-content" id="tab-yellowjack">
+    <!-- YELLOWJACK STATS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="number" id="yjTotalPlayers">-</div>
+        <div class="label">Total Players</div>
+      </div>
+      <div class="stat-card green">
+        <div class="number" id="yjTotalWon">-</div>
+        <div class="label">Total Won</div>
+      </div>
+      <div class="stat-card banned">
+        <div class="number" id="yjTotalLost">-</div>
+        <div class="label">Total Lost</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="yjTotalGames">-</div>
+        <div class="label">Games Played</div>
+      </div>
+      <div class="stat-card banned">
+        <div class="number" id="yjBlockedPlayers">-</div>
+        <div class="label">Blocked</div>
+      </div>
     </div>
-    <div class="user-list" id="searchResults"></div>
-  </div>
 
-  <!-- BADGE STATS -->
-  <div class="section">
-    <h2>📊 Badges Distribution</h2>
-    <div id="badgeStats"></div>
-  </div>
-
-  <!-- USERS BY BADGE -->
-  <div class="section">
-    <h2>👥 Users by Badge</h2>
-    <div class="filter-row">
-      <select id="badgeSelect" onchange="loadUsersByBadge()">
-  <option value="og">OG</option>
-  <option value="badge_2">Badge 2 - Supporter</option>
-  <option value="badge_3">Badge 3 - Yellow Army</option>
-  <option value="badge_4">Badge 4 - Reach the Moon</option>
-  <option value="badge_5">Badge 5 - X Hunter</option>
-  <option value="badge_6">Badge 6 - M Hunter</option>
-  <option value="badge_7">Badge 7 - Doorkeeper</option>
-  <option value="badge_8">Badge 8 - Ambassador</option>
-  <option value="badge_9">Badge 9 - ???</option>
-  <option value="badge_10">Badge 10 - Legend</option>
-</select>
+    <!-- SEARCH PLAYER -->
+    <div class="section">
+      <h2>🔍 Search Player</h2>
+      <div class="search-box">
+        <input type="text" id="yjSearchInput" placeholder="Enter username">
+        <button onclick="searchYJPlayer()">Search</button>
+      </div>
+      <div class="user-list" id="yjSearchResults"></div>
     </div>
-    <div class="user-list" id="usersByBadge"></div>
+
+    <!-- TOP PLAYERS -->
+    <div class="section">
+      <h2>🏆 Top Players (by Points)</h2>
+      <div class="user-list" id="yjTopPlayers"></div>
+    </div>
+
+    <!-- RECENT PLAYERS -->
+    <div class="section">
+      <h2>🕐 Recently Active</h2>
+      <div class="user-list" id="yjRecentPlayers"></div>
+    </div>
+
+    <!-- BLOCKED PLAYERS -->
+    <div class="section">
+      <h2>🚫 Blocked Players</h2>
+      <div class="user-list" id="yjBlockedPlayers"></div>
+    </div>
   </div>
-
-<!-- USERS BY BADGE COUNT + EXPORT -->
-<div class="section">
-  <h2>🎯 Users by Badge Count</h2>
-
-  <div class="filter-row">
-    <select id="badgeCountMode">
-      <option value="exact">Exactly</option>
-      <option value="min">At least</option>
-    </select>
-
-    <select id="badgeCountValue">
-      <option value="1">1 badge</option>
-      <option value="3">3 badges</option>
-      <option value="4">4 badges</option>
-      <option value="6">6 badges</option>
-      <option value="8">8 badges</option>
-      <option value="10">10 badges</option>
-    </select>
-
-    <button class="btn btn-warning" onclick="loadUsersByBadgeCount()">
-      Search
-    </button>
-
-    <button class="btn btn-success" onclick="exportUsersByBadgeCountCSV()">
-      Export CSV
-    </button>
-  </div>
-
-  <div class="user-list" id="usersByBadgeCount"></div>
 </div>
 
-  <!-- BANNED USERS -->
-  <div class="section">
-    <h2>🚫 Banned Users</h2>
-    <div class="user-list" id="bannedUsers"></div>
-  </div>
-
-  <!-- RECENT USERS -->
-  <div class="section">
-    <h2>🕐 Recent Users</h2>
-    <div class="user-list" id="recentUsers"></div>
-  </div>
-</div>
-
-<!-- USER MODAL -->
+<!-- USER MODAL (Badges) -->
 <div class="modal" id="userModal">
   <div class="modal-content">
     <div class="modal-header">
@@ -535,14 +709,10 @@
       <button class="close-btn" onclick="closeModal()">&times;</button>
     </div>
     
-    <div class="user-detail" id="modalUserDetail">
-      <!-- Filled by JS -->
-    </div>
+    <div class="user-detail" id="modalUserDetail"></div>
 
     <h4 style="color:#E8A000; margin-bottom:10px;">Badges (click to toggle)</h4>
-    <div class="badges-manage" id="modalBadges">
-      <!-- Filled by JS -->
-    </div>
+    <div class="badges-manage" id="modalBadges"></div>
 
     <div class="action-buttons">
       <button class="btn btn-danger" id="banBtn" onclick="toggleBan()">Ban User</button>
@@ -552,10 +722,81 @@
   </div>
 </div>
 
+<!-- YELLOWJACK PLAYER MODAL -->
+<div class="modal" id="yjPlayerModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>🃏 YellowJack Player</h3>
+      <button class="close-btn" onclick="closeYJModal()">&times;</button>
+    </div>
+    
+    <div class="user-detail" id="yjModalUserDetail"></div>
+
+    <div style="background:#3a3a3a;padding:15px;border-radius:8px;margin-bottom:20px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:center;">
+        <div>
+          <div style="color:#888;font-size:12px;">Points</div>
+          <div style="font-size:24px;font-weight:bold;color:#2ecc71;" id="yjModalPoints">0</div>
+        </div>
+        <div>
+          <div style="color:#888;font-size:12px;">Games Played</div>
+          <div style="font-size:24px;font-weight:bold;color:#E8A000;" id="yjModalGames">0</div>
+        </div>
+        <div>
+          <div style="color:#888;font-size:12px;">Total Won</div>
+          <div style="font-size:18px;font-weight:bold;color:#2ecc71;" id="yjModalWon">0</div>
+        </div>
+        <div>
+          <div style="color:#888;font-size:12px;">Total Lost</div>
+          <div style="font-size:18px;font-weight:bold;color:#ff4444;" id="yjModalLost">0</div>
+        </div>
+      </div>
+    </div>
+
+    <h4 style="color:#E8A000; margin-bottom:10px;">Set Points</h4>
+    <div style="display:flex;gap:10px;margin-bottom:15px;">
+      <input type="number" class="input-field" id="yjNewPoints" placeholder="New points amount" style="margin:0;flex:1;">
+      <button class="btn btn-warning" onclick="setYJPoints()">Set</button>
+    </div>
+
+    <h4 style="color:#E8A000; margin-bottom:10px;">Quick Actions</h4>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px;">
+      <button class="btn btn-success" onclick="addYJPoints(1000)">+1000</button>
+      <button class="btn btn-success" onclick="addYJPoints(5000)">+5000</button>
+      <button class="btn btn-success" onclick="addYJPoints(10000)">+10000</button>
+      <button class="btn btn-warning" onclick="resetYJPoints()">Reset to 10000</button>
+    </div>
+
+    <div class="action-buttons">
+      <button class="btn btn-danger" id="yjBlockBtn" onclick="toggleYJBlock()">Block Player</button>
+    </div>
+
+    <p id="yjModalMessage"></p>
+  </div>
+</div>
+
 <script>
 let adminPassword = '';
 let currentUserId = null;
 let currentUserBanned = false;
+let currentYJUserId = null;
+let currentYJBlocked = false;
+let currentYJPoints = 0;
+
+// ============================================================
+// MAIN TABS
+// ============================================================
+function switchMainTab(tab) {
+  document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  
+  document.querySelector(`[onclick="switchMainTab('${tab}')"]`).classList.add('active');
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  
+  if (tab === 'yellowjack') {
+    loadYellowJackStats();
+  }
+}
 
 // ============================================================
 // AUTH
@@ -613,7 +854,6 @@ async function loadDashboard() {
   document.getElementById('totalUsers').textContent = data.totalUsers || 0;
   document.getElementById('bannedCount').textContent = data.bannedUsers || 0;
   
-  // Badge stats
   let ogCount = 0;
   let totalBadges = 0;
   let badgeHTML = '<div style="display:flex;flex-wrap:wrap;gap:15px;">';
@@ -635,10 +875,8 @@ async function loadDashboard() {
   document.getElementById('totalBadges').textContent = totalBadges;
   document.getElementById('badgeStats').innerHTML = badgeHTML;
   
-  // Recent users
   renderUserList('recentUsers', data.recentUsers || []);
   
-  // Load other sections
   loadUsersByBadge();
   loadBannedUsers();
 }
@@ -712,7 +950,6 @@ async function openUserModal(userId) {
 
   currentUserBanned = data.user.is_banned === 1;
   
-  // User detail
   document.getElementById('modalUserDetail').innerHTML = `
     <img src="${data.user.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'}">
     <div class="username">@${data.user.x_username}</div>
@@ -720,7 +957,6 @@ async function openUserModal(userId) {
     ${currentUserBanned ? '<div style="color:#ff4444;margin-top:10px;">⛔ BANNED</div>' : ''}
   `;
 
-  // Badges
   const userBadgeIds = (data.userBadges || []).map(b => b.badge_id);
   let badgesHTML = '';
   
@@ -735,7 +971,6 @@ async function openUserModal(userId) {
   });
   document.getElementById('modalBadges').innerHTML = badgesHTML;
 
-  // Ban button
   const banBtn = document.getElementById('banBtn');
   if (currentUserBanned) {
     banBtn.textContent = 'Unban User';
@@ -765,9 +1000,7 @@ async function toggleBadge(badgeId, currentlyUnlocked) {
 
   if (data.success) {
     document.getElementById('modalMessage').innerHTML = `<span class="success">${data.message}</span>`;
-    // Refresh modal
     openUserModal(currentUserId);
-    // Refresh dashboard
     loadDashboard();
   } else {
     document.getElementById('modalMessage').innerHTML = `<span class="error">${data.error || 'Error'}</span>`;
@@ -791,7 +1024,6 @@ async function toggleBan() {
 
   if (data.success) {
     document.getElementById('modalMessage').innerHTML = `<span class="success">${data.message}</span>`;
-    // Refresh
     openUserModal(currentUserId);
     loadDashboard();
     loadBannedUsers();
@@ -800,36 +1032,16 @@ async function toggleBan() {
   }
 }
 
-// Enter key to login
-document.getElementById('passwordInput').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') login();
-});
-
-// Enter key to search
-document.getElementById('searchInput').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') searchUser();
-});
-
-// Close modal on outside click
-document.getElementById('userModal').addEventListener('click', (e) => {
-  if (e.target.id === 'userModal') closeModal();
-});
-
 // ============================================================
 // USERS BY BADGE COUNT + CSV EXPORT
 // ============================================================
-
 let usersByBadgeCountCache = [];
 
 async function loadUsersByBadgeCount() {
   const mode = document.getElementById('badgeCountMode').value;
   const value = parseInt(document.getElementById('badgeCountValue').value, 10);
 
-  const data = await apiCall('usersWithAllBadges', {
-    minBadges: value,
-    mode
-  });
-
+  const data = await apiCall('usersWithAllBadges', { minBadges: value, mode });
   usersByBadgeCountCache = data.users || [];
   renderUserList('usersByBadgeCount', usersByBadgeCountCache);
 }
@@ -841,19 +1053,12 @@ function exportUsersByBadgeCountCSV() {
   }
 
   let csv = 'id,username,total_badges,is_banned\n';
-
   usersByBadgeCountCache.forEach(u => {
-    csv += [
-      u.id,
-      u.x_username,
-      u.total_badges ?? '',
-      u.is_banned ? 1 : 0
-    ].join(',') + '\n';
+    csv += [u.id, u.x_username, u.total_badges ?? '', u.is_banned ? 1 : 0].join(',') + '\n';
   });
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
-
   const a = document.createElement('a');
   a.href = url;
   a.download = `users_badge_count_${Date.now()}.csv`;
@@ -862,6 +1067,174 @@ function exportUsersByBadgeCountCSV() {
   document.body.removeChild(a);
 }
 
+// ============================================================
+// YELLOWJACK FUNCTIONS
+// ============================================================
+async function loadYellowJackStats() {
+  const data = await apiCall('yellowjackStats');
+  
+  document.getElementById('yjTotalPlayers').textContent = data.totalPlayers || 0;
+  document.getElementById('yjTotalWon').textContent = data.totalWon || 0;
+  document.getElementById('yjTotalLost').textContent = data.totalLost || 0;
+  document.getElementById('yjTotalGames').textContent = data.totalGames || 0;
+  document.getElementById('yjBlockedPlayers').textContent = data.blockedPlayers || 0;
+  
+  renderYJPlayerList('yjTopPlayers', data.topPlayers || []);
+  renderYJPlayerList('yjRecentPlayers', data.recentPlayers || []);
+  renderYJPlayerList('yjBlockedPlayers', data.blockedList || []);
+}
+
+function renderYJPlayerList(containerId, players) {
+  const container = document.getElementById(containerId);
+  
+  if (!players || players.length === 0) {
+    container.innerHTML = '<p style="color:#666;padding:10px;">No players found</p>';
+    return;
+  }
+
+  let html = '';
+  players.forEach(p => {
+    const blockedClass = p.is_blocked ? 'blocked' : '';
+    html += `
+      <div class="player-card ${blockedClass}" onclick="openYJPlayerModal(${p.user_id})">
+        <img src="${p.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'}">
+        <div class="info">
+          <div class="username">@${p.x_username}</div>
+          <div class="stats">
+            <span>🎮 ${p.games_played} games</span>
+            <span>💰 Won: ${p.total_won}</span>
+            <span>📉 Lost: ${p.total_lost}</span>
+          </div>
+        </div>
+        <div class="points">🪙 ${p.points}</div>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
+}
+
+async function searchYJPlayer() {
+  const username = document.getElementById('yjSearchInput').value.trim();
+  if (!username) return;
+
+  const data = await apiCall('yellowjackSearchPlayer', { username });
+  renderYJPlayerList('yjSearchResults', data.players || []);
+}
+
+async function openYJPlayerModal(userId) {
+  currentYJUserId = userId;
+  const data = await apiCall('yellowjackPlayerDetails', { userId });
+  
+  if (!data.player) {
+    alert('Player not found');
+    return;
+  }
+
+  const p = data.player;
+  currentYJBlocked = p.is_blocked === 1;
+  currentYJPoints = p.points;
+  
+  document.getElementById('yjModalUserDetail').innerHTML = `
+    <img src="${p.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'}">
+    <div class="username">@${p.x_username}</div>
+    <div class="user-id">User ID: ${p.user_id} • Last played: ${p.last_played ? new Date(p.last_played).toLocaleString() : 'Never'}</div>
+    ${currentYJBlocked ? '<div style="color:#ff4444;margin-top:10px;">⛔ BLOCKED FROM YELLOWJACK</div>' : ''}
+  `;
+
+  document.getElementById('yjModalPoints').textContent = p.points;
+  document.getElementById('yjModalGames').textContent = p.games_played;
+  document.getElementById('yjModalWon').textContent = p.total_won;
+  document.getElementById('yjModalLost').textContent = p.total_lost;
+  document.getElementById('yjNewPoints').value = p.points;
+
+  const blockBtn = document.getElementById('yjBlockBtn');
+  if (currentYJBlocked) {
+    blockBtn.textContent = 'Unblock Player';
+    blockBtn.className = 'btn btn-success';
+  } else {
+    blockBtn.textContent = 'Block Player';
+    blockBtn.className = 'btn btn-danger';
+  }
+
+  document.getElementById('yjModalMessage').textContent = '';
+  document.getElementById('yjPlayerModal').classList.add('open');
+}
+
+function closeYJModal() {
+  document.getElementById('yjPlayerModal').classList.remove('open');
+  currentYJUserId = null;
+}
+
+async function setYJPoints() {
+  if (!currentYJUserId) return;
+  const newPoints = parseInt(document.getElementById('yjNewPoints').value, 10);
+  if (isNaN(newPoints) || newPoints < 0) {
+    document.getElementById('yjModalMessage').innerHTML = '<span class="error">Invalid points value</span>';
+    return;
+  }
+
+  const data = await apiCall('yellowjackSetPoints', { userId: currentYJUserId, points: newPoints });
+  if (data.success) {
+    document.getElementById('yjModalMessage').innerHTML = '<span class="success">Points updated!</span>';
+    openYJPlayerModal(currentYJUserId);
+    loadYellowJackStats();
+  } else {
+    document.getElementById('yjModalMessage').innerHTML = `<span class="error">${data.error || 'Error'}</span>`;
+  }
+}
+
+async function addYJPoints(amount) {
+  if (!currentYJUserId) return;
+  const newPoints = currentYJPoints + amount;
+  document.getElementById('yjNewPoints').value = newPoints;
+  await setYJPoints();
+}
+
+async function resetYJPoints() {
+  if (!currentYJUserId) return;
+  document.getElementById('yjNewPoints').value = 10000;
+  await setYJPoints();
+}
+
+async function toggleYJBlock() {
+  if (!currentYJUserId) return;
+  
+  const action = currentYJBlocked ? 'yellowjackUnblockPlayer' : 'yellowjackBlockPlayer';
+  const confirmMsg = currentYJBlocked 
+    ? 'Unblock this player from YellowJack?' 
+    : 'Block this player from YellowJack?';
+  
+  if (!confirm(confirmMsg)) return;
+
+  const data = await apiCall(action, { userId: currentYJUserId });
+
+  if (data.success) {
+    document.getElementById('yjModalMessage').innerHTML = '<span class="success">' + data.message + '</span>';
+    openYJPlayerModal(currentYJUserId);
+    loadYellowJackStats();
+  } else {
+    document.getElementById('yjModalMessage').innerHTML = `<span class="error">${data.error || 'Error'}</span>`;
+  }
+}
+
+// Enter key handlers
+document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') login();
+});
+document.getElementById('searchInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') searchUser();
+});
+document.getElementById('yjSearchInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') searchYJPlayer();
+});
+
+// Close modals on outside click
+document.getElementById('userModal').addEventListener('click', (e) => {
+  if (e.target.id === 'userModal') closeModal();
+});
+document.getElementById('yjPlayerModal').addEventListener('click', (e) => {
+  if (e.target.id === 'yjPlayerModal') closeYJModal();
+});
 </script>
 </body>
 </html>
