@@ -1,806 +1,872 @@
-import { initDatabase } from './lib/db.js';
 import { createClient } from '@libsql/client';
 
+export const config = { api: { bodyParser: false } };
+
 const db = createClient({
-  url: process.env.TURSO_DATABASE_URL,
-  authToken: process.env.TURSO_AUTH_TOKEN,
+    url: process.env.TURSO_DATABASE_URL,
+    authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
 // ============================================================
-// YELLOWJACK MULTIPLAYER API — VERCEL SERVERLESS
-// POST /api/yellowjack
+// CONFIG
 // ============================================================
-
+const BETTING_WAIT = 12;        // seconds after first bet to start dealing
+const TURN_TIMEOUT = 30;        // seconds per player turn
+const DONE_DISPLAY = 6;         // seconds to show results
+const HEARTBEAT_TIMEOUT = 45;   // seconds before removing inactive player
+const NUM_TABLES = 6;
+const MAX_SEATS = 7;
 const SUITS = ['♠', '♥', '♦', '♣'];
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-const SEAT_TIMEOUT = 60000; // 60 seconds without heartbeat = kicked
-const BETTING_TIME = 30000; // 30 seconds to bet
-const ACTION_TIME = 30000; // 30 seconds per action
 
-function createDeck() {
-  const deck = [];
-  for (let d = 0; d < 6; d++) {
-    for (const s of SUITS) {
-      for (const r of RANKS) {
-        deck.push({ rank: r, suit: s });
-      }
-    }
-  }
-  // Shuffle
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-  return deck;
-}
+// ============================================================
+// DB INIT — runs once per cold start
+// ============================================================
+let dbReady = false;
 
-function handValue(hand) {
-  let total = 0, aces = 0;
-  for (const c of hand) {
-    if (c.rank === 'A') { total += 11; aces++; }
-    else if (['J', 'Q', 'K'].includes(c.rank)) total += 10;
-    else total += parseInt(c.rank);
-  }
-  while (total > 21 && aces > 0) { total -= 10; aces--; }
-  return total;
-}
+async function ensureTables() {
+    if (dbReady) return;
 
-function isBlackjack(hand) {
-  return hand.length === 2 && handValue(hand) === 21;
-}
-
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  // Manual body parsing
-  let rawBody = '';
-  await new Promise((resolve) => {
-    req.on('data', chunk => { rawBody += chunk; });
-    req.on('end', resolve);
-  });
-
-  let body;
-  try {
-    body = JSON.parse(rawBody || '{}');
-  } catch {
-    return res.status(400).json({ error: 'Invalid JSON body' });
-  }
-
-  const { action } = body;
-  if (!action) {
-    return res.status(400).json({ error: 'Missing action' });
-  }
-
-  try {
-    await initDatabase();
-
-    // Create tables if not exist
     await db.execute(`
-      CREATE TABLE IF NOT EXISTS yellowjack_players (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL UNIQUE,
-        points INTEGER DEFAULT 10000,
-        games_played INTEGER DEFAULT 0,
-        total_won INTEGER DEFAULT 0,
-        total_lost INTEGER DEFAULT 0,
-        is_blocked INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        last_played DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
-      )
+        CREATE TABLE IF NOT EXISTS yellowjack_players (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL UNIQUE,
+            points INTEGER DEFAULT 10000,
+            games_played INTEGER DEFAULT 0,
+            total_won INTEGER DEFAULT 0,
+            total_lost INTEGER DEFAULT 0,
+            is_blocked INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            last_played DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
     `);
 
     await db.execute(`
-      CREATE TABLE IF NOT EXISTS yellowjack_tables (
-        id INTEGER PRIMARY KEY,
-        deck TEXT DEFAULT '[]',
-        dealer_hand TEXT DEFAULT '[]',
-        phase TEXT DEFAULT 'waiting',
-        active_seat INTEGER DEFAULT -1,
-        round_start DATETIME,
-        last_action DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
+        CREATE TABLE IF NOT EXISTS yj_tables (
+            id INTEGER PRIMARY KEY,
+            phase TEXT DEFAULT 'waiting',
+            deck TEXT DEFAULT '[]',
+            dealer_hand TEXT DEFAULT '[]',
+            active_seat INTEGER DEFAULT -1,
+            bet_start_time TEXT,
+            turn_start_time TEXT,
+            done_time TEXT
+        )
     `);
 
     await db.execute(`
-      CREATE TABLE IF NOT EXISTS yellowjack_seats (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        table_id INTEGER NOT NULL,
-        seat_index INTEGER NOT NULL,
-        user_id INTEGER NOT NULL,
-        username TEXT,
-        avatar_url TEXT,
-        bet INTEGER DEFAULT 0,
-        hand TEXT DEFAULT '[]',
-        chips TEXT DEFAULT '[]',
-        status TEXT DEFAULT 'waiting',
-        last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(table_id, seat_index),
-        FOREIGN KEY (user_id) REFERENCES users(id)
-      )
+        CREATE TABLE IF NOT EXISTS yj_seats (
+            table_id INTEGER NOT NULL,
+            seat_index INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            username TEXT NOT NULL,
+            avatar TEXT DEFAULT '',
+            bet INTEGER DEFAULT 0,
+            chips TEXT DEFAULT '[]',
+            hand TEXT DEFAULT '[]',
+            status TEXT DEFAULT 'waiting',
+            last_seen TEXT DEFAULT (datetime('now')),
+            PRIMARY KEY (table_id, seat_index)
+        )
     `);
 
-    // Initialize 6 tables if not exist
-    for (let i = 1; i <= 6; i++) {
-      await db.execute({
-        sql: 'INSERT OR IGNORE INTO yellowjack_tables (id, deck, dealer_hand, phase) VALUES (?, "[]", "[]", "waiting")',
-        args: [i]
-      });
+    // Init 6 tables
+    for (let i = 1; i <= NUM_TABLES; i++) {
+        await db.execute({
+            sql: `INSERT OR IGNORE INTO yj_tables (id, phase) VALUES (?, 'waiting')`,
+            args: [i]
+        });
     }
 
-    // Clean up inactive seats (timeout)
-    await db.execute({
-      sql: `DELETE FROM yellowjack_seats WHERE datetime(last_seen) < datetime('now', '-60 seconds')`
+    dbReady = true;
+}
+
+// ============================================================
+// AUTH — same as your existing system
+// ============================================================
+function parseCookies(str) {
+    const obj = {};
+    if (!str) return obj;
+    str.split(';').forEach(p => {
+        const [k, ...v] = p.trim().split('=');
+        if (k) obj[k] = decodeURIComponent(v.join('='));
     });
+    return obj;
+}
 
-    // Get user from session (for most actions)
-    const sessionToken = req.cookies?.session_token;
-    let userId = null, userName = null, userAvatar = null;
+async function getUser(req) {
+    const cookies = parseCookies(req.headers.cookie || '');
+    const token = cookies['session_token'];
+    if (!token) return null;
 
-    if (sessionToken) {
-      const sessionResult = await db.execute({
+    const r = await db.execute({
         sql: `SELECT s.user_id, u.x_username, u.avatar_url 
               FROM sessions s 
               JOIN users u ON s.user_id = u.id 
-              WHERE s.token = ? AND s.expires_at > datetime('now')`,
-        args: [sessionToken]
-      });
-      if (sessionResult.rows.length > 0) {
-        userId = sessionResult.rows[0].user_id;
-        userName = sessionResult.rows[0].x_username;
-        userAvatar = sessionResult.rows[0].avatar_url;
-      }
+              WHERE s.session_token = ? AND s.expires_at > datetime('now')`,
+        args: [token]
+    });
+
+    if (r.rows.length === 0) return null;
+    const row = r.rows[0];
+    return { id: row.user_id, username: row.x_username, avatar: row.avatar_url || '' };
+}
+
+// ============================================================
+// CARD UTILITIES
+// ============================================================
+function createDeck(n = 6) {
+    const d = [];
+    for (let i = 0; i < n; i++)
+        for (const s of SUITS)
+            for (const r of RANKS)
+                d.push({ rank: r, suit: s });
+    // Fisher-Yates
+    for (let i = d.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [d[i], d[j]] = [d[j], d[i]];
     }
+    return d;
+}
 
-    // ============================================================
-    // GET PLAYER (for points)
-    // ============================================================
-    if (action === 'getPlayer') {
-      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+function draw(deck) {
+    if (deck.length < 20) deck.push(...createDeck());
+    return deck.pop();
+}
 
-      // Check if blocked
-      const blockCheck = await db.execute({
-        sql: 'SELECT is_blocked FROM yellowjack_players WHERE user_id = ?',
-        args: [userId]
-      });
-      if (blockCheck.rows.length > 0 && blockCheck.rows[0].is_blocked === 1) {
-        return res.status(200).json({ blocked: true });
-      }
-
-      const result = await db.execute({
-        sql: 'SELECT * FROM yellowjack_players WHERE user_id = ?',
-        args: [userId]
-      });
-
-      if (result.rows.length === 0) {
-        await db.execute({
-          sql: 'INSERT INTO yellowjack_players (user_id, points) VALUES (?, 10000)',
-          args: [userId]
-        });
-        return res.status(200).json({ player: { points: 10000, games_played: 0, total_won: 0, total_lost: 0 } });
-      }
-
-      return res.status(200).json({ player: result.rows[0] });
+function handValue(cards) {
+    let t = 0, a = 0;
+    for (const c of cards) {
+        if (c.rank === 'A') { t += 11; a++; }
+        else if (['J', 'Q', 'K'].includes(c.rank)) t += 10;
+        else t += parseInt(c.rank);
     }
+    while (t > 21 && a > 0) { t -= 10; a--; }
+    return t;
+}
 
-    // ============================================================
-    // GET ALL TABLES (lobby view)
-    // ============================================================
-    if (action === 'getTables') {
-      const tables = [];
-      for (let i = 1; i <= 6; i++) {
-        const seats = await db.execute({
-          sql: 'SELECT seat_index, username, avatar_url FROM yellowjack_seats WHERE table_id = ?',
-          args: [i]
-        });
-        tables.push({
-          id: i,
-          players: seats.rows.map(s => ({ seat: s.seat_index, name: s.username, avatar: s.avatar_url }))
-        });
-      }
-      return res.status(200).json({ tables });
-    }
+function isBJ(cards) { return cards.length === 2 && handValue(cards) === 21; }
 
-    // ============================================================
-    // GET TABLE STATE (for polling during game)
-    // ============================================================
-    if (action === 'getTable') {
-      const { tableId } = body;
-      if (!tableId) return res.status(400).json({ error: 'Missing tableId' });
+// ============================================================
+// DB HELPERS
+// ============================================================
+async function getTable(id) {
+    const r = await db.execute({ sql: 'SELECT * FROM yj_tables WHERE id = ?', args: [id] });
+    if (!r.rows.length) return null;
+    const t = r.rows[0];
+    return {
+        id: t.id,
+        phase: t.phase,
+        deck: JSON.parse(t.deck || '[]'),
+        dealerHand: JSON.parse(t.dealer_hand || '[]'),
+        activeSeat: t.active_seat ?? -1,
+        betStartTime: t.bet_start_time,
+        turnStartTime: t.turn_start_time,
+        doneTime: t.done_time
+    };
+}
 
-      const tableResult = await db.execute({
-        sql: 'SELECT * FROM yellowjack_tables WHERE id = ?',
+async function saveTable(t) {
+    await db.execute({
+        sql: `UPDATE yj_tables SET phase=?, deck=?, dealer_hand=?, active_seat=?,
+              bet_start_time=?, turn_start_time=?, done_time=? WHERE id=?`,
+        args: [
+            t.phase, JSON.stringify(t.deck), JSON.stringify(t.dealerHand),
+            t.activeSeat, t.betStartTime || null, t.turnStartTime || null,
+            t.doneTime || null, t.id
+        ]
+    });
+}
+
+async function getSeats(tableId) {
+    const r = await db.execute({
+        sql: 'SELECT * FROM yj_seats WHERE table_id = ? ORDER BY seat_index',
         args: [tableId]
-      });
-
-      if (tableResult.rows.length === 0) {
-        return res.status(404).json({ error: 'Table not found' });
-      }
-
-      const table = tableResult.rows[0];
-      const seats = await db.execute({
-        sql: 'SELECT * FROM yellowjack_seats WHERE table_id = ? ORDER BY seat_index',
-        args: [tableId]
-      });
-
-      // Parse JSON fields
-      const dealerHand = JSON.parse(table.dealer_hand || '[]');
-      const seatsData = seats.rows.map(s => ({
+    });
+    return r.rows.map(s => ({
+        tableId: s.table_id,
         seatIndex: s.seat_index,
         userId: s.user_id,
         username: s.username,
-        avatar: s.avatar_url,
-        bet: s.bet,
-        hand: JSON.parse(s.hand || '[]'),
+        avatar: s.avatar || '',
+        bet: s.bet || 0,
         chips: JSON.parse(s.chips || '[]'),
-        status: s.status
-      }));
+        hand: JSON.parse(s.hand || '[]'),
+        status: s.status || 'waiting',
+        lastSeen: s.last_seen
+    }));
+}
 
-      return res.status(200).json({
-        tableId,
-        phase: table.phase,
-        activeSeat: table.active_seat,
-        dealerHand: table.phase === 'dealer' || table.phase === 'done' ? dealerHand : 
-                    (dealerHand.length > 0 ? [dealerHand[0], { rank: '?', suit: '?' }] : []),
-        dealerHandFull: dealerHand, // For server-side logic
-        seats: seatsData,
-        myUserId: userId
-      });
+async function saveSeat(s) {
+    await db.execute({
+        sql: `INSERT OR REPLACE INTO yj_seats 
+              (table_id, seat_index, user_id, username, avatar, bet, chips, hand, status, last_seen)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+        args: [
+            s.tableId, s.seatIndex, s.userId, s.username, s.avatar || '',
+            s.bet || 0, JSON.stringify(s.chips || []),
+            JSON.stringify(s.hand || []), s.status || 'waiting'
+        ]
+    });
+}
+
+async function removeSeat(tableId, seatIndex) {
+    await db.execute({ sql: 'DELETE FROM yj_seats WHERE table_id=? AND seat_index=?', args: [tableId, seatIndex] });
+}
+
+async function removeUserFromAllTables(userId) {
+    await db.execute({ sql: 'DELETE FROM yj_seats WHERE user_id=?', args: [userId] });
+}
+
+async function getPlayer(userId) {
+    const r = await db.execute({ sql: 'SELECT * FROM yellowjack_players WHERE user_id=?', args: [userId] });
+    return r.rows[0] || null;
+}
+
+async function ensurePlayer(userId) {
+    let p = await getPlayer(userId);
+    if (!p) {
+        await db.execute({ sql: 'INSERT INTO yellowjack_players (user_id, points) VALUES (?, 10000)', args: [userId] });
+        p = await getPlayer(userId);
+    }
+    return p;
+}
+
+// ============================================================
+// GAME LOGIC — Lazy evaluation on each poll
+// ============================================================
+async function tickTable(table, seats) {
+    const now = Date.now();
+    let changed = false;
+
+    // --- Remove stale players (no heartbeat) ---
+    for (const s of seats) {
+        if (s.lastSeen) {
+            const seen = new Date(s.lastSeen + 'Z').getTime();
+            if (now - seen > HEARTBEAT_TIMEOUT * 1000) {
+                await removeSeat(s.tableId, s.seatIndex);
+                changed = true;
+                // If it was their turn, we'll need to advance after re-fetching
+            }
+        }
+    }
+    if (changed) {
+        seats = await getSeats(table.id);
+        // If we're in playing phase and active seat was removed, advance
+        if (table.phase === 'playing') {
+            const activeStillExists = seats.find(s => s.seatIndex === table.activeSeat && s.status === 'playing');
+            if (!activeStillExists) {
+                await advanceTurn(table, seats);
+                return; // advanceTurn handles the rest
+            }
+        }
+        // If no seats left, reset
+        if (seats.length === 0) {
+            table.phase = 'waiting';
+            table.betStartTime = null;
+            table.turnStartTime = null;
+            table.doneTime = null;
+            table.deck = [];
+            table.dealerHand = [];
+            table.activeSeat = -1;
+            await saveTable(table);
+            return;
+        }
     }
 
-    // ============================================================
-    // JOIN TABLE
-    // ============================================================
-    if (action === 'joinTable') {
-      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+    // --- Phase: waiting (with bet countdown running) ---
+    if (table.phase === 'waiting' && table.betStartTime) {
+        const elapsed = (now - new Date(table.betStartTime + 'Z').getTime()) / 1000;
+        const seatedWithBet = seats.filter(s => s.bet > 0);
+        const seatedTotal = seats.length;
+        const allBet = seatedTotal > 0 && seatedWithBet.length === seatedTotal;
 
-      const { tableId, seatIndex } = body;
-      if (!tableId || seatIndex === undefined) {
-        return res.status(400).json({ error: 'Missing tableId or seatIndex' });
-      }
-
-      // Check if seat is taken
-      const existing = await db.execute({
-        sql: 'SELECT * FROM yellowjack_seats WHERE table_id = ? AND seat_index = ?',
-        args: [tableId, seatIndex]
-      });
-
-      if (existing.rows.length > 0) {
-        return res.status(400).json({ error: 'Seat already taken' });
-      }
-
-      // Check if user is already at this table
-      const userSeat = await db.execute({
-        sql: 'SELECT * FROM yellowjack_seats WHERE table_id = ? AND user_id = ?',
-        args: [tableId, userId]
-      });
-
-      if (userSeat.rows.length > 0) {
-        return res.status(400).json({ error: 'Already at this table' });
-      }
-
-      // Get user points
-      let playerPoints = 10000;
-      const playerResult = await db.execute({
-        sql: 'SELECT points FROM yellowjack_players WHERE user_id = ?',
-        args: [userId]
-      });
-      if (playerResult.rows.length > 0) {
-        playerPoints = playerResult.rows[0].points;
-      } else {
-        await db.execute({
-          sql: 'INSERT INTO yellowjack_players (user_id, points) VALUES (?, 10000)',
-          args: [userId]
-        });
-      }
-
-      // Join the seat
-      await db.execute({
-        sql: `INSERT INTO yellowjack_seats (table_id, seat_index, user_id, username, avatar_url, status, last_seen)
-              VALUES (?, ?, ?, ?, ?, 'waiting', datetime('now'))`,
-        args: [tableId, seatIndex, userId, userName, userAvatar]
-      });
-
-      return res.status(200).json({ success: true, points: playerPoints });
+        if (allBet || elapsed >= BETTING_WAIT) {
+            if (seatedWithBet.length > 0) {
+                await dealCards(table, seats);
+            } else {
+                // No one bet → clear timer
+                table.betStartTime = null;
+                await saveTable(table);
+            }
+        }
+        return;
     }
 
-    // ============================================================
-    // LEAVE TABLE
-    // ============================================================
-    if (action === 'leaveTable') {
-      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
-
-      const { tableId } = body;
-
-      await db.execute({
-        sql: 'DELETE FROM yellowjack_seats WHERE table_id = ? AND user_id = ?',
-        args: [tableId, userId]
-      });
-
-      return res.status(200).json({ success: true });
+    // --- Phase: waiting (no countdown) ---
+    if (table.phase === 'waiting') {
+        return;
     }
 
-    // ============================================================
-    // HEARTBEAT (keep seat alive)
-    // ============================================================
-    if (action === 'heartbeat') {
-      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
-
-      const { tableId } = body;
-
-      await db.execute({
-        sql: `UPDATE yellowjack_seats SET last_seen = datetime('now') WHERE table_id = ? AND user_id = ?`,
-        args: [tableId, userId]
-      });
-
-      return res.status(200).json({ success: true });
+    // --- Phase: playing ---
+    if (table.phase === 'playing' && table.turnStartTime) {
+        const elapsed = (now - new Date(table.turnStartTime + 'Z').getTime()) / 1000;
+        if (elapsed >= TURN_TIMEOUT) {
+            // Auto-stand
+            const seat = seats.find(s => s.seatIndex === table.activeSeat);
+            if (seat && seat.status === 'playing') {
+                seat.status = 'stand';
+                await saveSeat(seat);
+            }
+            await advanceTurn(table, seats);
+        }
+        return;
     }
 
-    // ============================================================
-    // PLACE BET
-    // ============================================================
-    if (action === 'placeBet') {
-      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
-
-      const { tableId, bet, chips } = body;
-
-      // Get player points
-      const playerResult = await db.execute({
-        sql: 'SELECT points FROM yellowjack_players WHERE user_id = ?',
-        args: [userId]
-      });
-
-      if (playerResult.rows.length === 0 || playerResult.rows[0].points < bet) {
-        return res.status(400).json({ error: 'Not enough points' });
-      }
-
-      // Update seat with bet
-      await db.execute({
-        sql: `UPDATE yellowjack_seats SET bet = ?, chips = ?, status = 'ready' WHERE table_id = ? AND user_id = ?`,
-        args: [bet, JSON.stringify(chips), tableId, userId]
-      });
-
-      // Deduct points
-      await db.execute({
-        sql: 'UPDATE yellowjack_players SET points = points - ? WHERE user_id = ?',
-        args: [bet, userId]
-      });
-
-      // Check if all players are ready to start
-      const allSeats = await db.execute({
-        sql: 'SELECT * FROM yellowjack_seats WHERE table_id = ?',
-        args: [tableId]
-      });
-
-      const allReady = allSeats.rows.every(s => s.status === 'ready');
-
-      if (allReady && allSeats.rows.length > 0) {
-        // Start dealing!
-        await startDealing(tableId);
-      }
-
-      return res.status(200).json({ success: true });
+    // --- Phase: dealer ---
+    if (table.phase === 'dealer') {
+        await playDealer(table, seats);
+        return;
     }
 
-    // ============================================================
-    // START ROUND (when host clicks deal or auto-start)
-    // ============================================================
-    if (action === 'startRound') {
-      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+    // --- Phase: done ---
+    if (table.phase === 'done' && table.doneTime) {
+        const elapsed = (now - new Date(table.doneTime + 'Z').getTime()) / 1000;
+        if (elapsed >= DONE_DISPLAY) {
+            await resetForNewRound(table);
+        }
+        return;
+    }
+}
 
-      const { tableId } = body;
+async function dealCards(table, seats) {
+    let deck = createDeck();
 
-      // Check if there are players with bets
-      const seats = await db.execute({
-        sql: `SELECT * FROM yellowjack_seats WHERE table_id = ? AND bet > 0`,
-        args: [tableId]
-      });
-
-      if (seats.rows.length === 0) {
-        return res.status(400).json({ error: 'No players with bets' });
-      }
-
-      await startDealing(tableId);
-
-      return res.status(200).json({ success: true });
+    // Deal 2 cards to each betting player
+    const bettors = seats.filter(s => s.bet > 0);
+    for (const s of bettors) {
+        s.hand = [draw(deck), draw(deck)];
+        s.status = isBJ(s.hand) ? 'blackjack' : 'playing';
+        await saveSeat(s);
     }
 
-    // ============================================================
-    // PLAYER ACTION (hit, stand, double, split)
-    // ============================================================
-    if (action === 'playerAction') {
-      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+    // Non-bettors just sit idle
+    for (const s of seats) {
+        if (s.bet === 0) {
+            s.status = 'idle';
+            await saveSeat(s);
+        }
+    }
 
-      const { tableId, actionType } = body;
+    // Dealer gets 2 cards
+    const dealerHand = [draw(deck), draw(deck)];
 
-      // Get table state
-      const tableResult = await db.execute({
-        sql: 'SELECT * FROM yellowjack_tables WHERE id = ?',
-        args: [tableId]
-      });
+    // Find first active player
+    const firstActive = bettors
+        .filter(s => s.status === 'playing')
+        .sort((a, b) => a.seatIndex - b.seatIndex)[0];
 
-      if (tableResult.rows.length === 0) {
-        return res.status(404).json({ error: 'Table not found' });
-      }
+    table.deck = deck;
+    table.dealerHand = dealerHand;
+    table.phase = firstActive ? 'playing' : 'dealer';
+    table.activeSeat = firstActive ? firstActive.seatIndex : -1;
+    table.turnStartTime = new Date().toISOString();
+    table.betStartTime = null;
+    await saveTable(table);
 
-      const table = tableResult.rows[0];
+    // If all players have blackjack, go straight to dealer
+    if (!firstActive) {
+        const updatedSeats = await getSeats(table.id);
+        await playDealer(table, updatedSeats);
+    }
+}
 
-      if (table.phase !== 'playing') {
-        return res.status(400).json({ error: 'Not in playing phase' });
-      }
+async function advanceTurn(table, seats) {
+    // Find next player who needs to act
+    const active = seats
+        .filter(s => s.bet > 0 && s.status === 'playing' && s.seatIndex > table.activeSeat)
+        .sort((a, b) => a.seatIndex - b.seatIndex);
 
-      // Get current seat
-      const seatResult = await db.execute({
-        sql: 'SELECT * FROM yellowjack_seats WHERE table_id = ? AND user_id = ?',
-        args: [tableId, userId]
-      });
+    if (active.length > 0) {
+        table.activeSeat = active[0].seatIndex;
+        table.turnStartTime = new Date().toISOString();
+        await saveTable(table);
+    } else {
+        // All players done → dealer
+        table.phase = 'dealer';
+        table.activeSeat = -1;
+        table.turnStartTime = null;
+        await saveTable(table);
+        const updatedSeats = await getSeats(table.id);
+        await playDealer(table, updatedSeats);
+    }
+}
 
-      if (seatResult.rows.length === 0) {
-        return res.status(400).json({ error: 'Not at this table' });
-      }
+async function playDealer(table, seats) {
+    const bettors = seats.filter(s => s.bet > 0);
+    const nonBusted = bettors.filter(s => s.status !== 'bust');
 
-      const seat = seatResult.rows[0];
+    let deck = table.deck.length > 10 ? table.deck : createDeck();
 
-      if (seat.seat_index !== table.active_seat) {
-        return res.status(400).json({ error: 'Not your turn' });
-      }
+    // Dealer draws to 17 if anyone didn't bust
+    if (nonBusted.length > 0 && !nonBusted.every(s => s.status === 'blackjack' || s.status === 'bust')) {
+        while (handValue(table.dealerHand) < 17) {
+            table.dealerHand.push(draw(deck));
+        }
+    }
 
-      let deck = JSON.parse(table.deck || '[]');
-      let hand = JSON.parse(seat.hand || '[]');
-      let newStatus = seat.status;
+    table.deck = deck;
+    const dealerVal = handValue(table.dealerHand);
+    const dealerBust = dealerVal > 21;
+    const dealerBJ = isBJ(table.dealerHand);
 
-      if (actionType === 'hit') {
-        if (deck.length === 0) deck = createDeck();
-        hand.push(deck.pop());
-        
-        const value = handValue(hand);
-        if (value > 21) {
-          newStatus = 'bust';
-        } else if (value === 21) {
-          newStatus = 'standing';
+    // Resolve each player
+    for (const s of bettors) {
+        const pVal = handValue(s.hand);
+        const pBJ = isBJ(s.hand);
+        let payout = 0;
+        let result = '';
+
+        if (s.status === 'bust' || pVal > 21) {
+            result = 'lose';
+            payout = 0; // already deducted on bet
+        } else if (pBJ && dealerBJ) {
+            result = 'push';
+            payout = s.bet; // return bet
+        } else if (pBJ) {
+            result = 'blackjack';
+            payout = s.bet + Math.floor(s.bet * 1.5); // bet + 1.5x
+        } else if (dealerBJ) {
+            result = 'lose';
+            payout = 0;
+        } else if (dealerBust) {
+            result = 'win';
+            payout = s.bet * 2; // bet + winnings
+        } else if (pVal > dealerVal) {
+            result = 'win';
+            payout = s.bet * 2;
+        } else if (pVal < dealerVal) {
+            result = 'lose';
+            payout = 0;
+        } else {
+            result = 'push';
+            payout = s.bet; // return bet
         }
 
-        await db.execute({
-          sql: 'UPDATE yellowjack_seats SET hand = ?, status = ? WHERE id = ?',
-          args: [JSON.stringify(hand), newStatus, seat.id]
-        });
-        await db.execute({
-          sql: 'UPDATE yellowjack_tables SET deck = ? WHERE id = ?',
-          args: [JSON.stringify(deck), tableId]
-        });
+        s.status = result;
+        await saveSeat(s);
 
-        if (newStatus === 'bust' || newStatus === 'standing') {
-          await moveToNextPlayer(tableId);
+        // Update player points (points were deducted when bet was placed)
+        // Now add back the payout
+        if (payout > 0) {
+            await db.execute({
+                sql: 'UPDATE yellowjack_players SET points = points + ?, last_played = datetime("now") WHERE user_id = ?',
+                args: [payout, s.userId]
+            });
         }
 
-      } else if (actionType === 'stand') {
+        // Stats
+        const won = payout > s.bet ? payout - s.bet : 0;
+        const lost = payout === 0 ? s.bet : 0;
         await db.execute({
-          sql: `UPDATE yellowjack_seats SET status = 'standing' WHERE id = ?`,
-          args: [seat.id]
-        });
-        await moveToNextPlayer(tableId);
-
-      } else if (actionType === 'double') {
-        // Check if can afford double
-        const playerResult = await db.execute({
-          sql: 'SELECT points FROM yellowjack_players WHERE user_id = ?',
-          args: [userId]
-        });
-
-        if (playerResult.rows.length === 0 || playerResult.rows[0].points < seat.bet) {
-          return res.status(400).json({ error: 'Not enough points to double' });
-        }
-
-        // Deduct additional bet
-        await db.execute({
-          sql: 'UPDATE yellowjack_players SET points = points - ? WHERE user_id = ?',
-          args: [seat.bet, userId]
-        });
-
-        // Double the bet and draw one card
-        if (deck.length === 0) deck = createDeck();
-        hand.push(deck.pop());
-
-        const value = handValue(hand);
-        newStatus = value > 21 ? 'bust' : 'standing';
-
-        const newBet = seat.bet * 2;
-        const chips = JSON.parse(seat.chips || '[]');
-        chips.push(...chips); // Double chips visually
-
-        await db.execute({
-          sql: 'UPDATE yellowjack_seats SET hand = ?, bet = ?, chips = ?, status = ? WHERE id = ?',
-          args: [JSON.stringify(hand), newBet, JSON.stringify(chips), newStatus, seat.id]
-        });
-        await db.execute({
-          sql: 'UPDATE yellowjack_tables SET deck = ? WHERE id = ?',
-          args: [JSON.stringify(deck), tableId]
-        });
-
-        await moveToNextPlayer(tableId);
-      }
-
-      return res.status(200).json({ success: true });
-    }
-
-    // ============================================================
-    // UPDATE POINTS (fallback for solo mode)
-    // ============================================================
-    if (action === 'updatePoints') {
-      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
-
-      const { points } = body;
-
-      await db.execute({
-        sql: `INSERT INTO yellowjack_players (user_id, points, last_played) 
-              VALUES (?, ?, datetime('now'))
-              ON CONFLICT(user_id) DO UPDATE SET 
-              points = ?, last_played = datetime('now')`,
-        args: [userId, points, points]
-      });
-
-      return res.status(200).json({ success: true });
-    }
-
-    // ============================================================
-    // RECORD GAME
-    // ============================================================
-    if (action === 'recordGame') {
-      if (!userId) return res.status(401).json({ error: 'Not authenticated' });
-
-      const { won, lost } = body;
-
-      await db.execute({
-        sql: `UPDATE yellowjack_players 
-              SET games_played = games_played + 1,
+            sql: `UPDATE yellowjack_players SET 
+                  games_played = games_played + 1,
                   total_won = total_won + ?,
                   total_lost = total_lost + ?,
-                  last_played = datetime('now')
-              WHERE user_id = ?`,
-        args: [won || 0, lost || 0, userId]
-      });
-
-      return res.status(200).json({ success: true });
+                  last_played = datetime("now")
+                  WHERE user_id = ?`,
+            args: [won, lost, s.userId]
+        });
     }
 
-    return res.status(400).json({ error: 'Invalid action' });
+    table.phase = 'done';
+    table.doneTime = new Date().toISOString();
+    table.activeSeat = -1;
+    await saveTable(table);
+}
 
-  } catch (err) {
-    console.error('YELLOWJACK API ERROR:', err);
-    return res.status(500).json({ error: 'Server error' });
-  }
+async function resetForNewRound(table) {
+    const seats = await getSeats(table.id);
+
+    // Reset all seats for new round
+    for (const s of seats) {
+        s.bet = 0;
+        s.chips = [];
+        s.hand = [];
+        s.status = 'waiting';
+        await saveSeat(s);
+    }
+
+    table.phase = seats.length > 0 ? 'waiting' : 'waiting';
+    table.deck = [];
+    table.dealerHand = [];
+    table.activeSeat = -1;
+    table.betStartTime = null;
+    table.turnStartTime = null;
+    table.doneTime = null;
+    await saveTable(table);
 }
 
 // ============================================================
-// HELPER: Start dealing cards
+// RESPONSE BUILDERS
 // ============================================================
-async function startDealing(tableId) {
-  let deck = createDeck();
-  const dealerHand = [];
-
-  // Get all seats with bets
-  const seats = await db.execute({
-    sql: 'SELECT * FROM yellowjack_seats WHERE table_id = ? AND bet > 0 ORDER BY seat_index',
-    args: [tableId]
-  });
-
-  // Deal cards to each player (2 cards each)
-  for (const seat of seats.rows) {
-    const hand = [deck.pop(), deck.pop()];
-    await db.execute({
-      sql: `UPDATE yellowjack_seats SET hand = ?, status = 'playing' WHERE id = ?`,
-      args: [JSON.stringify(hand), seat.id]
-    });
-  }
-
-  // Deal to dealer
-  dealerHand.push(deck.pop());
-  dealerHand.push(deck.pop());
-
-  // Find first active player
-  const firstSeat = seats.rows.length > 0 ? seats.rows[0].seat_index : -1;
-
-  // Check for dealer blackjack
-  if (isBlackjack(dealerHand)) {
-    // Resolve immediately
-    await db.execute({
-      sql: `UPDATE yellowjack_tables SET deck = ?, dealer_hand = ?, phase = 'done', active_seat = -1 WHERE id = ?`,
-      args: [JSON.stringify(deck), JSON.stringify(dealerHand), tableId]
-    });
-    await resolveRound(tableId);
-  } else {
-    await db.execute({
-      sql: `UPDATE yellowjack_tables SET deck = ?, dealer_hand = ?, phase = 'playing', active_seat = ?, round_start = datetime('now') WHERE id = ?`,
-      args: [JSON.stringify(deck), JSON.stringify(dealerHand), firstSeat, tableId]
-    });
-
-    // Check if first player has blackjack - auto stand
-    if (seats.rows.length > 0) {
-      const firstHand = JSON.parse(seats.rows[0].hand || '[]');
-      if (firstHand.length === 0) {
-        // Cards not dealt yet, we just dealt them above
-        const newFirstSeat = await db.execute({
-          sql: 'SELECT * FROM yellowjack_seats WHERE table_id = ? AND seat_index = ?',
-          args: [tableId, firstSeat]
-        });
-        if (newFirstSeat.rows.length > 0) {
-          const hand = JSON.parse(newFirstSeat.rows[0].hand || '[]');
-          if (isBlackjack(hand)) {
-            await db.execute({
-              sql: `UPDATE yellowjack_seats SET status = 'blackjack' WHERE id = ?`,
-              args: [newFirstSeat.rows[0].id]
-            });
-            await moveToNextPlayer(tableId);
-          }
+function buildTableResponse(table, seats, myUserId) {
+    // Build dealer hand for client (hide 2nd card during play)
+    let clientDealerHand = [];
+    if (table.dealerHand.length > 0) {
+        if (table.phase === 'playing') {
+            clientDealerHand = [table.dealerHand[0], { rank: '?', suit: '?' }];
+        } else {
+            clientDealerHand = table.dealerHand;
         }
-      }
     }
-  }
+
+    return {
+        tableId: table.id,
+        myUserId,
+        phase: table.phase,
+        activeSeat: table.activeSeat,
+        turnStartTime: table.turnStartTime,
+        dealerHand: clientDealerHand,
+        seats: seats.map(s => ({
+            seatIndex: s.seatIndex,
+            userId: s.userId,
+            username: s.username,
+            avatar: s.avatar,
+            bet: s.bet,
+            chips: s.chips,
+            hand: s.hand,
+            status: s.status
+        }))
+    };
 }
 
 // ============================================================
-// HELPER: Move to next player or dealer
+// MAIN HANDLER
 // ============================================================
-async function moveToNextPlayer(tableId) {
-  const tableResult = await db.execute({
-    sql: 'SELECT * FROM yellowjack_tables WHERE id = ?',
-    args: [tableId]
-  });
-
-  if (tableResult.rows.length === 0) return;
-
-  const table = tableResult.rows[0];
-  const currentSeat = table.active_seat;
-
-  // Get all playing seats
-  const seats = await db.execute({
-    sql: `SELECT * FROM yellowjack_seats WHERE table_id = ? AND bet > 0 ORDER BY seat_index`,
-    args: [tableId]
-  });
-
-  // Find next seat that is still 'playing'
-  let nextSeat = -1;
-  let foundCurrent = false;
-
-  for (const seat of seats.rows) {
-    if (seat.seat_index === currentSeat) {
-      foundCurrent = true;
-      continue;
-    }
-    if (foundCurrent && seat.status === 'playing') {
-      // Check for blackjack
-      const hand = JSON.parse(seat.hand || '[]');
-      if (isBlackjack(hand)) {
-        await db.execute({
-          sql: `UPDATE yellowjack_seats SET status = 'blackjack' WHERE id = ?`,
-          args: [seat.id]
-        });
-        continue;
-      }
-      nextSeat = seat.seat_index;
-      break;
-    }
-  }
-
-  if (nextSeat >= 0) {
-    // Move to next player
-    await db.execute({
-      sql: 'UPDATE yellowjack_tables SET active_seat = ? WHERE id = ?',
-      args: [nextSeat, tableId]
-    });
-  } else {
-    // All players done - dealer's turn
-    await dealerPlay(tableId);
-  }
-}
-
-// ============================================================
-// HELPER: Dealer plays
-// ============================================================
-async function dealerPlay(tableId) {
-  const tableResult = await db.execute({
-    sql: 'SELECT * FROM yellowjack_tables WHERE id = ?',
-    args: [tableId]
-  });
-
-  if (tableResult.rows.length === 0) return;
-
-  const table = tableResult.rows[0];
-  let deck = JSON.parse(table.deck || '[]');
-  let dealerHand = JSON.parse(table.dealer_hand || '[]');
-
-  // Dealer draws until 17+
-  while (handValue(dealerHand) < 17) {
-    if (deck.length === 0) deck = createDeck();
-    dealerHand.push(deck.pop());
-  }
-
-  // Update table
-  await db.execute({
-    sql: `UPDATE yellowjack_tables SET deck = ?, dealer_hand = ?, phase = 'done', active_seat = -1 WHERE id = ?`,
-    args: [JSON.stringify(deck), JSON.stringify(dealerHand), tableId]
-  });
-
-  // Resolve round
-  await resolveRound(tableId);
-}
-
-// ============================================================
-// HELPER: Resolve round - pay winners
-// ============================================================
-async function resolveRound(tableId) {
-  const tableResult = await db.execute({
-    sql: 'SELECT * FROM yellowjack_tables WHERE id = ?',
-    args: [tableId]
-  });
-
-  if (tableResult.rows.length === 0) return;
-
-  const table = tableResult.rows[0];
-  const dealerHand = JSON.parse(table.dealer_hand || '[]');
-  const dealerValue = handValue(dealerHand);
-  const dealerBJ = isBlackjack(dealerHand);
-
-  const seats = await db.execute({
-    sql: 'SELECT * FROM yellowjack_seats WHERE table_id = ? AND bet > 0',
-    args: [tableId]
-  });
-
-  for (const seat of seats.rows) {
-    const hand = JSON.parse(seat.hand || '[]');
-    const playerValue = handValue(hand);
-    const playerBJ = isBlackjack(hand);
-    let payout = 0;
-
-    if (seat.status === 'bust') {
-      // Player busted - loses bet (already deducted)
-      payout = 0;
-    } else if (playerBJ && dealerBJ) {
-      // Both blackjack - push
-      payout = seat.bet;
-    } else if (playerBJ) {
-      // Player blackjack - pays 2.5x
-      payout = Math.floor(seat.bet * 2.5);
-    } else if (dealerBJ) {
-      // Dealer blackjack - player loses
-      payout = 0;
-    } else if (dealerValue > 21) {
-      // Dealer busted - player wins
-      payout = seat.bet * 2;
-    } else if (playerValue > dealerValue) {
-      // Player wins
-      payout = seat.bet * 2;
-    } else if (playerValue === dealerValue) {
-      // Push
-      payout = seat.bet;
-    } else {
-      // Dealer wins
-      payout = 0;
+export default async function handler(req, res) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // Pay the player
-    if (payout > 0) {
-      await db.execute({
-        sql: 'UPDATE yellowjack_players SET points = points + ? WHERE user_id = ?',
-        args: [payout, seat.user_id]
-      });
+    await ensureTables();
+
+    // Parse body
+    let body = {};
+    try {
+        const chunks = [];
+        for await (const chunk of req) chunks.push(chunk);
+        const raw = Buffer.concat(chunks).toString('utf8');
+        if (raw) body = JSON.parse(raw);
+    } catch (e) {}
+
+    const { action } = body;
+
+    // Auth
+    const user = await getUser(req);
+    if (!user) {
+        return res.status(200).json({ success: false, error: 'Not authenticated' });
     }
 
-    // Record game stats
-    const won = payout > seat.bet ? payout - seat.bet : 0;
-    const lost = payout < seat.bet ? seat.bet - payout : 0;
+    try {
+        // ==================================================
+        // getPlayer
+        // ==================================================
+        if (action === 'getPlayer') {
+            const p = await ensurePlayer(user.id);
+            if (p.is_blocked) return res.json({ blocked: true });
+            return res.json({
+                success: true,
+                player: {
+                    points: p.points,
+                    games_played: p.games_played,
+                    total_won: p.total_won,
+                    total_lost: p.total_lost
+                }
+            });
+        }
 
-    await db.execute({
-      sql: `UPDATE yellowjack_players 
-            SET games_played = games_played + 1,
-                total_won = total_won + ?,
-                total_lost = total_lost + ?
-            WHERE user_id = ?`,
-      args: [won, lost, seat.user_id]
-    });
-  }
+        // ==================================================
+        // getTables — lobby overview
+        // ==================================================
+        if (action === 'getTables') {
+            const tables = [];
+            for (let i = 1; i <= NUM_TABLES; i++) {
+                const seats = await getSeats(i);
+                const t = await getTable(i);
+                tables.push({
+                    id: i,
+                    phase: t?.phase || 'waiting',
+                    players: seats.map(s => ({
+                        seat: s.seatIndex,
+                        name: s.username,
+                        avatar: s.avatar
+                    }))
+                });
+            }
+            return res.json({ success: true, tables });
+        }
 
-  // Reset table after 5 seconds (done by client polling)
+        // ==================================================
+        // getTable — full state for rendering (called every 1s)
+        // ==================================================
+        if (action === 'getTable') {
+            const { tableId } = body;
+            let table = await getTable(tableId);
+            if (!table) return res.json({ error: 'Table not found' });
+
+            let seats = await getSeats(tableId);
+
+            // Tick game logic (lazy evaluation)
+            await tickTable(table, seats);
+
+            // Re-fetch after potential changes
+            table = await getTable(tableId);
+            seats = await getSeats(tableId);
+
+            return res.json(buildTableResponse(table, seats, user.id));
+        }
+
+        // ==================================================
+        // joinTable — sit at a seat
+        // ==================================================
+        if (action === 'joinTable') {
+            const { tableId, seatIndex } = body;
+            if (seatIndex < 0 || seatIndex >= MAX_SEATS) return res.json({ error: 'Invalid seat' });
+
+            const table = await getTable(tableId);
+            if (!table) return res.json({ error: 'Table not found' });
+
+            // Can't join during active play
+            if (table.phase === 'playing' || table.phase === 'dealer') {
+                return res.json({ error: 'Round in progress, wait a moment' });
+            }
+
+            // Check seat not taken
+            const seats = await getSeats(tableId);
+            if (seats.find(s => s.seatIndex === seatIndex)) {
+                return res.json({ error: 'Seat taken' });
+            }
+
+            // Check not blocked
+            const p = await ensurePlayer(user.id);
+            if (p.is_blocked) return res.json({ error: 'You are blocked' });
+
+            // Check has points
+            if (p.points <= 0) return res.json({ error: 'No points. Ask admin for refill!' });
+
+            // Remove from other tables
+            await removeUserFromAllTables(user.id);
+
+            // Sit down
+            await saveSeat({
+                tableId, seatIndex,
+                userId: user.id,
+                username: user.username,
+                avatar: user.avatar,
+                bet: 0, chips: [], hand: [],
+                status: 'waiting'
+            });
+
+            return res.json({ success: true, points: p.points });
+        }
+
+        // ==================================================
+        // leaveTable
+        // ==================================================
+        if (action === 'leaveTable') {
+            const { tableId } = body;
+
+            // Find my seat (search given table, or all tables)
+            let mySeat = null;
+            let searchTables = tableId ? [tableId] : [1, 2, 3, 4, 5, 6];
+            
+            for (const tid of searchTables) {
+                const seats = await getSeats(tid);
+                const found = seats.find(s => s.userId === user.id);
+                if (found) { mySeat = found; break; }
+            }
+
+            if (mySeat) {
+                const table = await getTable(mySeat.tableId);
+
+                // If in active round with bet and still playing, forfeit
+                if (table && table.phase === 'playing' && mySeat.status === 'playing' && mySeat.bet > 0) {
+                    // Points already deducted at bet time, no extra penalty
+                }
+
+                await removeSeat(mySeat.tableId, mySeat.seatIndex);
+
+                // If it was my turn, advance
+                if (table && table.phase === 'playing' && table.activeSeat === mySeat.seatIndex) {
+                    const remaining = await getSeats(table.id);
+                    await advanceTurn(table, remaining);
+                }
+
+                // If table empty, reset
+                const remaining = await getSeats(mySeat.tableId);
+                if (remaining.length === 0 && table) {
+                    table.phase = 'waiting';
+                    table.deck = [];
+                    table.dealerHand = [];
+                    table.activeSeat = -1;
+                    table.betStartTime = null;
+                    table.turnStartTime = null;
+                    table.doneTime = null;
+                    await saveTable(table);
+                }
+            } else {
+                await removeUserFromAllTables(user.id);
+            }
+
+            return res.json({ success: true });
+        }
+
+        // ==================================================
+        // placeBet
+        // ==================================================
+        if (action === 'placeBet') {
+            const { tableId, bet, chips } = body;
+
+            const table = await getTable(tableId);
+            if (!table) return res.json({ error: 'Table not found' });
+
+            if (table.phase !== 'waiting') {
+                return res.json({ error: 'Cannot bet now' });
+            }
+
+            const seats = await getSeats(tableId);
+            const mySeat = seats.find(s => s.userId === user.id);
+            if (!mySeat) return res.json({ error: 'Not seated' });
+            if (mySeat.bet > 0) return res.json({ error: 'Already bet' });
+
+            const p = await getPlayer(user.id);
+            if (!p || p.points < bet) return res.json({ error: 'Not enough points' });
+            if (bet <= 0) return res.json({ error: 'Invalid bet' });
+
+            // Deduct points immediately
+            await db.execute({
+                sql: 'UPDATE yellowjack_players SET points = points - ?, last_played = datetime("now") WHERE user_id = ?',
+                args: [bet, user.id]
+            });
+
+            // Save bet
+            mySeat.bet = bet;
+            mySeat.chips = chips || [];
+            mySeat.status = 'ready';
+            await saveSeat(mySeat);
+
+            // If no countdown running yet, start it
+            if (!table.betStartTime) {
+                table.betStartTime = new Date().toISOString();
+                await saveTable(table);
+            }
+
+            // Check if all seated players have bet → quick start
+            const updatedSeats = await getSeats(tableId);
+            const allBet = updatedSeats.every(s => s.bet > 0);
+            if (allBet && updatedSeats.length > 0) {
+                await dealCards(table, updatedSeats);
+            }
+
+            return res.json({ success: true });
+        }
+
+        // ==================================================
+        // playerAction — hit / stand / double / split
+        // ==================================================
+        if (action === 'playerAction') {
+            const { tableId, actionType } = body;
+
+            const table = await getTable(tableId);
+            if (!table || table.phase !== 'playing') return res.json({ error: 'Not in play' });
+
+            const seats = await getSeats(tableId);
+            const mySeat = seats.find(s => s.userId === user.id);
+            if (!mySeat || mySeat.seatIndex !== table.activeSeat) {
+                return res.json({ error: 'Not your turn' });
+            }
+            if (mySeat.status !== 'playing') return res.json({ error: 'Already done' });
+
+            let deck = table.deck.length > 10 ? table.deck : createDeck();
+
+            // --- HIT ---
+            if (actionType === 'hit') {
+                mySeat.hand.push(draw(deck));
+                const val = handValue(mySeat.hand);
+
+                if (val > 21) {
+                    mySeat.status = 'bust';
+                } else if (val === 21) {
+                    mySeat.status = 'stand';
+                }
+
+                table.deck = deck;
+                await saveSeat(mySeat);
+                await saveTable(table);
+
+                if (mySeat.status !== 'playing') {
+                    await advanceTurn(table, seats);
+                } else {
+                    // Reset turn timer
+                    table.turnStartTime = new Date().toISOString();
+                    await saveTable(table);
+                }
+
+                return res.json({ success: true });
+            }
+
+            // --- STAND ---
+            if (actionType === 'stand') {
+                mySeat.status = 'stand';
+                await saveSeat(mySeat);
+                await advanceTurn(table, seats);
+                return res.json({ success: true });
+            }
+
+            // --- DOUBLE ---
+            if (actionType === 'double') {
+                if (mySeat.hand.length !== 2) return res.json({ error: 'Can only double on 2 cards' });
+
+                const p = await getPlayer(user.id);
+                if (!p || p.points < mySeat.bet) return res.json({ error: 'Not enough points' });
+
+                // Deduct extra bet
+                await db.execute({
+                    sql: 'UPDATE yellowjack_players SET points = points - ? WHERE user_id = ?',
+                    args: [mySeat.bet, user.id]
+                });
+
+                mySeat.bet *= 2;
+                mySeat.hand.push(draw(deck));
+                const val = handValue(mySeat.hand);
+                mySeat.status = val > 21 ? 'bust' : 'stand';
+
+                table.deck = deck;
+                await saveSeat(mySeat);
+                await saveTable(table);
+                await advanceTurn(table, seats);
+
+                return res.json({ success: true });
+            }
+
+            // --- SPLIT ---
+            if (actionType === 'split') {
+                // Simplified: for now, don't support split to keep it clean
+                // Can be added later
+                return res.json({ error: 'Split not yet available' });
+            }
+
+            return res.json({ error: 'Unknown action type' });
+        }
+
+        // ==================================================
+        // heartbeat — keep seat alive
+        // ==================================================
+        if (action === 'heartbeat') {
+            const { tableId } = body;
+            await db.execute({
+                sql: `UPDATE yj_seats SET last_seen = datetime('now') WHERE table_id = ? AND user_id = ?`,
+                args: [tableId, user.id]
+            });
+            return res.json({ ok: true });
+        }
+
+        return res.status(400).json({ error: 'Unknown action' });
+
+    } catch (err) {
+        console.error('YellowJack API error:', err);
+        return res.status(500).json({ error: 'Server error' });
+    }
 }
