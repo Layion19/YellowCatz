@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>YellowJack — Blackjack by YellowCatz</title>
+    <title>YellowJack — Multiplayer Blackjack</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
         :root{--gold:#E8A000;--gold-dark:#8B5A00;--black:#0a0a0a;--dark:#111;--dark2:#1a1a1a;--dark3:#222;--red:#e74c3c;--green:#2ecc71;--purple:#9b59b6;--white:#fff}
@@ -11,7 +11,6 @@
         html,body{height:100%;overflow:hidden}
         body{min-height:100vh;background:var(--black);font-family:'Poppins',sans-serif;color:var(--white)}
         
-        /* ROTATE WARNING */
         .rotate-warning{display:none;position:fixed;inset:0;background:var(--black);z-index:99999;flex-direction:column;justify-content:center;align-items:center;gap:20px;text-align:center;padding:40px}
         .rotate-warning .phone-icon{font-size:60px;animation:rP 2s ease-in-out infinite}
         @keyframes rP{0%,100%{transform:rotate(0)}50%{transform:rotate(90deg)}}
@@ -20,7 +19,6 @@
         body.is-mobile .rotate-warning{display:none}
         @media(max-width:900px)and(orientation:portrait){body.is-mobile .rotate-warning{display:flex!important}body.is-mobile .app-container{display:none!important}}
         
-        /* MENU */
         .menu-btn{position:fixed;top:15px;right:15px;width:36px;height:36px;cursor:pointer;z-index:1000;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;background:rgba(0,0,0,.6);border-radius:8px;padding:8px}
         .menu-btn span{display:block;width:20px;height:2px;background:var(--gold);border-radius:2px;transition:all .3s}
         .menu-btn.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
@@ -42,7 +40,6 @@
         .error-toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--red);color:#fff;padding:10px 20px;border-radius:8px;font-size:12px;font-weight:700;z-index:9999;opacity:0;pointer-events:none;transition:all .3s;white-space:nowrap}
         .error-toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
         
-        /* LOGIN SCREEN */
         .login-screen{position:fixed;inset:0;background:var(--black);display:flex;flex-direction:column;justify-content:center;align-items:center;z-index:500;text-align:center;padding:40px}
         .login-screen.hidden{display:none}
         .login-logo{font-family:'Bebas Neue',sans-serif;font-size:64px;color:var(--gold);letter-spacing:6px;margin-bottom:10px}
@@ -52,7 +49,6 @@
         .login-message{color:var(--gold);font-size:18px;margin-bottom:20px}
         .login-info{color:#666;font-size:12px;margin-top:20px}
         
-        /* LOBBY */
         .lobby{padding:20px;max-width:1000px;margin:0 auto;height:100vh;overflow-y:auto}
         .lobby.hidden{display:none}
         .lobby-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:25px;padding:10px 15px;background:rgba(0,0,0,.5);border-radius:10px;border:1px solid #333}
@@ -66,24 +62,28 @@
         .lobby-user-points .amount{font-weight:700;color:var(--gold);font-size:14px}
         .lobby-title{text-align:center;margin-bottom:25px}
         .lobby-title h2{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;color:var(--gold)}
+        .lobby-title p{color:#888;font-size:12px;margin-top:5px}
         .tables-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
         .table-card{background:linear-gradient(145deg,var(--dark2),var(--dark3));border:2px solid #333;border-radius:12px;padding:15px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}
         .table-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);opacity:0;transition:opacity .3s}
         .table-card:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 6px 20px rgba(232,160,0,.15)}
         .table-card:hover::before{opacity:1}
+        .table-card.has-players{border-color:var(--green)}
+        .table-card.has-players::before{background:var(--green);opacity:1}
         .table-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
         .table-card-name{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--gold)}
         .table-card-status{font-size:10px;padding:2px 8px;border-radius:8px;font-weight:600;background:rgba(46,204,113,.15);color:#2ecc71;border:1px solid rgba(46,204,113,.3)}
+        .table-card-status.active{background:rgba(232,160,0,.15);color:var(--gold);border-color:rgba(232,160,0,.3)}
         .table-card-players{display:flex;gap:3px;margin-bottom:12px}
-        .table-card-seat{width:24px;height:24px;border-radius:50%;border:2px solid #333;display:flex;justify-content:center;align-items:center;font-size:9px;color:#555}
+        .table-card-seat{width:24px;height:24px;border-radius:50%;border:2px solid #333;display:flex;justify-content:center;align-items:center;font-size:9px;color:#555;overflow:hidden}
         .table-card-seat.occupied{border-color:var(--gold);background:var(--gold-dark);color:var(--gold)}
+        .table-card-seat.occupied img{width:100%;height:100%;object-fit:cover}
         .table-card-actions{display:flex;gap:6px}
         .table-card-btn{flex:1;padding:8px;border:none;border-radius:6px;font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s}
         .table-card-btn.join{background:var(--gold);color:#000}
         .table-card-btn.watch{background:transparent;color:var(--gold);border:1px solid var(--gold-dark)}
         .table-card-btn:hover{transform:scale(1.02)}
         
-        /* GAME VIEW */
         .game-view{display:none;position:fixed;inset:0;background:#000}
         .game-view.active{display:flex;justify-content:center;align-items:center}
         
@@ -96,6 +96,7 @@
         .back-btn:hover{border-color:var(--gold);color:var(--gold)}
         
         .table-name{position:fixed;top:15px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);padding:6px 20px;border-radius:6px;font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--gold);letter-spacing:2px;z-index:100}
+        .table-name .status{font-size:10px;color:#888;margin-left:10px;font-family:'Poppins',sans-serif}
         
         .music-player{position:fixed;top:15px;left:110px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.8);padding:5px 10px;border-radius:20px;z-index:100}
         .music-btn{background:transparent;border:none;color:var(--gold);font-size:12px;cursor:pointer;padding:3px;transition:transform .2s}
@@ -109,14 +110,10 @@
         .chat-zone::-webkit-scrollbar-track{background:transparent}
         .chat-zone::-webkit-scrollbar-thumb{background:var(--gold-dark);border-radius:2px}
         .chat-message{font-size:11px;padding:2px 0;text-shadow:0 1px 3px rgba(0,0,0,.9)}
-        .chat-message.green{color:var(--green)}
-        .chat-message.purple{color:var(--purple)}
+        .chat-message.system{color:var(--purple)}
+        .chat-message.player{color:var(--green)}
         
         .bottom-left-ui{position:fixed;bottom:15px;left:15px;display:flex;flex-direction:column;gap:8px;z-index:100}
-        .chat-input-row{display:flex;align-items:center;gap:6px}
-        .chat-input-row input{background:rgba(0,0,0,.8);border:1px solid #444;color:#fff;padding:8px 12px;border-radius:20px;font-family:'Poppins',sans-serif;font-size:11px;width:160px;outline:none}
-        .chat-input-row input:focus{border-color:var(--gold)}
-        .chat-input-row button{background:var(--gold);color:#000;border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:11px}
         .stats-row{display:flex;gap:8px}
         .stat-box{background:rgba(0,0,0,.85);padding:8px 14px;border-radius:10px;min-width:90px}
         .stat-box.bet{border:1px solid var(--gold)}
@@ -137,19 +134,13 @@
         .bet-confirm{padding:7px 18px;background:var(--gold);color:#000;border:none;border-radius:18px;font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;cursor:pointer}
         .bet-clear{padding:5px 10px;background:transparent;color:#888;border:1px solid #444;border-radius:12px;font-family:'Poppins',sans-serif;font-size:9px;cursor:pointer}
         
-        /* RESPONSIVE */
-        @media(max-width:900px){
-            .tables-grid{grid-template-columns:repeat(2,1fr)}
-            .chat-zone{width:160px;max-height:100px;font-size:10px}
-        }
-        @media(max-width:600px){
-            .tables-grid{grid-template-columns:1fr}
-            .chip{width:30px;height:30px;font-size:8px}
-            .chat-zone{width:140px}
-            .stat-box{min-width:70px;padding:6px 10px}
-            .stat-value{font-size:12px}
-            .login-logo{font-size:42px}
-        }
+        .turn-indicator{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.9);padding:10px 25px;border-radius:8px;font-size:14px;font-weight:700;z-index:100;display:none;border:2px solid var(--gold)}
+        .turn-indicator.active{display:block}
+        .turn-indicator.your-turn{border-color:var(--green);color:var(--green)}
+        .turn-indicator.waiting{border-color:#888;color:#888}
+        
+        @media(max-width:900px){.tables-grid{grid-template-columns:repeat(2,1fr)}.chat-zone{width:160px;max-height:100px;font-size:10px}}
+        @media(max-width:600px){.tables-grid{grid-template-columns:1fr}.chip{width:30px;height:30px;font-size:8px}.chat-zone{width:140px}.stat-box{min-width:70px;padding:6px 10px}.stat-value{font-size:12px}.login-logo{font-size:42px}}
     </style>
 </head>
 <body>
@@ -183,16 +174,14 @@
     <audio id="bgMusic" preload="auto" loop></audio>
 
     <div class="app-container">
-        <!-- LOGIN SCREEN -->
         <div class="login-screen" id="loginScreen">
             <div class="login-logo">YELLOW<span>JACK</span></div>
-            <p class="login-subtitle">Connect with X to play Blackjack</p>
+            <p class="login-subtitle">Multiplayer Blackjack</p>
             <div class="login-cat" id="loginCat">😼</div>
             <p class="login-message">Click the cat to connect</p>
-            <p class="login-info">You'll be redirected to X for authentication</p>
+            <p class="login-info">Play with other YellowCatz members!</p>
         </div>
 
-        <!-- LOBBY -->
         <div class="lobby hidden" id="lobbyView">
             <div class="lobby-header">
                 <div class="lobby-logo">YELLOW<span>JACK</span></div>
@@ -205,16 +194,18 @@
                     </div>
                 </div>
             </div>
-            <div class="lobby-title"><h2>Choose Your Table</h2></div>
+            <div class="lobby-title">
+                <h2>Choose Your Table</h2>
+                <p>Join a table with other players or start your own!</p>
+            </div>
             <div class="tables-grid" id="tablesGrid"></div>
         </div>
         
-        <!-- GAME VIEW -->
         <div class="game-view" id="gameView">
             <canvas id="gameCanvas"></canvas>
             
             <div class="game-ui">
-                <button class="back-btn" onclick="leaveLobby()">← Lobby</button>
+                <button class="back-btn" onclick="leaveTable()">← Lobby</button>
                 
                 <div class="music-player">
                     <button class="music-btn" onclick="prevTrack()">⏮</button>
@@ -223,22 +214,20 @@
                     <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="30" onchange="setVolume(this.value)">
                 </div>
                 
-                <div class="table-name" id="tableName">TABLE 1</div>
+                <div class="table-name" id="tableName">TABLE 1<span class="status" id="tableStatus"></span></div>
+                
+                <div class="turn-indicator" id="turnIndicator">YOUR TURN</div>
                 
                 <div class="chat-zone" id="chatZone"></div>
                 
                 <div class="bottom-left-ui">
-                    <div class="chat-input-row">
-                        <input type="text" id="chatInput" placeholder="Say something..." maxlength="80" onkeydown="if(event.key==='Enter')sendChat()">
-                        <button onclick="sendChat()">➤</button>
-                    </div>
                     <div class="stats-row">
                         <div class="stat-box">
                             <div class="stat-label">BALANCE</div>
                             <div class="stat-value" id="balanceDisplay">🪙 10000</div>
                         </div>
                         <div class="stat-box bet" id="betBox" style="display:none">
-                            <div class="stat-label">TOTAL BET</div>
+                            <div class="stat-label">YOUR BET</div>
                             <div class="stat-value" id="betDisplay">🎰 0</div>
                         </div>
                     </div>
@@ -252,22 +241,17 @@
                     <div class="chip chip-100" onclick="addBet(100)">100</div>
                     <div class="chip chip-500" onclick="addBet(500)">500</div>
                     <button class="bet-clear" onclick="clearBet()">✕</button>
-                    <button class="bet-confirm" onclick="confirmBet()">DEAL</button>
+                    <button class="bet-confirm" onclick="confirmBet()">READY</button>
                 </div>
             </div>
         </div>
     </div>
 
 <script>
-// ============================================================
-// MOBILE CHECK
-// ============================================================
 const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 if (isMobile) document.body.classList.add('is-mobile');
 
-// ============================================================
-// MENU
-// ============================================================
+// Menu
 document.getElementById('menuBtn').addEventListener('click', function() {
     this.classList.toggle('active');
     document.getElementById('sidebar').classList.toggle('active');
@@ -278,16 +262,15 @@ document.getElementById('menuOverlay').addEventListener('click', () => {
     document.getElementById('sidebar').classList.remove('active');
     document.getElementById('menuOverlay').classList.remove('active');
 });
-document.getElementById('secretCat').addEventListener('click', () => {
-    window.location.href = 'yellow.html';
-});
+document.getElementById('secretCat').addEventListener('click', () => window.location.href = 'yellow.html');
 
 // ============================================================
-// AUTH (same as index.html)
+// AUTH
 // ============================================================
 const SK = 'yellowcatz_session';
 const SESSION_EXPIRY = 7 * 24 * 60 * 60 * 1000;
-let isAuth = false, twName = '', twPfp = '', twId = '';
+let isAuth = false, twName = '', twPfp = '', twId = '', myUserId = null;
+let pts = 10000;
 
 function getSession() {
     try {
@@ -306,35 +289,30 @@ function saveSession(userData) {
     localStorage.setItem(SK, JSON.stringify({ data: userData, timestamp: Date.now() }));
 }
 
-// Login via cat click - same pattern as other pages
 document.getElementById('loginCat').addEventListener('click', () => {
     window.location.href = '/api/auth/twitter';
 });
 
-function showAuthenticatedUI() {
+async function showAuthenticatedUI() {
     isAuth = true;
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('lobbyView').classList.remove('hidden');
     document.getElementById('statusLink').classList.add('visible');
-    
-    // Update lobby header with user info
     document.getElementById('lobbyUserName').textContent = twName || 'Player';
     document.getElementById('lobbyUserPfp').src = twPfp || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
-    
-    loadPlayerPoints();
-    renderLobby();
+    await loadPlayerPoints();
+    loadTables();
 }
 
-// Check cached session first
 const cached = getSession();
 if (cached && cached.authenticated) {
     twName = cached.username || cached.name || cached.displayName || 'Player';
     twPfp = cached.profileImage || cached.avatar_url || '';
     twId = cached.id || '';
+    myUserId = cached.id;
     showAuthenticatedUI();
 }
 
-// Verify with API
 async function checkAuth() {
     try {
         const r = await fetch('/api/user', { credentials: 'include' });
@@ -343,20 +321,13 @@ async function checkAuth() {
             twName = d.username || d.name || d.displayName || 'Player';
             twPfp = d.profileImage || d.avatar_url || '';
             twId = d.id || '';
+            myUserId = d.id;
             saveSession(d);
             showAuthenticatedUI();
         }
-    } catch (e) {
-        console.log('Auth check failed');
-    }
+    } catch (e) { console.log('Auth check failed'); }
 }
 checkAuth();
-
-// ============================================================
-// POINTS PERSISTENCE
-// ============================================================
-const DEFAULT_POINTS = 10000;
-let pts = DEFAULT_POINTS;
 
 async function loadPlayerPoints() {
     try {
@@ -367,105 +338,35 @@ async function loadPlayerPoints() {
             body: JSON.stringify({ action: 'getPlayer' })
         });
         const d = await r.json();
-        if (d.blocked) {
-            showErr('You are blocked from YellowJack');
-            return;
-        }
-        if (d.player && typeof d.player.points === 'number') {
-            pts = d.player.points;
-        } else {
-            pts = DEFAULT_POINTS;
-        }
-    } catch (e) {
-        pts = DEFAULT_POINTS;
-    }
+        if (d.blocked) { showErr('You are blocked'); return; }
+        if (d.player) pts = d.player.points || 10000;
+    } catch (e) { pts = 10000; }
     updateUI();
 }
 
-async function savePlayerPoints() {
-    if (!isAuth) return;
-    try {
-        await fetch('/api/yellowjack', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ action: 'updatePoints', points: pts })
-        });
-    } catch (e) {
-        console.log('Failed to save points');
-    }
-}
-
-async function recordGameResult(won, lost) {
-    if (!isAuth) return;
-    try {
-        await fetch('/api/yellowjack', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ action: 'recordGame', won: won || 0, lost: lost || 0 })
-        });
-    } catch (e) {
-        console.log('Failed to record game');
-    }
-}
-
 // ============================================================
-// GAME CONSTANTS
+// CONSTANTS
 // ============================================================
 const G = '#E8A000';
-const PURPLE = '#9b59b6';
-const GREEN = '#2ecc71';
 const GOLD_BJ = '#f1c40f';
-
-const SUITS = ['♠', '♥', '♦', '♣'];
-const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-const TIMER = 30;
 const CC = { 5: { b: '#c0392b', r: '#ff6b6b' }, 10: { b: '#2471a3', r: '#5dade2' }, 20: { b: '#1e8449', r: '#58d68d' }, 50: { b: '#d68910', r: '#f0b429' }, 100: { b: '#222', r: '#666' }, 500: { b: '#6c3483', r: '#a569bd' } };
 
 const SPOTS = [
-    { x: 0.178, y: 0.565 },
-    { x: 0.261, y: 0.67 },
-    { x: 0.378, y: 0.74 },
-    { x: 0.515, y: 0.76 },
-    { x: 0.650, y: 0.74 },
-    { x: 0.755, y: 0.676 },
-    { x: 0.825, y: 0.575 },
+    { x: 0.178, y: 0.565 }, { x: 0.261, y: 0.67 }, { x: 0.378, y: 0.74 },
+    { x: 0.515, y: 0.76 }, { x: 0.650, y: 0.74 }, { x: 0.755, y: 0.676 }, { x: 0.825, y: 0.575 },
 ];
 const DPO = { x: 0.50, y: 0.28 };
 
-// ============================================================
-// GAME STATE
-// ============================================================
-let deck = [], gamePhase = 'idle', curTable = null, isSpec = false, timerInt = null, timerRem = 0;
-let mySeats = [], activeHandIdx = 0, dealerHand = [], aBtns = [], roundMsg = null, hoveredSeat = -1;
-let chatMessages = [];
-const MAX_CHAT = 50;
-
 const TABLE_IMAGES = { 1: 'images/yellowjack-table.png', 2: 'images/yellowjack-table2.png', 3: 'images/yellowjack-table3.png', 4: 'images/yellowjack-table4.png', 5: 'images/yellowjack-table5.png', 6: 'images/yellowjack-table6.png' };
 
+// ============================================================
+// STATE
+// ============================================================
+let curTable = null, mySeat = null, myBet = 0, myChips = [];
+let tableState = null, pollInterval = null, heartbeatInterval = null;
+let chatMessages = [], aBtns = [];
 let tImg = null, tLoaded = false;
-function loadTableImg(tableId) {
-    tLoaded = false;
-    tImg = new Image();
-    tImg.onload = () => { tLoaded = true; resize(); render(); };
-    tImg.onerror = () => { tImg.src = 'images/yellowjack-table.png'; };
-    tImg.src = TABLE_IMAGES[tableId] || 'images/yellowjack-table.png';
-}
-
-let pfpImg = null;
-function loadPfp() {
-    if (twPfp) {
-        pfpImg = new Image();
-        pfpImg.crossOrigin = 'anonymous';
-        pfpImg.onload = () => render();
-        pfpImg.onerror = () => { pfpImg = null; };
-        pfpImg.src = twPfp;
-    }
-}
-
-let tables = [];
-for (let i = 1; i <= 6; i++) tables.push({ id: i, name: `Table ${i}`, players: [], max: 7 });
+let pfpCache = {};
 
 function showErr(m) {
     const t = document.getElementById('errorToast');
@@ -474,33 +375,17 @@ function showErr(m) {
     setTimeout(() => t.classList.remove('visible'), 3000);
 }
 
-function pName() { return twName || 'Player'; }
-
 function playSound(id) {
     const s = document.getElementById(id);
     if (s) { s.currentTime = 0; s.volume = 0.5; s.play().catch(() => {}); }
 }
 
-// ============================================================
-// MUSIC
-// ============================================================
+// Music
 const TRACKS = ['images/bjmusic1.mp3','images/bjmusic2.mp3','images/bjmusic3.mp3','images/bjmusic4.mp3','images/bjmusic5.mp3'];
 let currentTrack = 0, isPlaying = false;
 const bgMusic = document.getElementById('bgMusic');
 bgMusic.volume = 0.3;
-
-function toggleMusic() {
-    if (isPlaying) {
-        bgMusic.pause();
-        isPlaying = false;
-        document.getElementById('playBtn').textContent = '▶';
-    } else {
-        if (!bgMusic.src) bgMusic.src = TRACKS[currentTrack];
-        bgMusic.play().catch(() => {});
-        isPlaying = true;
-        document.getElementById('playBtn').textContent = '⏸';
-    }
-}
+function toggleMusic() { if (isPlaying) { bgMusic.pause(); isPlaying = false; document.getElementById('playBtn').textContent = '▶'; } else { if (!bgMusic.src) bgMusic.src = TRACKS[currentTrack]; bgMusic.play().catch(() => {}); isPlaying = true; document.getElementById('playBtn').textContent = '⏸'; } }
 function nextTrack() { currentTrack = (currentTrack + 1) % TRACKS.length; bgMusic.src = TRACKS[currentTrack]; if (isPlaying) bgMusic.play(); }
 function prevTrack() { currentTrack = (currentTrack - 1 + TRACKS.length) % TRACKS.length; bgMusic.src = TRACKS[currentTrack]; if (isPlaying) bgMusic.play(); }
 function setVolume(v) { bgMusic.volume = v / 100; }
@@ -509,128 +394,312 @@ bgMusic.addEventListener('ended', nextTrack);
 // ============================================================
 // LOBBY
 // ============================================================
-function renderLobby() {
+async function loadTables() {
+    try {
+        const r = await fetch('/api/yellowjack', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'getTables' })
+        });
+        const d = await r.json();
+        renderLobby(d.tables || []);
+    } catch (e) {
+        console.log('Failed to load tables');
+        renderLobby([]);
+    }
+}
+
+function renderLobby(tables) {
     const g = document.getElementById('tablesGrid');
     g.innerHTML = '';
-    tables.forEach(t => {
-        const c = t.players.length;
+    
+    for (let i = 1; i <= 6; i++) {
+        const tbl = tables.find(t => t.id === i) || { id: i, players: [] };
+        const c = tbl.players.length;
+        const hasPlayers = c > 0;
+        
         const e = document.createElement('div');
-        e.className = 'table-card';
+        e.className = 'table-card' + (hasPlayers ? ' has-players' : '');
         e.innerHTML = `
             <div class="table-card-header">
-                <div class="table-card-name">${t.name}</div>
-                <div class="table-card-status">${c}/${t.max} OPEN</div>
+                <div class="table-card-name">Table ${i}</div>
+                <div class="table-card-status ${hasPlayers ? 'active' : ''}">${c}/7 ${hasPlayers ? 'PLAYING' : 'OPEN'}</div>
             </div>
             <div class="table-card-players">
-                ${Array.from({ length: 7 }, (_, i) => `<div class="table-card-seat ${i < c ? 'occupied' : ''}">${i < c ? '😼' : '·'}</div>`).join('')}
+                ${Array.from({ length: 7 }, (_, j) => {
+                    const player = tbl.players.find(p => p.seat === j);
+                    if (player) {
+                        return `<div class="table-card-seat occupied" title="${player.name}"><img src="${player.avatar || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'}"></div>`;
+                    }
+                    return `<div class="table-card-seat">·</div>`;
+                }).join('')}
             </div>
             <div class="table-card-actions">
-                <button class="table-card-btn join" onclick="joinT(${t.id})">Join</button>
-                <button class="table-card-btn watch" onclick="watchT(${t.id})">Watch</button>
+                <button class="table-card-btn join" onclick="joinTable(${i})">Join</button>
             </div>
         `;
         g.appendChild(e);
-    });
+    }
     
-    // Update points display in lobby
     document.getElementById('lobbyUserPoints').textContent = pts;
 }
 
-function joinT(id) {
-    curTable = id;
-    isSpec = false;
-    mySeats = [];
-    gamePhase = 'seat-selection';
-    activeHandIdx = 0;
-    dealerHand = [];
-    roundMsg = null;
-    chatMessages = [];
-    loadTableImg(id);
-    loadPfp();
-    document.getElementById('lobbyView').classList.add('hidden');
-    document.getElementById('gameView').classList.add('active');
-    document.getElementById('tableName').textContent = 'TABLE ' + id;
-    updateUI();
-    hideBet();
-    addSystemChat('Click on a spot to join the table');
-}
+// Refresh lobby every 5 seconds
+setInterval(() => {
+    if (!curTable && isAuth) loadTables();
+}, 5000);
 
-function watchT(id) {
+// ============================================================
+// JOIN / LEAVE TABLE
+// ============================================================
+async function joinTable(id) {
     curTable = id;
-    isSpec = true;
-    mySeats = [];
-    gamePhase = 'idle';
+    mySeat = null;
+    myBet = 0;
+    myChips = [];
+    tableState = null;
     chatMessages = [];
+    
     loadTableImg(id);
     document.getElementById('lobbyView').classList.add('hidden');
     document.getElementById('gameView').classList.add('active');
-    document.getElementById('tableName').textContent = 'TABLE ' + id + ' (SPECTATING)';
-    updateUI();
-    hideBet();
-    addSystemChat('Watching this table');
+    document.getElementById('tableName').innerHTML = `TABLE ${id}<span class="status" id="tableStatus">Connecting...</span>`;
+    
+    // Start polling
+    startPolling();
+    startHeartbeat();
+    
+    addSystemChat('Click on an empty spot to join');
 }
 
-function leaveLobby() {
-    if (curTable) {
-        const t = tables.find(t => t.id === curTable);
-        mySeats.forEach(s => { t.players = t.players.filter(p => p.seat !== s.seat); });
+async function leaveTable() {
+    if (curTable && mySeat !== null) {
+        try {
+            await fetch('/api/yellowjack', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ action: 'leaveTable', tableId: curTable })
+            });
+        } catch (e) {}
     }
-    curTable = null; isSpec = false; mySeats = []; gamePhase = 'idle';
-    clrTimer(); aBtns = []; dealerHand = []; roundMsg = null; chatMessages = [];
+    
+    stopPolling();
+    stopHeartbeat();
+    curTable = null;
+    mySeat = null;
+    tableState = null;
+    
     document.getElementById('gameView').classList.remove('active');
     document.getElementById('lobbyView').classList.remove('hidden');
-    document.getElementById('lobbyUserPoints').textContent = pts;
-    savePlayerPoints();
-    renderLobby();
+    hideBet();
+    loadTables();
+    loadPlayerPoints();
 }
 
-function leaveSeat(seatIdx) {
-    const t = tables.find(t => t.id === curTable);
-    mySeats = mySeats.filter(s => s.seat !== seatIdx);
-    t.players = t.players.filter(p => p.seat !== seatIdx);
-    if (mySeats.length === 0) { gamePhase = 'seat-selection'; hideBet(); addSystemChat('You left your seat'); }
-    updateUI(); render(); renderLobby();
+// ============================================================
+// POLLING
+// ============================================================
+function startPolling() {
+    pollTable();
+    pollInterval = setInterval(pollTable, 1000);
 }
 
-function updateUI() {
-    document.getElementById('balanceDisplay').textContent = '🪙 ' + pts;
-    const totalBet = mySeats.reduce((s, h) => s + h.bet, 0);
-    const betBox = document.getElementById('betBox');
-    if (mySeats.length && totalBet >= 0) {
-        betBox.style.display = 'block';
-        document.getElementById('betDisplay').textContent = '🎰 ' + totalBet;
-    } else {
-        betBox.style.display = 'none';
+function stopPolling() {
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+}
+
+async function pollTable() {
+    if (!curTable) return;
+    
+    try {
+        const r = await fetch('/api/yellowjack', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'getTable', tableId: curTable })
+        });
+        const d = await r.json();
+        
+        if (d.tableId) {
+            const oldPhase = tableState?.phase;
+            tableState = d;
+            myUserId = d.myUserId;
+            
+            // Check if I'm at this table
+            const mySeatData = d.seats.find(s => s.userId === myUserId);
+            if (mySeatData) {
+                mySeat = mySeatData.seatIndex;
+            }
+            
+            // Update status
+            let statusText = '';
+            if (d.phase === 'waiting') statusText = 'Waiting for bets...';
+            else if (d.phase === 'playing') {
+                const activeSeat = d.seats.find(s => s.seatIndex === d.activeSeat);
+                if (activeSeat) {
+                    if (activeSeat.userId === myUserId) statusText = 'YOUR TURN!';
+                    else statusText = `${activeSeat.username}'s turn`;
+                }
+            }
+            else if (d.phase === 'dealer') statusText = 'Dealer playing...';
+            else if (d.phase === 'done') statusText = 'Round complete';
+            
+            document.getElementById('tableStatus').textContent = statusText;
+            
+            // Update turn indicator
+            const turnInd = document.getElementById('turnIndicator');
+            if (d.phase === 'playing' && mySeat !== null) {
+                const isMyTurn = d.activeSeat === mySeat;
+                turnInd.classList.add('active');
+                turnInd.classList.toggle('your-turn', isMyTurn);
+                turnInd.classList.toggle('waiting', !isMyTurn);
+                turnInd.textContent = isMyTurn ? '🎰 YOUR TURN!' : `Waiting for ${d.seats.find(s => s.seatIndex === d.activeSeat)?.username || 'player'}...`;
+            } else {
+                turnInd.classList.remove('active');
+            }
+            
+            // Show/hide bet overlay
+            if (d.phase === 'waiting' && mySeat !== null) {
+                const mySeatData = d.seats.find(s => s.seatIndex === mySeat);
+                if (mySeatData && mySeatData.status === 'waiting') {
+                    showBet();
+                } else {
+                    hideBet();
+                }
+            } else {
+                hideBet();
+            }
+            
+            // Phase change sounds
+            if (oldPhase !== d.phase) {
+                if (d.phase === 'playing') playSound('sndCard');
+                if (d.phase === 'done') {
+                    // Check if I won
+                    const mySeatData = d.seats.find(s => s.userId === myUserId);
+                    if (mySeatData) {
+                        const myHand = mySeatData.hand || [];
+                        const dealerHand = d.dealerHand || [];
+                        if (myHand.length > 0 && dealerHand.length > 0) {
+                            const myValue = handValue(myHand);
+                            const dealerValue = handValue(dealerHand);
+                            if (myValue <= 21 && (dealerValue > 21 || myValue > dealerValue)) {
+                                playSound('sndWin');
+                            }
+                        }
+                    }
+                    // Refresh points after round
+                    setTimeout(loadPlayerPoints, 2000);
+                }
+            }
+            
+            // Load PFP images
+            for (const seat of d.seats) {
+                if (seat.avatar && !pfpCache[seat.avatar]) {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = () => { pfpCache[seat.avatar] = img; render(); };
+                    img.src = seat.avatar;
+                    pfpCache[seat.avatar] = null; // Mark as loading
+                }
+            }
+            
+            render();
+        }
+    } catch (e) {
+        console.log('Poll error:', e);
     }
-    document.getElementById('lobbyUserPoints').textContent = pts;
 }
 
 // ============================================================
-// CHAT
+// HEARTBEAT
 // ============================================================
-function renderChat() {
-    const zone = document.getElementById('chatZone');
-    zone.innerHTML = '';
-    chatMessages.forEach((msg, i) => {
-        const div = document.createElement('div');
-        div.className = 'chat-message ' + (msg.system ? 'purple' : (i % 2 === 0 ? 'green' : 'purple'));
-        div.textContent = msg.name ? `${msg.name}: ${msg.text}` : msg.text;
-        zone.appendChild(div);
-    });
-    zone.scrollTop = zone.scrollHeight;
+function startHeartbeat() {
+    heartbeatInterval = setInterval(async () => {
+        if (!curTable) return;
+        try {
+            await fetch('/api/yellowjack', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ action: 'heartbeat', tableId: curTable })
+            });
+        } catch (e) {}
+    }, 10000);
 }
-function addSystemChat(text) { chatMessages.push({ name: '', text, system: true }); if (chatMessages.length > MAX_CHAT) chatMessages.shift(); renderChat(); }
-function addChat(name, text) { chatMessages.push({ name, text }); if (chatMessages.length > MAX_CHAT) chatMessages.shift(); renderChat(); }
-function sendChat() { const input = document.getElementById('chatInput'); const text = input.value.trim(); if (!text) return; addChat(pName(), text); input.value = ''; }
+
+function stopHeartbeat() {
+    if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
+}
 
 // ============================================================
-// DECK & HAND VALUE
+// BETTING
 // ============================================================
-function mkDeck() { deck = []; for (let d = 0; d < 6; d++) for (const s of SUITS) for (const r of RANKS) deck.push({ rank: r, suit: s }); for (let i = deck.length - 1; i > 0; i--) { const j = 0 | Math.random() * (i + 1); [deck[i], deck[j]] = [deck[j], deck[i]]; } }
-function draw() { if (deck.length < 20) mkDeck(); return deck.pop(); }
-function hv(h) { let t = 0, a = 0; for (const c of h) { if (c.rank === 'A') { t += 11; a++; } else if ('JQK'.includes(c.rank[0]) && c.rank.length <= 2) t += 10; else t += +c.rank; } while (t > 21 && a > 0) { t -= 10; a--; } return t; }
-function isBJ(h) { return h.length === 2 && hv(h) === 21; }
-function canSplit(h) { return h.hand.length === 2 && h.hand[0].rank === h.hand[1].rank; }
+function addBet(a) {
+    if (myBet + a > pts) { showErr('Not enough points'); return; }
+    playSound('sndChip');
+    myBet += a;
+    myChips.push(a);
+    updateUI();
+}
+
+function clearBet() {
+    myBet = 0;
+    myChips = [];
+    updateUI();
+}
+
+async function confirmBet() {
+    if (myBet <= 0) { showErr('Place a bet first'); return; }
+    if (myBet > pts) { showErr('Not enough points'); return; }
+    
+    try {
+        const r = await fetch('/api/yellowjack', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'placeBet', tableId: curTable, bet: myBet, chips: myChips })
+        });
+        const d = await r.json();
+        if (d.error) { showErr(d.error); return; }
+        
+        pts -= myBet;
+        hideBet();
+        addSystemChat(`You bet ${myBet} points`);
+        updateUI();
+    } catch (e) {
+        showErr('Failed to place bet');
+    }
+}
+
+function showBet() { document.getElementById('betOverlay').classList.add('active'); }
+function hideBet() { document.getElementById('betOverlay').classList.remove('active'); }
+
+// ============================================================
+// PLAYER ACTIONS
+// ============================================================
+async function playerAction(actionType) {
+    if (!curTable || mySeat === null) return;
+    if (!tableState || tableState.phase !== 'playing') return;
+    if (tableState.activeSeat !== mySeat) { showErr('Not your turn'); return; }
+    
+    try {
+        const r = await fetch('/api/yellowjack', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'playerAction', tableId: curTable, actionType })
+        });
+        const d = await r.json();
+        if (d.error) { showErr(d.error); return; }
+        
+        playSound('sndCard');
+        pollTable();
+    } catch (e) {
+        showErr('Action failed');
+    }
+}
 
 // ============================================================
 // CANVAS
@@ -639,221 +708,250 @@ const cv = document.getElementById('gameCanvas');
 const cx = cv.getContext('2d');
 let W = 0, H = 0, dx = 0, dy = 0, dw = 0, dh = 0;
 
+function loadTableImg(tableId) {
+    tLoaded = false;
+    tImg = new Image();
+    tImg.onload = () => { tLoaded = true; resize(); render(); };
+    tImg.onerror = () => { tImg.src = 'images/yellowjack-table.png'; };
+    tImg.src = TABLE_IMAGES[tableId] || 'images/yellowjack-table.png';
+}
+
 function resize() {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    cv.width = vw;
-    cv.height = vh;
-    W = vw;
-    H = vh;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    cv.width = vw; cv.height = vh; W = vw; H = vh;
     if (!tLoaded || !tImg) { dx = 0; dy = 0; dw = W; dh = H; return; }
-    const ir = tImg.width / tImg.height;
-    const cr = W / H;
-    if (cr > ir) { dh = H; dw = dh * ir; dx = (W - dw) / 2; dy = 0; } else { dw = W; dh = dw / ir; dx = 0; dy = (H - dh) / 2; }
+    const ir = tImg.width / tImg.height, cr = W / H;
+    if (cr > ir) { dh = H; dw = dh * ir; dx = (W - dw) / 2; dy = 0; } 
+    else { dw = W; dh = dw / ir; dx = 0; dy = (H - dh) / 2; }
 }
 
 window.addEventListener('resize', () => { if (curTable) { resize(); render(); } });
-window.addEventListener('orientationchange', () => { setTimeout(() => { if (curTable) { resize(); render(); } }, 100); });
+window.addEventListener('orientationchange', () => setTimeout(() => { if (curTable) { resize(); render(); } }, 100));
 
 function render() {
     cx.fillStyle = '#0a0a0a';
     cx.fillRect(0, 0, W, H);
     if (!tLoaded) return;
+    
     cx.save();
     roundRectPath(cx, dx, dy, dw, dh, 15);
     cx.clip();
     cx.drawImage(tImg, dx, dy, dw, dh);
     cx.restore();
-    cv.style.cursor = (gamePhase === 'seat-selection' || aBtns.length || hoveredSeat >= 0) ? 'pointer' : 'default';
-    drawSpots();
-    drawChips();
+    
+    cv.style.cursor = 'default';
+    
+    if (!tableState) {
+        drawEmptySpots();
+        return;
+    }
+    
+    drawSeats();
     drawDealerCards();
-    drawPlayerCards();
     drawActions();
-    drawCardsHUD();
 }
 
 function roundRectPath(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath(); }
 
-function drawSpots() {
-    const tbl = tables.find(t => t.id === curTable);
-    if (!tbl) return;
+function drawEmptySpots() {
     const sr = Math.max(dw * 0.020, 14);
     SPOTS.forEach((p, i) => {
         const sx = dx + p.x * dw, sy = dy + p.y * dh;
-        const mine = mySeats.find(s => s.seat === i);
-        const other = tbl.players.find(pl => pl.seat === i && !pl.isMe);
-        if (!mine && !other && gamePhase === 'seat-selection') {
-            cx.save(); cx.beginPath(); cx.arc(sx, sy, sr, 0, Math.PI * 2); cx.strokeStyle = 'rgba(232,160,0,0.6)'; cx.lineWidth = 2; cx.setLineDash([5, 5]); cx.stroke(); cx.setLineDash([]); cx.restore();
-        }
-        if (mine || other) {
-            const nm = mine ? pName() : (other ? other.name : '');
-            cx.save();
-            const fontSize = Math.max(dw * 0.014, 10);
-            cx.font = `700 ${fontSize}px Poppins`;
-            const tw = cx.measureText(nm).width, tW = tw + 16, tH = fontSize + 8, tX = sx - tW / 2, tY = sy + sr + 8;
-            const isActive = mine && activeHandIdx === mySeats.indexOf(mine) && gamePhase === 'playing';
-            cx.fillStyle = mine ? 'rgba(232,160,0,0.9)' : 'rgba(0,0,0,0.85)';
-            if (isActive) { cx.shadowColor = G; cx.shadowBlur = 15; }
-            roundRect(cx, tX, tY, tW, tH, 5); cx.fill(); cx.shadowBlur = 0;
-            cx.fillStyle = mine ? '#000' : G; cx.textAlign = 'center'; cx.fillText(nm, sx, tY + tH - 4);
-            // PFP circle
-            const pfpR = Math.max(sr * 0.75, 12), pfpY = tY + tH + pfpR + 4;
-            cx.beginPath(); cx.arc(sx, pfpY, pfpR, 0, Math.PI * 2); cx.fillStyle = 'rgba(0,0,0,.6)'; cx.fill();
-            cx.strokeStyle = mine ? G : '#555'; cx.lineWidth = 2; cx.stroke();
-            if (mine && pfpImg && pfpImg.complete && pfpImg.naturalWidth > 0) {
-                cx.save(); cx.beginPath(); cx.arc(sx, pfpY, pfpR - 2, 0, Math.PI * 2); cx.clip();
-                cx.drawImage(pfpImg, sx - pfpR + 2, pfpY - pfpR + 2, (pfpR - 2) * 2, (pfpR - 2) * 2);
-                cx.restore();
-            } else {
-                cx.font = `${pfpR}px sans-serif`; cx.fillStyle = '#666'; cx.textAlign = 'center'; cx.fillText('👤', sx, pfpY + pfpR * 0.35);
-            }
-            // Close button
-            if (mine && (hoveredSeat === i || gamePhase === 'betting' || gamePhase === 'seat-selection')) {
-                const closeX = sx + sr + 8, closeY = sy - sr/2;
-                cx.beginPath(); cx.arc(closeX, closeY, 10, 0, Math.PI * 2); cx.fillStyle = '#e74c3c'; cx.fill();
-                cx.fillStyle = '#fff'; cx.font = '900 11px Poppins'; cx.textAlign = 'center'; cx.fillText('✕', closeX, closeY + 4);
-            }
-            cx.restore();
-        }
+        cx.save();
+        cx.beginPath(); cx.arc(sx, sy, sr, 0, Math.PI * 2);
+        cx.strokeStyle = 'rgba(232,160,0,0.6)'; cx.lineWidth = 2; cx.setLineDash([5, 5]); cx.stroke();
+        cx.restore();
     });
 }
 
-function drawChips() {
-    mySeats.forEach(s => {
-        if (!s.chips.length) return;
-        const p = SPOTS[s.seat], sx = dx + p.x * dw, sy = dy + p.y * dh, cr = Math.max(dw * 0.012, 10);
-        s.chips.forEach((v, i) => {
-            const c = CC[v] || CC[5], cy = sy - i * 3 - cr - 5;
+function drawSeats() {
+    const sr = Math.max(dw * 0.020, 14);
+    
+    SPOTS.forEach((p, i) => {
+        const sx = dx + p.x * dw, sy = dy + p.y * dh;
+        const seatData = tableState.seats.find(s => s.seatIndex === i);
+        
+        if (!seatData) {
+            // Empty seat - clickable
+            if (mySeat === null) {
+                cx.save();
+                cx.beginPath(); cx.arc(sx, sy, sr, 0, Math.PI * 2);
+                cx.strokeStyle = 'rgba(232,160,0,0.6)'; cx.lineWidth = 2; cx.setLineDash([5, 5]); cx.stroke();
+                cx.restore();
+                cv.style.cursor = 'pointer';
+            }
+        } else {
+            // Occupied seat
+            const isMe = seatData.userId === myUserId;
+            const isActive = tableState.activeSeat === i && tableState.phase === 'playing';
+            
+            // Draw chips
+            if (seatData.chips && seatData.chips.length > 0) {
+                const cr = Math.max(dw * 0.012, 10);
+                seatData.chips.forEach((v, ci) => {
+                    const c = CC[v] || CC[5], cy = sy - ci * 3 - cr - 5;
+                    cx.save();
+                    cx.beginPath(); cx.ellipse(sx + 1, cy + 2, cr, cr * 0.3, 0, 0, Math.PI * 2); cx.fillStyle = 'rgba(0,0,0,.3)'; cx.fill();
+                    cx.beginPath(); cx.ellipse(sx, cy + 1, cr, cr * 0.3, 0, 0, Math.PI * 2); cx.fillStyle = c.b; cx.fill();
+                    cx.beginPath(); cx.ellipse(sx, cy, cr, cr * 0.3, 0, 0, Math.PI * 2); cx.fillStyle = c.r; cx.fill();
+                    cx.strokeStyle = 'rgba(255,255,255,.3)'; cx.lineWidth = 1; cx.stroke();
+                    if (ci === seatData.chips.length - 1) { cx.fillStyle = v === 50 ? '#000' : '#fff'; cx.font = `900 ${Math.max(cr * 0.5, 7)}px Poppins`; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(v, sx, cy); }
+                    cx.restore();
+                });
+            }
+            
+            // Draw cards
+            if (seatData.hand && seatData.hand.length > 0) {
+                const cw = Math.max(Math.min(dw * 0.035, 40), 28), ch = cw * 1.42, g = cw * 0.15;
+                const cy = sy - ch - dw * 0.03;
+                const stx = sx - ((seatData.hand.length * (cw + g)) - g) / 2;
+                
+                seatData.hand.forEach((c, ci) => {
+                    cardFace(cx, c, stx + ci * (cw + g), cy, cw, ch);
+                });
+                
+                // Hand value badge
+                const v = handValue(seatData.hand);
+                const hasBJ = seatData.hand.length === 2 && v === 21;
+                cx.save();
+                if (hasBJ) cx.fillStyle = GOLD_BJ;
+                else if (v > 21) cx.fillStyle = '#e74c3c';
+                else if (v === 21) cx.fillStyle = '#2ecc71';
+                else cx.fillStyle = 'rgba(0,0,0,.7)';
+                const badgeW = hasBJ ? 38 : 30;
+                roundRect(cx, sx - badgeW/2, cy - 28, badgeW, 22, 11); cx.fill();
+                cx.font = '900 ' + Math.max(dw * 0.014, 11) + 'px Poppins';
+                cx.fillStyle = hasBJ ? '#000' : '#fff';
+                cx.textAlign = 'center';
+                cx.fillText(hasBJ ? 'BJ' : (seatData.status === 'bust' ? 'BUST' : v), sx, cy - 12);
+                cx.restore();
+            }
+            
+            // Player name tag
             cx.save();
-            cx.beginPath(); cx.ellipse(sx + 1, cy + 2, cr, cr * 0.3, 0, 0, Math.PI * 2); cx.fillStyle = 'rgba(0,0,0,.3)'; cx.fill();
-            cx.beginPath(); cx.ellipse(sx, cy + 1, cr, cr * 0.3, 0, 0, Math.PI * 2); cx.fillStyle = c.b; cx.fill();
-            cx.beginPath(); cx.ellipse(sx, cy, cr, cr * 0.3, 0, 0, Math.PI * 2); cx.fillStyle = c.r; cx.fill();
-            cx.strokeStyle = 'rgba(255,255,255,.3)'; cx.lineWidth = 1; cx.stroke();
-            if (i === s.chips.length - 1) { cx.fillStyle = v === 50 ? '#000' : '#fff'; cx.font = `900 ${Math.max(cr * 0.5, 7)}px Poppins`; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(v, sx, cy); }
+            const fontSize = Math.max(dw * 0.012, 9);
+            cx.font = `700 ${fontSize}px Poppins`;
+            const nm = seatData.username || 'Player';
+            const tw = cx.measureText(nm).width;
+            const tW = tw + 16, tH = fontSize + 8;
+            const tX = sx - tW / 2, tY = sy + sr + 8;
+            
+            cx.fillStyle = isMe ? 'rgba(232,160,0,0.9)' : 'rgba(0,0,0,0.85)';
+            if (isActive) { cx.shadowColor = isMe ? '#2ecc71' : G; cx.shadowBlur = 15; }
+            roundRect(cx, tX, tY, tW, tH, 5); cx.fill();
+            cx.shadowBlur = 0;
+            cx.fillStyle = isMe ? '#000' : G;
+            cx.textAlign = 'center';
+            cx.fillText(nm, sx, tY + tH - 4);
+            
+            // PFP
+            const pfpR = Math.max(sr * 0.6, 10), pfpY = tY + tH + pfpR + 4;
+            cx.beginPath(); cx.arc(sx, pfpY, pfpR, 0, Math.PI * 2);
+            cx.fillStyle = 'rgba(0,0,0,.6)'; cx.fill();
+            cx.strokeStyle = isMe ? G : '#555'; cx.lineWidth = 2; cx.stroke();
+            
+            const pfpImg = pfpCache[seatData.avatar];
+            if (pfpImg && pfpImg.complete) {
+                cx.save();
+                cx.beginPath(); cx.arc(sx, pfpY, pfpR - 2, 0, Math.PI * 2); cx.clip();
+                cx.drawImage(pfpImg, sx - pfpR + 2, pfpY - pfpR + 2, (pfpR - 2) * 2, (pfpR - 2) * 2);
+                cx.restore();
+            } else {
+                cx.font = `${pfpR}px sans-serif`; cx.fillStyle = '#666'; cx.textAlign = 'center';
+                cx.fillText('👤', sx, pfpY + pfpR * 0.35);
+            }
+            
+            // Active indicator
+            if (isActive) {
+                cx.beginPath(); cx.arc(sx, sy - sr - 10, 6, 0, Math.PI * 2);
+                cx.fillStyle = '#2ecc71'; cx.fill();
+            }
+            
             cx.restore();
-        });
+        }
     });
 }
 
 function drawDealerCards() {
-    if (!dealerHand.length) return;
+    if (!tableState || !tableState.dealerHand || tableState.dealerHand.length === 0) return;
+    
     const dcx = dx + DPO.x * dw, dcy = dy + DPO.y * dh;
     const cw = Math.max(Math.min(dw * 0.045, 50), 35), ch = cw * 1.42, g = cw * 0.2;
-    const startX = dcx - ((dealerHand.length * (cw + g)) - g) / 2;
-    dealerHand.forEach((c, i) => {
+    const hand = tableState.dealerHand;
+    const startX = dcx - ((hand.length * (cw + g)) - g) / 2;
+    
+    hand.forEach((c, i) => {
         const x = startX + i * (cw + g);
-        if (i === 1 && gamePhase !== 'done' && gamePhase !== 'dealer') cardBack(cx, x, dcy, cw, ch);
-        else cardFace(cx, c, x, dcy, cw, ch);
+        if (c.rank === '?') {
+            cardBack(cx, x, dcy, cw, ch);
+        } else {
+            cardFace(cx, c, x, dcy, cw, ch);
+        }
     });
-}
-
-function drawPlayerCards() {
-    mySeats.forEach(s => {
-        if (!s.hand.length) return;
-        const p = SPOTS[s.seat], sx = dx + p.x * dw, sy = dy + p.y * dh;
-        const cw = Math.max(Math.min(dw * 0.035, 40), 28), ch = cw * 1.42, g = cw * 0.15;
-        const cy = sy - ch - dw * 0.03, stx = sx - ((s.hand.length * (cw + g)) - g) / 2;
-        s.hand.forEach((c, i) => cardFace(cx, c, stx + i * (cw + g), cy, cw, ch));
-        const v = hv(s.hand), hasBJ = isBJ(s.hand);
+    
+    // Dealer value badge
+    const visibleCards = hand.filter(c => c.rank !== '?');
+    if (visibleCards.length > 0) {
+        const v = handValue(visibleCards);
+        const showFull = tableState.phase === 'done' || tableState.phase === 'dealer';
         cx.save();
-        if (hasBJ) cx.fillStyle = GOLD_BJ; else if (v > 21) cx.fillStyle = '#e74c3c'; else if (v === 21) cx.fillStyle = '#2ecc71'; else cx.fillStyle = 'rgba(0,0,0,.7)';
-        const badgeW = hasBJ ? 38 : 30;
-        roundRect(cx, sx - badgeW/2, cy - 28, badgeW, 22, 11); cx.fill();
-        cx.font = '900 ' + Math.max(dw * 0.014, 11) + 'px Poppins'; cx.fillStyle = hasBJ ? '#000' : '#fff'; cx.textAlign = 'center'; cx.fillText(hasBJ ? 'BJ' : v, sx, cy - 12);
+        cx.fillStyle = 'rgba(0,0,0,.7)';
+        roundRect(cx, dcx - 20, dcy - 30, 40, 22, 11); cx.fill();
+        cx.font = '900 12px Poppins'; cx.fillStyle = G; cx.textAlign = 'center';
+        cx.fillText(showFull ? v : v + '+?', dcx, dcy - 14);
         cx.restore();
-    });
+    }
 }
 
 function drawActions() {
     aBtns = [];
-    if (gamePhase === 'playing' && mySeats.length) {
-        const cur = mySeats[activeHandIdx];
-        if (isBJ(cur.hand)) return;
-        const acx = dx + dw / 2, acy = dy + dh * 0.5;
-        const btnR = Math.max(dw * 0.018, 18), gap = btnR * 2.4;
-        const btns = [
-            { l: 'DOUBLE', c: '#f39c12', icon: '2x', a: pDbl, enabled: cur && cur.bet <= pts && cur.hand.length === 2 },
-            { l: 'HIT', c: '#2ecc71', icon: '+', a: pHit, enabled: true },
-            { l: 'STAND', c: '#e74c3c', icon: '−', a: pStand, enabled: true },
-            { l: 'SPLIT', c: '#3498db', icon: '⇄', a: pSplit, enabled: cur && canSplit(cur) && cur.bet <= pts },
-        ];
-        const enabledBtns = btns.filter(b => b.enabled);
-        let sx = acx - (enabledBtns.length * gap) / 2 + gap / 2;
-        enabledBtns.forEach(b => {
-            cx.save();
-            cx.beginPath(); cx.arc(sx, acy + 2, btnR, 0, Math.PI * 2); cx.fillStyle = 'rgba(0,0,0,.4)'; cx.fill();
-            cx.beginPath(); cx.arc(sx, acy, btnR, 0, Math.PI * 2);
-            const grad = cx.createRadialGradient(sx - btnR * 0.3, acy - btnR * 0.3, 0, sx, acy, btnR);
-            grad.addColorStop(0, b.c); grad.addColorStop(1, shadeColor(b.c, -30)); cx.fillStyle = grad; cx.fill();
-            cx.fillStyle = '#fff'; cx.font = `900 ${btnR * 0.55}px Poppins`; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(b.icon, sx, acy);
-            cx.font = `700 ${Math.max(btnR * 0.3, 7)}px Poppins`; cx.fillText(b.l, sx, acy + btnR + 10);
-            cx.restore();
-            aBtns.push({ x: sx - btnR, y: acy - btnR, w: btnR * 2, h: btnR * 2, action: b.a });
-            sx += gap;
-        });
-        if (timerRem > 0) {
-            const tbw = 150, tby = acy + btnR + 22;
-            cx.save();
-            cx.fillStyle = 'rgba(0,0,0,.5)'; roundRect(cx, acx - tbw/2, tby, tbw, 4, 2); cx.fill();
-            cx.fillStyle = timerRem <= 10 ? '#e74c3c' : '#2ecc71'; roundRect(cx, acx - tbw/2, tby, tbw * (timerRem / TIMER), 4, 2); cx.fill();
-            cx.beginPath(); cx.arc(acx, tby + 16, 13, 0, Math.PI * 2); cx.fillStyle = 'rgba(0,0,0,.8)'; cx.fill();
-            cx.strokeStyle = '#2ecc71'; cx.lineWidth = 2; cx.stroke();
-            cx.fillStyle = '#fff'; cx.font = '900 10px Poppins'; cx.textAlign = 'center'; cx.fillText(hv(cur.hand), acx, tby + 20);
-            cx.restore();
-        }
-    }
-    if (roundMsg && gamePhase === 'done') {
-        const acx = dx + dw / 2, acy = dy + dh * 0.4;
-        cx.save(); cx.fillStyle = 'rgba(0,0,0,.85)'; roundRect(cx, acx - 140, acy - 30, 280, 60, 12); cx.fill();
-        cx.font = '900 24px Poppins'; cx.textAlign = 'center'; cx.fillStyle = roundMsg.color; cx.fillText(roundMsg.text, acx, acy + 10);
+    
+    if (!tableState || tableState.phase !== 'playing') return;
+    if (mySeat === null || tableState.activeSeat !== mySeat) return;
+    
+    const mySeatData = tableState.seats.find(s => s.seatIndex === mySeat);
+    if (!mySeatData || mySeatData.status !== 'playing') return;
+    
+    const acx = dx + dw / 2, acy = dy + dh * 0.5;
+    const btnR = Math.max(dw * 0.018, 18), gap = btnR * 2.4;
+    
+    const canDouble = mySeatData.hand.length === 2 && mySeatData.bet <= pts;
+    const canSplit = mySeatData.hand.length === 2 && mySeatData.hand[0].rank === mySeatData.hand[1].rank && mySeatData.bet <= pts;
+    
+    const btns = [
+        { l: 'DOUBLE', c: '#f39c12', icon: '2x', a: () => playerAction('double'), enabled: canDouble },
+        { l: 'HIT', c: '#2ecc71', icon: '+', a: () => playerAction('hit'), enabled: true },
+        { l: 'STAND', c: '#e74c3c', icon: '−', a: () => playerAction('stand'), enabled: true },
+    ];
+    
+    const enabledBtns = btns.filter(b => b.enabled);
+    let sx = acx - (enabledBtns.length * gap) / 2 + gap / 2;
+    
+    enabledBtns.forEach(b => {
+        cx.save();
+        cx.beginPath(); cx.arc(sx, acy + 2, btnR, 0, Math.PI * 2); cx.fillStyle = 'rgba(0,0,0,.4)'; cx.fill();
+        cx.beginPath(); cx.arc(sx, acy, btnR, 0, Math.PI * 2);
+        const grad = cx.createRadialGradient(sx - btnR * 0.3, acy - btnR * 0.3, 0, sx, acy, btnR);
+        grad.addColorStop(0, b.c); grad.addColorStop(1, shadeColor(b.c, -30)); cx.fillStyle = grad; cx.fill();
+        cx.fillStyle = '#fff'; cx.font = `900 ${btnR * 0.55}px Poppins`; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(b.icon, sx, acy);
+        cx.font = `700 ${Math.max(btnR * 0.3, 7)}px Poppins`; cx.fillText(b.l, sx, acy + btnR + 10);
         cx.restore();
-    }
-    if (gamePhase === 'seat-selection') {
-        const acx = dx + dw / 2, acy = dy + dh * 0.4;
-        cx.save(); cx.fillStyle = 'rgba(0,0,0,.7)'; roundRect(cx, acx - 130, acy, 260, 36, 8); cx.fill();
-        cx.font = '600 13px Poppins'; cx.fillStyle = '#fff'; cx.textAlign = 'center'; cx.fillText('Click on a spot to join', acx, acy + 23);
-        cx.restore();
-    }
-}
-
-function drawCardsHUD() {
-    if (!dealerHand.length && !mySeats.some(s => s.hand.length)) return;
-    const hudX = dx + dw - 15;
-    let hudY = dy + 50;
-    const cardW = 34, cardH = 50, gap = 3;
-    if (dealerHand.length) {
-        cx.save(); cx.fillStyle = 'rgba(0,0,0,.75)';
-        const boxW = dealerHand.length * (cardW + gap) + 25;
-        roundRect(cx, hudX - boxW, hudY, boxW, cardH + 32, 8); cx.fill();
-        cx.font = '600 9px Poppins'; cx.fillStyle = G; cx.textAlign = 'right'; cx.fillText('DEALER', hudX - 8, hudY + 12);
-        let cx2 = hudX - 12;
-        for (let i = dealerHand.length - 1; i >= 0; i--) { cx2 -= cardW + gap; if (i === 1 && gamePhase !== 'done' && gamePhase !== 'dealer') drawMiniCardBack(cx2, hudY + 16, cardW, cardH); else drawMiniCard(dealerHand[i], cx2, hudY + 16, cardW, cardH); }
-        const dv = (gamePhase === 'done' || gamePhase === 'dealer') ? hv(dealerHand) : hv([dealerHand[0]]);
-        const dealerBJ = (gamePhase === 'done' || gamePhase === 'dealer') && isBJ(dealerHand);
-        cx.fillStyle = dealerBJ ? GOLD_BJ : G; cx.font = '900 11px Poppins'; cx.textAlign = 'center';
-        cx.fillText(dealerBJ ? 'BJ' : ((gamePhase !== 'done' && gamePhase !== 'dealer' && dealerHand.length === 2) ? dv + '+?' : dv), hudX - boxW/2, hudY + cardH + 28);
-        cx.restore();
-        hudY += cardH + 45;
-    }
-    mySeats.forEach((seat, idx) => {
-        if (!seat.hand.length) return;
-        const hasBJ = isBJ(seat.hand);
-        cx.save(); cx.fillStyle = 'rgba(0,0,0,.75)';
-        const boxW = seat.hand.length * (cardW + gap) + 25;
-        roundRect(cx, hudX - boxW, hudY, boxW, cardH + 32, 8); cx.fill();
-        cx.font = '600 9px Poppins'; cx.fillStyle = GREEN; cx.textAlign = 'right'; cx.fillText(mySeats.length > 1 ? 'HAND ' + (idx+1) : 'YOU', hudX - 8, hudY + 12);
-        let cx2 = hudX - 12;
-        for (let i = seat.hand.length - 1; i >= 0; i--) { cx2 -= cardW + gap; drawMiniCard(seat.hand[i], cx2, hudY + 16, cardW, cardH); }
-        cx.fillStyle = hasBJ ? GOLD_BJ : GREEN; cx.font = '900 11px Poppins'; cx.textAlign = 'center';
-        cx.fillText(hasBJ ? 'BJ' : hv(seat.hand), hudX - boxW/2, hudY + cardH + 28);
-        cx.restore();
-        hudY += cardH + 45;
+        aBtns.push({ x: sx - btnR, y: acy - btnR, w: btnR * 2, h: btnR * 2, action: b.a });
+        sx += gap;
     });
 }
 
-function drawMiniCard(cd, x, y, w, h) { cx.save(); cx.fillStyle = '#fff'; roundRect(cx, x, y, w, h, 3); cx.fill(); cx.fillStyle = (cd.suit === '♥' || cd.suit === '♦') ? '#e74c3c' : '#111'; cx.font = '900 9px Poppins'; cx.textAlign = 'left'; cx.fillText(cd.rank, x + 3, y + 11); cx.font = '12px sans-serif'; cx.textAlign = 'center'; cx.fillText(cd.suit, x + w/2, y + h/2 + 6); cx.restore(); }
-function drawMiniCardBack(x, y, w, h) { cx.save(); cx.fillStyle = G; roundRect(cx, x, y, w, h, 3); cx.fill(); cx.fillStyle = '#8B5A00'; roundRect(cx, x + 2, y + 2, w - 4, h - 4, 2); cx.fill(); cx.font = '14px sans-serif'; cx.textAlign = 'center'; cx.fillText('🐱', x + w/2, y + h/2 + 5); cx.restore(); }
+// Helper functions
+function handValue(hand) {
+    let total = 0, aces = 0;
+    for (const c of hand) {
+        if (c.rank === 'A') { total += 11; aces++; }
+        else if (['J', 'Q', 'K'].includes(c.rank)) total += 10;
+        else if (c.rank !== '?') total += parseInt(c.rank);
+    }
+    while (total > 21 && aces > 0) { total -= 10; aces--; }
+    return total;
+}
 
 function shadeColor(color, percent) { const num = parseInt(color.replace('#', ''), 16); const amt = Math.round(2.55 * percent); const R = (num >> 16) + amt; const Gr = (num >> 8 & 0x00FF) + amt; const B = (num & 0x0000FF) + amt; return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (Gr < 255 ? Gr < 1 ? 0 : Gr : 255) * 0x100 + (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1); }
 function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath(); }
@@ -866,130 +964,90 @@ function cardBack(c, x, y, w, h) { c.save(); c.fillStyle = 'rgba(0,0,0,.3)'; rou
 function onClick(ex, ey) {
     const r = cv.getBoundingClientRect();
     const mx = (ex - r.left) * (cv.width / r.width), my = (ey - r.top) * (cv.height / r.height);
-    for (const b of aBtns) { const bcx = b.x + b.w / 2, bcy = b.y + b.h / 2; if (Math.sqrt((mx - bcx) ** 2 + (my - bcy) ** 2) < b.w / 2) { b.action(); return; } }
-    const sr = Math.max(dw * 0.020, 14);
-    for (let i = 0; i < SPOTS.length; i++) {
-        const mine = mySeats.find(s => s.seat === i);
-        if (mine && (gamePhase === 'betting' || gamePhase === 'seat-selection')) {
-            const p = SPOTS[i], sx = dx + p.x * dw, sy = dy + p.y * dh;
-            if (Math.sqrt((mx - (sx + sr + 8)) ** 2 + (my - (sy - sr/2)) ** 2) < 15) { leaveSeat(i); return; }
+    
+    // Check action buttons
+    for (const b of aBtns) {
+        const bcx = b.x + b.w / 2, bcy = b.y + b.h / 2;
+        if (Math.sqrt((mx - bcx) ** 2 + (my - bcy) ** 2) < b.w / 2) {
+            b.action();
+            return;
         }
     }
-    if (gamePhase === 'seat-selection' || gamePhase === 'betting') {
-        const tbl = tables.find(t => t.id === curTable);
+    
+    // Check empty seats to join
+    if (mySeat === null && tableState) {
+        const sr = Math.max(dw * 0.020, 14);
         for (let i = 0; i < SPOTS.length; i++) {
-            const p = SPOTS[i], sx = dx + p.x * dw, sy = dy + p.y * dh;
-            if (Math.sqrt((mx - sx) ** 2 + (my - sy) ** 2) < Math.max(dw * 0.04, 35)) {
-                if (tbl.players.find(pl => pl.seat === i)) { showErr('Spot taken'); return; }
-                if (mySeats.find(s => s.seat === i)) return;
-                mySeats.push({ seat: i, bet: 0, chips: [], hand: [] });
-                tbl.players.push({ name: pName(), points: pts, seat: i, isMe: true });
-                if (gamePhase === 'seat-selection') { gamePhase = 'betting'; mkDeck(); showBet(); addSystemChat(`${pName()} joined the table`); }
-                updateUI(); render(); renderLobby(); return;
+            const seatData = tableState.seats.find(s => s.seatIndex === i);
+            if (!seatData) {
+                const p = SPOTS[i], sx = dx + p.x * dw, sy = dy + p.y * dh;
+                if (Math.sqrt((mx - sx) ** 2 + (my - sy) ** 2) < Math.max(dw * 0.04, 35)) {
+                    joinSeat(i);
+                    return;
+                }
             }
         }
     }
 }
 
-function onMouseMove(ex, ey) {
-    const r = cv.getBoundingClientRect();
-    const mx = (ex - r.left) * (cv.width / r.width), my = (ey - r.top) * (cv.height / r.height);
-    let newHovered = -1;
-    for (let i = 0; i < SPOTS.length; i++) {
-        if (mySeats.find(s => s.seat === i)) {
-            const p = SPOTS[i], sx = dx + p.x * dw, sy = dy + p.y * dh;
-            if (Math.sqrt((mx - sx) ** 2 + (my - sy) ** 2) < Math.max(dw * 0.04, 35)) { newHovered = i; break; }
-        }
+async function joinSeat(seatIndex) {
+    try {
+        const r = await fetch('/api/yellowjack', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'joinTable', tableId: curTable, seatIndex })
+        });
+        const d = await r.json();
+        if (d.error) { showErr(d.error); return; }
+        
+        mySeat = seatIndex;
+        if (d.points) pts = d.points;
+        addSystemChat(`You joined seat ${seatIndex + 1}`);
+        showBet();
+        updateUI();
+        pollTable();
+    } catch (e) {
+        showErr('Failed to join seat');
     }
-    if (newHovered !== hoveredSeat) { hoveredSeat = newHovered; render(); }
 }
 
 cv.addEventListener('click', e => onClick(e.clientX, e.clientY));
-cv.addEventListener('mousemove', e => onMouseMove(e.clientX, e.clientY));
 cv.addEventListener('touchend', e => { e.preventDefault(); if (e.changedTouches?.length) onClick(e.changedTouches[0].clientX, e.changedTouches[0].clientY); }, { passive: false });
 
 // ============================================================
-// BETTING
+// UI
 // ============================================================
-function addBet(a) { const total = mySeats.reduce((s, h) => s + h.bet, 0); if (total + a > pts) { showErr('Not enough points'); return; } playSound('sndChip'); mySeats.forEach(s => { s.bet += a; s.chips.push(a); }); updateUI(); render(); }
-function clearBet() { mySeats.forEach(s => { s.bet = 0; s.chips = []; }); updateUI(); render(); }
-function confirmBet() { const total = mySeats.reduce((s, h) => s + h.bet, 0); if (total <= 0) { showErr('Place a bet first'); return; } if (total > pts) { showErr('Not enough'); return; } pts -= total; updateUI(); hideBet(); animDeal(); savePlayerPoints(); }
-function showBet() { document.getElementById('betOverlay').classList.add('active'); }
-function hideBet() { document.getElementById('betOverlay').classList.remove('active'); }
-
-// ============================================================
-// DEALING
-// ============================================================
-function animDeal() {
-    gamePhase = 'dealing'; dealerHand = []; mySeats.forEach(s => s.hand = []); activeHandIdx = 0; roundMsg = null;
-    const cards = []; mySeats.forEach(() => cards.push(draw())); const dc1 = draw(); mySeats.forEach(() => cards.push(draw())); const dc2 = draw();
-    let delay = 0;
-    mySeats.forEach((s, i) => { setTimeout(() => { playSound('sndCard'); s.hand.push(cards[i]); render(); }, delay); delay += 300; });
-    setTimeout(() => { playSound('sndCard'); dealerHand.push(dc1); render(); }, delay); delay += 300;
-    mySeats.forEach((s, i) => { setTimeout(() => { playSound('sndCard'); s.hand.push(cards[mySeats.length + i]); render(); }, delay); delay += 300; });
-    setTimeout(() => { playSound('sndCard'); dealerHand.push(dc2); render(); }, delay); delay += 300;
-    setTimeout(() => { if (isBJ(mySeats[0].hand)) { handleBJ(0); return; } gamePhase = 'playing'; activeHandIdx = 0; startTimer(); render(); }, delay);
+function updateUI() {
+    document.getElementById('balanceDisplay').textContent = '🪙 ' + pts;
+    document.getElementById('lobbyUserPoints').textContent = pts;
+    
+    const betBox = document.getElementById('betBox');
+    if (myBet > 0) {
+        betBox.style.display = 'block';
+        document.getElementById('betDisplay').textContent = '🎰 ' + myBet;
+    } else {
+        betBox.style.display = 'none';
+    }
 }
 
-function handleBJ(idx) {
-    const s = mySeats[idx];
-    gamePhase = 'dealer'; render();
-    setTimeout(() => {
-        gamePhase = 'done';
-        if (isBJ(dealerHand)) { 
-            pts += s.bet; 
-            roundMsg = { text: 'PUSH - BOTH BJ', color: GOLD_BJ }; 
-            addSystemChat('Push! Both have Blackjack'); 
-            recordGameResult(0, 0);
-        } else { 
-            const w = Math.floor(s.bet * 2.5); 
-            pts += w; 
-            roundMsg = { text: `BLACKJACK! +${w}`, color: GOLD_BJ }; 
-            playSound('sndWin'); 
-            addSystemChat('BLACKJACK! +' + w); 
-            recordGameResult(w - s.bet, 0);
-        }
-        updateUI(); savePlayerPoints(); render();
-        setTimeout(() => { roundMsg = null; newRound(); }, 2500);
-    }, 800);
+function addSystemChat(text) {
+    chatMessages.push({ text, system: true });
+    if (chatMessages.length > 30) chatMessages.shift();
+    renderChat();
 }
 
-function nextHand() { activeHandIdx++; if (activeHandIdx >= mySeats.length) { dealerTurn(); return; } if (isBJ(mySeats[activeHandIdx].hand)) { handleBJ(activeHandIdx); return; } startTimer(); render(); }
-
-function pHit() { if (gamePhase !== 'playing') return; clrTimer(); const h = mySeats[activeHandIdx]; h.hand.push(draw()); playSound('sndCard'); render(); const v = hv(h.hand); if (v > 21) { addSystemChat('Bust! ' + v); nextHand(); } else if (v === 21) pStand(); else startTimer(); }
-function pStand() { if (gamePhase !== 'playing') return; clrTimer(); nextHand(); }
-function pDbl() { if (gamePhase !== 'playing') return; clrTimer(); const h = mySeats[activeHandIdx]; if (h.bet > pts) { showErr('Not enough'); return; } pts -= h.bet; h.bet *= 2; updateUI(); h.hand.push(draw()); playSound('sndCard'); render(); addSystemChat('Doubled!'); savePlayerPoints(); nextHand(); }
-function pSplit() { if (gamePhase !== 'playing') return; const h = mySeats[activeHandIdx]; if (!canSplit(h) || h.bet > pts) return; pts -= h.bet; updateUI(); const newHand = { seat: h.seat, bet: h.bet, chips: [...h.chips], hand: [h.hand.pop()] }; mySeats.splice(activeHandIdx + 1, 0, newHand); h.hand.push(draw()); newHand.hand.push(draw()); playSound('sndCard'); addSystemChat('Split!'); savePlayerPoints(); render(); startTimer(); }
-
-function dealerTurn() { gamePhase = 'dealer'; aBtns = []; render(); function step() { if (hv(dealerHand) < 17) { dealerHand.push(draw()); playSound('sndCard'); render(); setTimeout(step, 500); } else resolve(); } setTimeout(step, 600); }
-
-function resolve() {
-    gamePhase = 'done'; aBtns = []; render(); const dv = hv(dealerHand); let roundWin = 0, roundLost = 0;
-    mySeats.forEach(s => { 
-        const pv = hv(s.hand); 
-        if (isBJ(s.hand)) return; 
-        if (pv > 21) { roundLost += s.bet; return; } 
-        if (dv > 21 || pv > dv) { pts += s.bet * 2; roundWin += s.bet; } 
-        else if (pv === dv) pts += s.bet; 
-        else roundLost += s.bet; 
+function renderChat() {
+    const zone = document.getElementById('chatZone');
+    zone.innerHTML = '';
+    chatMessages.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'chat-message ' + (msg.system ? 'system' : 'player');
+        div.textContent = msg.text;
+        zone.appendChild(div);
     });
-    updateUI(); savePlayerPoints(); recordGameResult(roundWin, roundLost);
-    if (roundWin > 0) { roundMsg = { text: `YOU WIN +${roundWin}`, color: '#2ecc71' }; playSound('sndWin'); addSystemChat('You won ' + roundWin + '!'); }
-    else { roundMsg = { text: `DEALER WINS`, color: '#e74c3c' }; addSystemChat('Dealer wins'); }
-    render(); setTimeout(() => { roundMsg = null; newRound(); }, 2500);
+    zone.scrollTop = zone.scrollHeight;
 }
-
-function newRound() {
-    dealerHand = [];
-    const uniqueSeats = [], seenPositions = new Set();
-    mySeats.forEach(s => { if (!seenPositions.has(s.seat)) { seenPositions.add(s.seat); uniqueSeats.push({ seat: s.seat, bet: 0, chips: [], hand: [] }); } });
-    mySeats = uniqueSeats; gamePhase = 'betting'; activeHandIdx = 0; aBtns = []; roundMsg = null; clrTimer();
-    if (pts <= 0) { pts = 10000; addSystemChat('Refilled to 10000!'); savePlayerPoints(); }
-    updateUI(); if (!isSpec) showBet(); render();
-}
-
-function startTimer() { clrTimer(); timerRem = TIMER; timerInt = setInterval(() => { timerRem -= 0.1; render(); if (timerRem <= 0) { clrTimer(); pStand(); } }, 100); }
-function clrTimer() { if (timerInt) { clearInterval(timerInt); timerInt = null; timerRem = 0; } }
 
 updateUI();
 </script>
