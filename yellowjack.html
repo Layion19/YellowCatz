@@ -485,15 +485,32 @@ async function leaveTable() {
 }
 
 // ============================================================
-// POLLING
+// POLLING — adaptive speed
 // ============================================================
+let fastPollTimer = null;
+
 function startPolling() {
     pollTable();
-    pollInterval = setInterval(pollTable, 1000);
+    pollInterval = setInterval(pollTable, 1200);
 }
 
 function stopPolling() {
     if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+    if (fastPollTimer) { clearInterval(fastPollTimer); fastPollTimer = null; }
+}
+
+// Fast poll for 5 seconds after an action (300ms intervals)
+function startFastPoll() {
+    if (fastPollTimer) clearInterval(fastPollTimer);
+    let count = 0;
+    fastPollTimer = setInterval(() => {
+        pollTable();
+        count++;
+        if (count >= 15) { // 15 × 300ms = ~4.5s
+            clearInterval(fastPollTimer);
+            fastPollTimer = null;
+        }
+    }, 300);
 }
 
 async function pollTable() {
@@ -563,23 +580,35 @@ async function pollTable() {
                 hideBet();
             }
             
-            // Phase change sounds
+            // Phase change handling
             if (oldPhase !== d.phase) {
-                if (d.phase === 'playing') playSound('sndCard');
+                if (d.phase === 'playing') {
+                    playSound('sndCard');
+                    addSystemChat('Cards dealt!');
+                    startFastPoll(); // Fast poll during play
+                }
+                if (d.phase === 'dealer') {
+                    addSystemChat('Dealer is playing...');
+                    startFastPoll();
+                }
                 if (d.phase === 'done') {
                     const mySeatResult = d.seats.find(s => s.userId === myUserId);
                     if (mySeatResult) {
-                        const myHand = mySeatResult.hand || [];
-                        const dealerHand = d.dealerHand || [];
-                        if (myHand.length > 0 && dealerHand.length > 0) {
-                            const myValue = handValue(myHand);
-                            const dealerValue = handValue(dealerHand);
-                            if (myValue <= 21 && (dealerValue > 21 || myValue > dealerValue)) {
-                                playSound('sndWin');
-                            }
-                        }
+                        const st = mySeatResult.status;
+                        if (st === 'win') { playSound('sndWin'); addSystemChat('You won!'); }
+                        else if (st === 'blackjack') { playSound('sndWin'); addSystemChat('BLACKJACK!'); }
+                        else if (st === 'bust') { addSystemChat('Bust!'); }
+                        else if (st === 'lose') { addSystemChat('Dealer wins'); }
+                        else if (st === 'push') { addSystemChat('Push — bet returned'); }
                     }
-                    setTimeout(loadPlayerPoints, 2000);
+                    setTimeout(loadPlayerPoints, 1500);
+                }
+                if (d.phase === 'waiting' && oldPhase === 'done') {
+                    // New round — reset local state
+                    myBet = 0;
+                    myChips = [];
+                    updateUI();
+                    addSystemChat('New round — place your bets!');
                 }
             }
             
@@ -631,12 +660,14 @@ function addBet(a) {
     myBet += a;
     myChips.push(a);
     updateUI();
+    render(); // Immediate visual feedback — show chips on canvas
 }
 
 function clearBet() {
     myBet = 0;
     myChips = [];
     updateUI();
+    render();
 }
 
 async function confirmBet() {
@@ -657,6 +688,11 @@ async function confirmBet() {
         hideBet();
         addSystemChat('You bet ' + myBet + ' points');
         updateUI();
+        render(); // Immediate visual update
+        
+        // Poll immediately + fast poll for 5s to catch the deal
+        pollTable();
+        startFastPoll();
     } catch (e) {
         showErr('Failed to place bet');
     }
@@ -684,7 +720,9 @@ async function playerAction(actionType) {
         if (d.error) { showErr(d.error); return; }
         
         playSound('sndCard');
+        // Immediate poll + fast poll to see result instantly
         pollTable();
+        startFastPoll();
     } catch (e) {
         showErr('Action failed');
     }
@@ -772,19 +810,29 @@ function drawSeats() {
             const isMe = seatData.userId === myUserId;
             const isActive = tableState.activeSeat === i && tableState.phase === 'playing';
             
-            // Chips
-            if (seatData.chips && seatData.chips.length > 0) {
+            // Chips — show local chips if server doesn't have them yet (during betting)
+            const displayChips = (isMe && myChips.length > 0 && (!seatData.chips || seatData.chips.length === 0))
+                ? myChips : (seatData.chips || []);
+            if (displayChips.length > 0) {
                 const cr = Math.max(dw * 0.012, 10);
-                seatData.chips.forEach((v, ci) => {
+                displayChips.forEach((v, ci) => {
                     const c = CC[v] || CC[5], cy = sy - ci * 3 - cr - 5;
                     cx.save();
                     cx.beginPath(); cx.ellipse(sx + 1, cy + 2, cr, cr * 0.3, 0, 0, Math.PI * 2); cx.fillStyle = 'rgba(0,0,0,.3)'; cx.fill();
                     cx.beginPath(); cx.ellipse(sx, cy + 1, cr, cr * 0.3, 0, 0, Math.PI * 2); cx.fillStyle = c.b; cx.fill();
                     cx.beginPath(); cx.ellipse(sx, cy, cr, cr * 0.3, 0, 0, Math.PI * 2); cx.fillStyle = c.r; cx.fill();
                     cx.strokeStyle = 'rgba(255,255,255,.3)'; cx.lineWidth = 1; cx.stroke();
-                    if (ci === seatData.chips.length - 1) { cx.fillStyle = v === 50 ? '#000' : '#fff'; cx.font = '900 ' + Math.max(cr * 0.5, 7) + 'px Poppins'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(v, sx, cy); }
+                    if (ci === displayChips.length - 1) { cx.fillStyle = v === 50 ? '#000' : '#fff'; cx.font = '900 ' + Math.max(cr * 0.5, 7) + 'px Poppins'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(v, sx, cy); }
                     cx.restore();
                 });
+                // Show bet total below chips
+                const totalBet = displayChips.reduce((a, b) => a + b, 0);
+                cx.save();
+                cx.fillStyle = 'rgba(232,160,0,0.9)';
+                cx.font = '900 ' + Math.max(dw * 0.011, 9) + 'px Poppins';
+                cx.textAlign = 'center';
+                cx.fillText(totalBet, sx, sy - displayChips.length * 3 - cr - 18);
+                cx.restore();
             }
             
             // Cards
@@ -890,14 +938,43 @@ function drawDealerCards() {
 function drawActions() {
     aBtns = [];
     
+    // --- RESULT BANNER during 'done' phase ---
+    if (tableState && tableState.phase === 'done' && mySeat !== null) {
+        const mySeatData = tableState.seats.find(s => s.seatIndex === mySeat);
+        if (mySeatData && mySeatData.status) {
+            const acx = dx + dw / 2, acy = dy + dh * 0.48;
+            const status = mySeatData.status;
+            let label = '', color = '';
+            if (status === 'win') { label = 'YOU WIN! 🎉'; color = '#2ecc71'; }
+            else if (status === 'blackjack') { label = 'BLACKJACK! 🔥'; color = '#f1c40f'; }
+            else if (status === 'lose' || status === 'bust') { label = status === 'bust' ? 'BUST 💥' : 'YOU LOSE'; color = '#e74c3c'; }
+            else if (status === 'push') { label = 'PUSH 🤝'; color = '#888'; }
+            
+            if (label) {
+                cx.save();
+                const bw = Math.max(dw * 0.22, 180), bh = 44;
+                cx.fillStyle = 'rgba(0,0,0,0.85)';
+                roundRect(cx, acx - bw/2, acy - bh/2, bw, bh, 12); cx.fill();
+                cx.strokeStyle = color; cx.lineWidth = 2;
+                roundRect(cx, acx - bw/2, acy - bh/2, bw, bh, 12); cx.stroke();
+                cx.font = '900 ' + Math.max(dw * 0.022, 18) + 'px Poppins';
+                cx.fillStyle = color; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+                cx.fillText(label, acx, acy);
+                cx.restore();
+            }
+        }
+        return;
+    }
+    
+    // --- ACTION BUTTONS during 'playing' phase ---
     if (!tableState || tableState.phase !== 'playing') return;
     if (mySeat === null || tableState.activeSeat !== mySeat) return;
     
     const mySeatData = tableState.seats.find(s => s.seatIndex === mySeat);
     if (!mySeatData || mySeatData.status !== 'playing') return;
     
-    const acx = dx + dw / 2, acy = dy + dh * 0.5;
-    const btnR = Math.max(dw * 0.018, 18), gap = btnR * 2.4;
+    const acx = dx + dw / 2, acy = dy + dh * 0.48;
+    const btnR = Math.max(dw * 0.024, 24), gap = btnR * 2.6;
     
     const canDouble = mySeatData.hand.length === 2 && mySeatData.bet <= pts;
     
@@ -911,17 +988,40 @@ function drawActions() {
     let sx = acx - (enabledBtns.length * gap) / 2 + gap / 2;
     
     enabledBtns.forEach(b => {
+        // Shadow
         cx.save();
-        cx.beginPath(); cx.arc(sx, acy + 2, btnR, 0, Math.PI * 2); cx.fillStyle = 'rgba(0,0,0,.4)'; cx.fill();
+        cx.beginPath(); cx.arc(sx, acy + 3, btnR, 0, Math.PI * 2);
+        cx.fillStyle = 'rgba(0,0,0,.5)'; cx.fill();
+        // Button
         cx.beginPath(); cx.arc(sx, acy, btnR, 0, Math.PI * 2);
         const grad = cx.createRadialGradient(sx - btnR * 0.3, acy - btnR * 0.3, 0, sx, acy, btnR);
-        grad.addColorStop(0, b.c); grad.addColorStop(1, shadeColor(b.c, -30)); cx.fillStyle = grad; cx.fill();
-        cx.fillStyle = '#fff'; cx.font = '900 ' + btnR * 0.55 + 'px Poppins'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(b.icon, sx, acy);
-        cx.font = '700 ' + Math.max(btnR * 0.3, 7) + 'px Poppins'; cx.fillText(b.l, sx, acy + btnR + 10);
+        grad.addColorStop(0, b.c); grad.addColorStop(1, shadeColor(b.c, -30));
+        cx.fillStyle = grad; cx.fill();
+        cx.strokeStyle = 'rgba(255,255,255,.3)'; cx.lineWidth = 2; cx.stroke();
+        // Icon
+        cx.fillStyle = '#fff'; cx.font = '900 ' + btnR * 0.55 + 'px Poppins';
+        cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(b.icon, sx, acy);
+        // Label
+        cx.font = '700 ' + Math.max(btnR * 0.35, 8) + 'px Poppins';
+        cx.fillStyle = '#fff'; cx.fillText(b.l, sx, acy + btnR + 12);
         cx.restore();
         aBtns.push({ x: sx - btnR, y: acy - btnR, w: btnR * 2, h: btnR * 2, action: b.a });
         sx += gap;
     });
+    
+    // Turn timer bar
+    if (tableState.turnStartTime) {
+        const elapsed = (Date.now() - new Date(tableState.turnStartTime + 'Z').getTime()) / 1000;
+        const remaining = Math.max(0, 30 - elapsed);
+        const barW = Math.min(dw * 0.15, 140), barH = 4;
+        const barX = acx - barW / 2, barY = acy + btnR + 25;
+        cx.save();
+        cx.fillStyle = 'rgba(0,0,0,.5)';
+        roundRect(cx, barX, barY, barW, barH, 2); cx.fill();
+        cx.fillStyle = remaining <= 8 ? '#e74c3c' : '#2ecc71';
+        roundRect(cx, barX, barY, barW * (remaining / 30), barH, 2); cx.fill();
+        cx.restore();
+    }
 }
 
 // Helpers
