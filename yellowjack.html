@@ -86,15 +86,12 @@
         
         .game-view{display:none;position:fixed;inset:0;background:#000}
         .game-view.active{display:flex;justify-content:center;align-items:center}
-        
         #gameCanvas{display:block;border-radius:15px}
-        
         .game-ui{display:none}
         .game-view.active .game-ui{display:block}
         
         .back-btn{position:fixed;top:15px;left:15px;background:rgba(0,0,0,.8);border:1px solid #444;color:#888;padding:6px 12px;border-radius:6px;font-family:'Poppins',sans-serif;font-size:11px;cursor:pointer;z-index:100;display:flex;align-items:center;gap:5px}
         .back-btn:hover{border-color:var(--gold);color:var(--gold)}
-        
         .table-name{position:fixed;top:15px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);padding:6px 20px;border-radius:6px;font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--gold);letter-spacing:2px;z-index:100}
         .table-name .status{font-size:10px;color:#888;margin-left:10px;font-family:'Poppins',sans-serif}
         
@@ -289,8 +286,10 @@ function saveSession(userData) {
     localStorage.setItem(SK, JSON.stringify({ data: userData, timestamp: Date.now() }));
 }
 
-document.getElementById('xBtn').onclick = () => location.href = '/api/auth?action=login';  // ← correct
-
+// ★ FIX: loginCat (not xBtn — xBtn doesn't exist in the HTML)
+document.getElementById('loginCat').addEventListener('click', () => {
+    window.location.href = '/api/auth?action=login';
+});
 
 async function showAuthenticatedUI() {
     isAuth = true;
@@ -427,7 +426,6 @@ function renderLobby(tables) {
     document.getElementById('lobbyUserPoints').textContent = pts;
 }
 
-// Refresh lobby every 5 seconds
 setInterval(() => {
     if (!curTable && isAuth) loadTables();
 }, 5000);
@@ -448,7 +446,6 @@ async function joinTable(id) {
     document.getElementById('gameView').classList.add('active');
     document.getElementById('tableName').innerHTML = 'TABLE ' + id + '<span class="status" id="tableStatus">Connecting...</span>';
     
-    // Start polling
     startPolling();
     startHeartbeat();
     
@@ -509,13 +506,12 @@ async function pollTable() {
             tableState = d;
             myUserId = d.myUserId;
             
-            // Check if I'm at this table
             const mySeatData = d.seats.find(s => s.userId === myUserId);
             if (mySeatData) {
                 mySeat = mySeatData.seatIndex;
             }
             
-            // Update status
+            // Update status text
             let statusText = '';
             if (d.phase === 'waiting') statusText = 'Waiting for bets...';
             else if (d.phase === 'playing') {
@@ -530,7 +526,7 @@ async function pollTable() {
             
             document.getElementById('tableStatus').textContent = statusText;
             
-            // Update turn indicator
+            // Turn indicator
             const turnInd = document.getElementById('turnIndicator');
             if (d.phase === 'playing' && mySeat !== null) {
                 const isMyTurn = d.activeSeat === mySeat;
@@ -542,10 +538,10 @@ async function pollTable() {
                 turnInd.classList.remove('active');
             }
             
-            // Show/hide bet overlay
+            // Bet overlay
             if (d.phase === 'waiting' && mySeat !== null) {
-                const mySeatData = d.seats.find(s => s.seatIndex === mySeat);
-                if (mySeatData && mySeatData.status === 'waiting') {
+                const mySeatData2 = d.seats.find(s => s.seatIndex === mySeat);
+                if (mySeatData2 && mySeatData2.status === 'waiting') {
                     showBet();
                 } else {
                     hideBet();
@@ -558,10 +554,9 @@ async function pollTable() {
             if (oldPhase !== d.phase) {
                 if (d.phase === 'playing') playSound('sndCard');
                 if (d.phase === 'done') {
-                    // Check if I won
-                    const mySeatData = d.seats.find(s => s.userId === myUserId);
-                    if (mySeatData) {
-                        const myHand = mySeatData.hand || [];
+                    const mySeatResult = d.seats.find(s => s.userId === myUserId);
+                    if (mySeatResult) {
+                        const myHand = mySeatResult.hand || [];
                         const dealerHand = d.dealerHand || [];
                         if (myHand.length > 0 && dealerHand.length > 0) {
                             const myValue = handValue(myHand);
@@ -571,7 +566,6 @@ async function pollTable() {
                             }
                         }
                     }
-                    // Refresh points after round
                     setTimeout(loadPlayerPoints, 2000);
                 }
             }
@@ -583,7 +577,7 @@ async function pollTable() {
                     img.crossOrigin = 'anonymous';
                     img.onload = () => { pfpCache[seat.avatar] = img; render(); };
                     img.src = seat.avatar;
-                    pfpCache[seat.avatar] = null; // Mark as loading
+                    pfpCache[seat.avatar] = null;
                 }
             }
             
@@ -754,7 +748,6 @@ function drawSeats() {
         const seatData = tableState.seats.find(s => s.seatIndex === i);
         
         if (!seatData) {
-            // Empty seat - clickable
             if (mySeat === null) {
                 cx.save();
                 cx.beginPath(); cx.arc(sx, sy, sr, 0, Math.PI * 2);
@@ -763,11 +756,10 @@ function drawSeats() {
                 cv.style.cursor = 'pointer';
             }
         } else {
-            // Occupied seat
             const isMe = seatData.userId === myUserId;
             const isActive = tableState.activeSeat === i && tableState.phase === 'playing';
             
-            // Draw chips
+            // Chips
             if (seatData.chips && seatData.chips.length > 0) {
                 const cr = Math.max(dw * 0.012, 10);
                 seatData.chips.forEach((v, ci) => {
@@ -782,7 +774,7 @@ function drawSeats() {
                 });
             }
             
-            // Draw cards
+            // Cards
             if (seatData.hand && seatData.hand.length > 0) {
                 const cw = Math.max(Math.min(dw * 0.035, 40), 28), ch = cw * 1.42, g = cw * 0.15;
                 const cy = sy - ch - dw * 0.03;
@@ -792,7 +784,6 @@ function drawSeats() {
                     cardFace(cx, c, stx + ci * (cw + g), cy, cw, ch);
                 });
                 
-                // Hand value badge
                 const v = handValue(seatData.hand);
                 const hasBJ = seatData.hand.length === 2 && v === 21;
                 cx.save();
@@ -809,7 +800,7 @@ function drawSeats() {
                 cx.restore();
             }
             
-            // Player name tag
+            // Name tag
             cx.save();
             const fontSize = Math.max(dw * 0.012, 9);
             cx.font = '700 ' + fontSize + 'px Poppins';
@@ -843,7 +834,6 @@ function drawSeats() {
                 cx.fillText('👤', sx, pfpY + pfpR * 0.35);
             }
             
-            // Active indicator
             if (isActive) {
                 cx.beginPath(); cx.arc(sx, sy - sr - 10, 6, 0, Math.PI * 2);
                 cx.fillStyle = '#2ecc71'; cx.fill();
@@ -871,7 +861,6 @@ function drawDealerCards() {
         }
     });
     
-    // Dealer value badge
     const visibleCards = hand.filter(c => c.rank !== '?');
     if (visibleCards.length > 0) {
         const v = handValue(visibleCards);
@@ -898,7 +887,6 @@ function drawActions() {
     const btnR = Math.max(dw * 0.018, 18), gap = btnR * 2.4;
     
     const canDouble = mySeatData.hand.length === 2 && mySeatData.bet <= pts;
-    const canSplit = mySeatData.hand.length === 2 && mySeatData.hand[0].rank === mySeatData.hand[1].rank && mySeatData.bet <= pts;
     
     const btns = [
         { l: 'DOUBLE', c: '#f39c12', icon: '2x', a: function() { playerAction('double'); }, enabled: canDouble },
@@ -923,7 +911,7 @@ function drawActions() {
     });
 }
 
-// Helper functions
+// Helpers
 function handValue(hand) {
     let total = 0, aces = 0;
     for (const c of hand) {
@@ -947,7 +935,6 @@ function onClick(ex, ey) {
     const r = cv.getBoundingClientRect();
     const mx = (ex - r.left) * (cv.width / r.width), my = (ey - r.top) * (cv.height / r.height);
     
-    // Check action buttons
     for (const b of aBtns) {
         const bcx = b.x + b.w / 2, bcy = b.y + b.h / 2;
         if (Math.sqrt((mx - bcx) * (mx - bcx) + (my - bcy) * (my - bcy)) < b.w / 2) {
@@ -956,7 +943,6 @@ function onClick(ex, ey) {
         }
     }
     
-    // Check empty seats to join
     if (mySeat === null && tableState) {
         const sr = Math.max(dw * 0.020, 14);
         for (let i = 0; i < SPOTS.length; i++) {
