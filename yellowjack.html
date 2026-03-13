@@ -364,6 +364,7 @@ let tableState = null, pollInterval = null, heartbeatInterval = null;
 let chatMessages = [], aBtns = [];
 let tImg = null, tLoaded = false;
 let pfpCache = {};
+let dealAnimStart = 0; // timestamp when cards were dealt — for stagger animation
 
 function showErr(m) {
     const t = document.getElementById('errorToast');
@@ -585,7 +586,8 @@ async function pollTable() {
                 if (d.phase === 'playing') {
                     playSound('sndCard');
                     addSystemChat('Cards dealt!');
-                    startFastPoll(); // Fast poll during play
+                    dealAnimStart = Date.now(); // For card stagger animation
+                    startFastPoll();
                 }
                 if (d.phase === 'dealer') {
                     addSystemChat('Dealer is playing...');
@@ -593,22 +595,25 @@ async function pollTable() {
                 }
                 if (d.phase === 'done') {
                     const mySeatResult = d.seats.find(s => s.userId === myUserId);
-                    if (mySeatResult) {
+                    if (mySeatResult && mySeatResult.bet > 0) {
                         const st = mySeatResult.status;
-                        if (st === 'win') { playSound('sndWin'); addSystemChat('You won!'); }
-                        else if (st === 'blackjack') { playSound('sndWin'); addSystemChat('BLACKJACK!'); }
-                        else if (st === 'bust') { addSystemChat('Bust!'); }
-                        else if (st === 'lose') { addSystemChat('Dealer wins'); }
+                        const bet = mySeatResult.bet;
+                        if (st === 'win') { playSound('sndWin'); addSystemChat('You won +' + bet + ' points!'); }
+                        else if (st === 'blackjack') { playSound('sndWin'); addSystemChat('BLACKJACK! +' + Math.floor(bet * 1.5) + ' points!'); }
+                        else if (st === 'bust') { addSystemChat('Bust! -' + bet + ' points'); }
+                        else if (st === 'lose') { addSystemChat('Dealer wins. -' + bet + ' points'); }
                         else if (st === 'push') { addSystemChat('Push — bet returned'); }
                     }
                     setTimeout(loadPlayerPoints, 1500);
+                    // Keep fast polling during done to catch transition to new round
+                    startFastPoll();
                 }
-                if (d.phase === 'waiting' && oldPhase === 'done') {
-                    // New round — reset local state
+                if (d.phase === 'waiting' && (oldPhase === 'done' || oldPhase === null)) {
                     myBet = 0;
                     myChips = [];
+                    dealAnimStart = 0;
                     updateUI();
-                    addSystemChat('New round — place your bets!');
+                    if (oldPhase === 'done') addSystemChat('New round — place your bets!');
                 }
             }
             
@@ -776,6 +781,11 @@ function render() {
     drawSeats();
     drawDealerCards();
     drawActions();
+    
+    // Keep animating during deal phase (stagger effect)
+    if (dealAnimStart > 0 && Date.now() - dealAnimStart < 4000) {
+        requestAnimationFrame(render);
+    }
 }
 
 function roundRectPath(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath(); }
@@ -835,30 +845,63 @@ function drawSeats() {
                 cx.restore();
             }
             
-            // Cards
+            // Cards — staggered deal animation
             if (seatData.hand && seatData.hand.length > 0) {
                 const cw = Math.max(Math.min(dw * 0.035, 40), 28), ch = cw * 1.42, g = cw * 0.15;
                 const cy = sy - ch - dw * 0.03;
-                const stx = sx - ((seatData.hand.length * (cw + g)) - g) / 2;
                 
-                seatData.hand.forEach((c, ci) => {
-                    cardFace(cx, c, stx + ci * (cw + g), cy, cw, ch);
+                // Determine how many cards to show (stagger animation)
+                let visibleCount = seatData.hand.length;
+                if (dealAnimStart > 0 && tableState.phase === 'playing') {
+                    const elapsed = Date.now() - dealAnimStart;
+                    // Each card appears 350ms after the previous, offset by seat position
+                    const seatOrder = tableState.seats.filter(s => s.hand && s.hand.length > 0)
+                        .findIndex(s => s.seatIndex === seatData.seatIndex);
+                    visibleCount = 0;
+                    for (let ci = 0; ci < seatData.hand.length; ci++) {
+                        const cardDelay = (ci * tableState.seats.filter(s => s.hand?.length > 0).length + seatOrder) * 350;
+                        if (elapsed >= cardDelay) visibleCount++;
+                    }
+                }
+                
+                const showCards = seatData.hand.slice(0, visibleCount);
+                const stx = sx - ((showCards.length * (cw + g)) - g) / 2;
+                
+                showCards.forEach((c, ci) => {
+                    // Slide-in effect for newly appearing cards
+                    let cardY = cy;
+                    if (dealAnimStart > 0 && tableState.phase === 'playing') {
+                        const seatOrder = tableState.seats.filter(s => s.hand?.length > 0)
+                            .findIndex(s => s.seatIndex === seatData.seatIndex);
+                        const cardDelay = (ci * tableState.seats.filter(s => s.hand?.length > 0).length + seatOrder) * 350;
+                        const cardAge = Date.now() - dealAnimStart - cardDelay;
+                        if (cardAge < 200) {
+                            const t = Math.max(0, cardAge) / 200;
+                            cardY = cy - (1 - t) * 40; // Slide down from above
+                            cx.globalAlpha = t;
+                        }
+                    }
+                    cardFace(cx, c, stx + ci * (cw + g), cardY, cw, ch);
+                    cx.globalAlpha = 1;
                 });
                 
-                const v = handValue(seatData.hand);
-                const hasBJ = seatData.hand.length === 2 && v === 21;
-                cx.save();
-                if (hasBJ) cx.fillStyle = GOLD_BJ;
-                else if (v > 21) cx.fillStyle = '#e74c3c';
-                else if (v === 21) cx.fillStyle = '#2ecc71';
-                else cx.fillStyle = 'rgba(0,0,0,.7)';
-                const badgeW = hasBJ ? 38 : 30;
-                roundRect(cx, sx - badgeW/2, cy - 28, badgeW, 22, 11); cx.fill();
-                cx.font = '900 ' + Math.max(dw * 0.014, 11) + 'px Poppins';
-                cx.fillStyle = hasBJ ? '#000' : '#fff';
-                cx.textAlign = 'center';
-                cx.fillText(hasBJ ? 'BJ' : (seatData.status === 'bust' ? 'BUST' : v), sx, cy - 12);
-                cx.restore();
+                // Hand value badge — only show when all cards visible
+                if (visibleCount >= seatData.hand.length) {
+                    const v = handValue(seatData.hand);
+                    const hasBJ = seatData.hand.length === 2 && v === 21;
+                    cx.save();
+                    if (hasBJ) cx.fillStyle = GOLD_BJ;
+                    else if (v > 21) cx.fillStyle = '#e74c3c';
+                    else if (v === 21) cx.fillStyle = '#2ecc71';
+                    else cx.fillStyle = 'rgba(0,0,0,.7)';
+                    const badgeW = hasBJ ? 38 : 30;
+                    roundRect(cx, sx - badgeW/2, cy - 28, badgeW, 22, 11); cx.fill();
+                    cx.font = '900 ' + Math.max(dw * 0.014, 11) + 'px Poppins';
+                    cx.fillStyle = hasBJ ? '#000' : '#fff';
+                    cx.textAlign = 'center';
+                    cx.fillText(hasBJ ? 'BJ' : (seatData.status === 'bust' ? 'BUST' : v), sx, cy - 12);
+                    cx.restore();
+                }
             }
             
             // Name tag
@@ -911,27 +954,55 @@ function drawDealerCards() {
     const dcx = dx + DPO.x * dw, dcy = dy + DPO.y * dh;
     const cw = Math.max(Math.min(dw * 0.045, 50), 35), ch = cw * 1.42, g = cw * 0.2;
     const hand = tableState.dealerHand;
-    const startX = dcx - ((hand.length * (cw + g)) - g) / 2;
     
-    hand.forEach((c, i) => {
-        const x = startX + i * (cw + g);
-        if (c.rank === '?') {
-            cardBack(cx, x, dcy, cw, ch);
-        } else {
-            cardFace(cx, c, x, dcy, cw, ch);
+    // Stagger: dealer cards appear after all player cards
+    let visibleCount = hand.length;
+    if (dealAnimStart > 0 && tableState.phase === 'playing') {
+        const elapsed = Date.now() - dealAnimStart;
+        const numPlayerSeats = tableState.seats.filter(s => s.hand?.length > 0).length;
+        // Dealer card 1 appears after all first player cards, dealer card 2 after all second player cards
+        visibleCount = 0;
+        for (let ci = 0; ci < hand.length; ci++) {
+            const dealerDelay = ((ci + 1) * numPlayerSeats + ci) * 350;
+            if (elapsed >= dealerDelay) visibleCount++;
         }
+    }
+    
+    const showHand = hand.slice(0, visibleCount);
+    const startX = dcx - ((showHand.length * (cw + g)) - g) / 2;
+    
+    showHand.forEach((c, i) => {
+        let cardY = dcy;
+        // Slide-in animation
+        if (dealAnimStart > 0 && tableState.phase === 'playing') {
+            const numPlayerSeats = tableState.seats.filter(s => s.hand?.length > 0).length;
+            const dealerDelay = ((i + 1) * numPlayerSeats + i) * 350;
+            const cardAge = Date.now() - dealAnimStart - dealerDelay;
+            if (cardAge < 200) {
+                const t = Math.max(0, cardAge) / 200;
+                cardY = dcy - (1 - t) * 40;
+                cx.globalAlpha = t;
+            }
+        }
+        const x = startX + i * (cw + g);
+        if (c.rank === '?') cardBack(cx, x, cardY, cw, ch);
+        else cardFace(cx, c, x, cardY, cw, ch);
+        cx.globalAlpha = 1;
     });
     
-    const visibleCards = hand.filter(c => c.rank !== '?');
-    if (visibleCards.length > 0) {
-        const v = handValue(visibleCards);
-        const showFull = tableState.phase === 'done' || tableState.phase === 'dealer';
-        cx.save();
-        cx.fillStyle = 'rgba(0,0,0,.7)';
-        roundRect(cx, dcx - 20, dcy - 30, 40, 22, 11); cx.fill();
-        cx.font = '900 12px Poppins'; cx.fillStyle = G; cx.textAlign = 'center';
-        cx.fillText(showFull ? v : v + '+?', dcx, dcy - 14);
-        cx.restore();
+    // Dealer value badge — only show when all visible
+    if (visibleCount >= hand.length) {
+        const visibleCards = hand.filter(c => c.rank !== '?');
+        if (visibleCards.length > 0) {
+            const v = handValue(visibleCards);
+            const showFull = tableState.phase === 'done' || tableState.phase === 'dealer';
+            cx.save();
+            cx.fillStyle = 'rgba(0,0,0,.7)';
+            roundRect(cx, dcx - 20, dcy - 30, 40, 22, 11); cx.fill();
+            cx.font = '900 12px Poppins'; cx.fillStyle = G; cx.textAlign = 'center';
+            cx.fillText(showFull ? v : v + '+?', dcx, dcy - 14);
+            cx.restore();
+        }
     }
 }
 
@@ -941,23 +1012,27 @@ function drawActions() {
     // --- RESULT BANNER during 'done' phase ---
     if (tableState && tableState.phase === 'done' && mySeat !== null) {
         const mySeatData = tableState.seats.find(s => s.seatIndex === mySeat);
-        if (mySeatData && mySeatData.status) {
+        if (mySeatData && mySeatData.status && mySeatData.bet > 0) {
             const acx = dx + dw / 2, acy = dy + dh * 0.48;
             const status = mySeatData.status;
+            const bet = mySeatData.bet;
             let label = '', color = '';
-            if (status === 'win') { label = 'YOU WIN! 🎉'; color = '#2ecc71'; }
-            else if (status === 'blackjack') { label = 'BLACKJACK! 🔥'; color = '#f1c40f'; }
-            else if (status === 'lose' || status === 'bust') { label = status === 'bust' ? 'BUST 💥' : 'YOU LOSE'; color = '#e74c3c'; }
-            else if (status === 'push') { label = 'PUSH 🤝'; color = '#888'; }
+            if (status === 'win') { label = 'WIN  +' + bet; color = '#2ecc71'; }
+            else if (status === 'blackjack') { label = 'BLACKJACK  +' + Math.floor(bet * 1.5); color = '#f1c40f'; }
+            else if (status === 'bust') { label = 'BUST  -' + bet; color = '#e74c3c'; }
+            else if (status === 'lose') { label = 'LOSE  -' + bet; color = '#e74c3c'; }
+            else if (status === 'push') { label = 'PUSH  ±0'; color = '#888'; }
             
             if (label) {
                 cx.save();
-                const bw = Math.max(dw * 0.22, 180), bh = 44;
-                cx.fillStyle = 'rgba(0,0,0,0.85)';
+                const fs = Math.max(dw * 0.024, 20);
+                cx.font = '900 ' + fs + 'px Poppins';
+                const tw = cx.measureText(label).width;
+                const bw = tw + 50, bh = fs + 24;
+                cx.fillStyle = 'rgba(0,0,0,0.88)';
                 roundRect(cx, acx - bw/2, acy - bh/2, bw, bh, 12); cx.fill();
                 cx.strokeStyle = color; cx.lineWidth = 2;
                 roundRect(cx, acx - bw/2, acy - bh/2, bw, bh, 12); cx.stroke();
-                cx.font = '900 ' + Math.max(dw * 0.022, 18) + 'px Poppins';
                 cx.fillStyle = color; cx.textAlign = 'center'; cx.textBaseline = 'middle';
                 cx.fillText(label, acx, acy);
                 cx.restore();

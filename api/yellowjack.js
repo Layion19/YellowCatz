@@ -13,7 +13,7 @@ const db = createClient({
 // ============================================================
 const BETTING_WAIT = 12;        // seconds after first bet to start dealing
 const TURN_TIMEOUT = 30;        // seconds per player turn
-const DONE_DISPLAY = 6;         // seconds to show results
+const DONE_DISPLAY = 4;         // seconds to show results
 const HEARTBEAT_TIMEOUT = 45;   // seconds before removing inactive player
 const NUM_TABLES = 6;
 const MAX_SEATS = 7;
