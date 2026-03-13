@@ -241,6 +241,16 @@ async function ensurePlayer(userId) {
 // ============================================================
 // GAME LOGIC — Lazy evaluation on each poll
 // ============================================================
+
+// Parse time string — handles both ISO (has Z) and SQLite datetime (no Z)
+function parseTime(str) {
+    if (!str) return 0;
+    // If it already ends with Z, don't add another
+    if (str.endsWith('Z')) return new Date(str).getTime();
+    // SQLite datetime format: "2026-03-13 19:00:00"
+    return new Date(str + 'Z').getTime();
+}
+
 async function tickTable(table, seats) {
     const now = Date.now();
     let changed = false;
@@ -248,25 +258,22 @@ async function tickTable(table, seats) {
     // --- Remove stale players (no heartbeat) ---
     for (const s of seats) {
         if (s.lastSeen) {
-            const seen = new Date(s.lastSeen + 'Z').getTime();
-            if (now - seen > HEARTBEAT_TIMEOUT * 1000) {
+            const seen = parseTime(s.lastSeen);
+            if (seen > 0 && now - seen > HEARTBEAT_TIMEOUT * 1000) {
                 await removeSeat(s.tableId, s.seatIndex);
                 changed = true;
-                // If it was their turn, we'll need to advance after re-fetching
             }
         }
     }
     if (changed) {
         seats = await getSeats(table.id);
-        // If we're in playing phase and active seat was removed, advance
         if (table.phase === 'playing') {
             const activeStillExists = seats.find(s => s.seatIndex === table.activeSeat && s.status === 'playing');
             if (!activeStillExists) {
                 await advanceTurn(table, seats);
-                return; // advanceTurn handles the rest
+                return;
             }
         }
-        // If no seats left, reset
         if (seats.length === 0) {
             table.phase = 'waiting';
             table.betStartTime = null;
@@ -282,7 +289,7 @@ async function tickTable(table, seats) {
 
     // --- Phase: waiting (with bet countdown running) ---
     if (table.phase === 'waiting' && table.betStartTime) {
-        const elapsed = (now - new Date(table.betStartTime + 'Z').getTime()) / 1000;
+        const elapsed = (now - parseTime(table.betStartTime)) / 1000;
         const seatedWithBet = seats.filter(s => s.bet > 0);
         const seatedTotal = seats.length;
         const allBet = seatedTotal > 0 && seatedWithBet.length === seatedTotal;
@@ -291,7 +298,6 @@ async function tickTable(table, seats) {
             if (seatedWithBet.length > 0) {
                 await dealCards(table, seats);
             } else {
-                // No one bet → clear timer
                 table.betStartTime = null;
                 await saveTable(table);
             }
@@ -306,9 +312,8 @@ async function tickTable(table, seats) {
 
     // --- Phase: playing ---
     if (table.phase === 'playing' && table.turnStartTime) {
-        const elapsed = (now - new Date(table.turnStartTime + 'Z').getTime()) / 1000;
+        const elapsed = (now - parseTime(table.turnStartTime)) / 1000;
         if (elapsed >= TURN_TIMEOUT) {
-            // Auto-stand
             const seat = seats.find(s => s.seatIndex === table.activeSeat);
             if (seat && seat.status === 'playing') {
                 seat.status = 'stand';
@@ -327,7 +332,7 @@ async function tickTable(table, seats) {
 
     // --- Phase: done ---
     if (table.phase === 'done' && table.doneTime) {
-        const elapsed = (now - new Date(table.doneTime + 'Z').getTime()) / 1000;
+        const elapsed = (now - parseTime(table.doneTime)) / 1000;
         if (elapsed >= DONE_DISPLAY) {
             await resetForNewRound(table);
         }

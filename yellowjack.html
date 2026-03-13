@@ -365,6 +365,7 @@ let chatMessages = [], aBtns = [];
 let tImg = null, tLoaded = false;
 let pfpCache = {};
 let dealAnimStart = 0; // timestamp when cards were dealt — for stagger animation
+let dealSoundsPlayed = 0; // how many card sounds have been played this deal
 
 function showErr(m) {
     const t = document.getElementById('errorToast');
@@ -507,7 +508,7 @@ function startFastPoll() {
     fastPollTimer = setInterval(() => {
         pollTable();
         count++;
-        if (count >= 15) { // 15 × 300ms = ~4.5s
+        if (count >= 22) { // 22 × 300ms = ~6.6s — covers done phase
             clearInterval(fastPollTimer);
             fastPollTimer = null;
         }
@@ -584,9 +585,9 @@ async function pollTable() {
             // Phase change handling
             if (oldPhase !== d.phase) {
                 if (d.phase === 'playing') {
-                    playSound('sndCard');
                     addSystemChat('Cards dealt!');
-                    dealAnimStart = Date.now(); // For card stagger animation
+                    dealAnimStart = Date.now();
+                    dealSoundsPlayed = 0;
                     startFastPoll();
                 }
                 if (d.phase === 'dealer') {
@@ -612,6 +613,7 @@ async function pollTable() {
                     myBet = 0;
                     myChips = [];
                     dealAnimStart = 0;
+                    dealSoundsPlayed = 0;
                     updateUI();
                     if (oldPhase === 'done') addSystemChat('New round — place your bets!');
                 }
@@ -781,6 +783,17 @@ function render() {
     drawSeats();
     drawDealerCards();
     drawActions();
+    
+    // Play card sound for each new card appearing during deal animation
+    if (dealAnimStart > 0 && tableState.phase === 'playing') {
+        const elapsed = Date.now() - dealAnimStart;
+        const totalCards = tableState.seats.reduce((a, s) => a + (s.hand?.length || 0), 0) + (tableState.dealerHand?.length || 0);
+        const cardsVisible = Math.min(totalCards, Math.floor(elapsed / 350) + 1);
+        if (cardsVisible > dealSoundsPlayed) {
+            playSound('sndCard');
+            dealSoundsPlayed = cardsVisible;
+        }
+    }
     
     // Keep animating during deal phase (stagger effect)
     if (dealAnimStart > 0 && Date.now() - dealAnimStart < 4000) {
@@ -1086,7 +1099,8 @@ function drawActions() {
     
     // Turn timer bar
     if (tableState.turnStartTime) {
-        const elapsed = (Date.now() - new Date(tableState.turnStartTime + 'Z').getTime()) / 1000;
+        const tsParsed = tableState.turnStartTime.endsWith('Z') ? tableState.turnStartTime : tableState.turnStartTime + 'Z';
+        const elapsed = (Date.now() - new Date(tsParsed).getTime()) / 1000;
         const remaining = Math.max(0, 30 - elapsed);
         const barW = Math.min(dw * 0.15, 140), barH = 4;
         const barX = acx - barW / 2, barY = acy + btnR + 25;
