@@ -448,6 +448,14 @@ async function joinTable(id) {
     startPolling();
     startHeartbeat();
     
+    // Connection timeout — if no table data after 8s, show error
+    setTimeout(() => {
+        if (curTable === id && !tableState) {
+            showErr('Connection failed — check your network');
+            document.getElementById('tableStatus').textContent = 'Connection failed';
+        }
+    }, 8000);
+    
     addSystemChat('Click on an empty spot to join');
 }
 
@@ -499,6 +507,12 @@ async function pollTable() {
             body: JSON.stringify({ action: 'getTable', tableId: curTable })
         });
         const d = await r.json();
+        
+        // Debug: log errors from API
+        if (d.error) {
+            console.warn('YellowJack API error:', d.error, d.debug || '');
+            return;
+        }
         
         if (d.tableId) {
             const oldPhase = tableState?.phase;

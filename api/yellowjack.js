@@ -1,4 +1,5 @@
 import { createClient } from '@libsql/client';
+import jwt from 'jsonwebtoken';
 
 export const config = { api: { bodyParser: false } };
 
@@ -97,20 +98,24 @@ function parseCookies(str) {
 
 async function getUser(req) {
     const cookies = parseCookies(req.headers.cookie || '');
-    const token = cookies['session_token'];
+    const token = cookies['yellow_session'];
     if (!token) return null;
 
-    const r = await db.execute({
-        sql: `SELECT s.user_id, u.x_username, u.avatar_url 
-              FROM sessions s 
-              JOIN users u ON s.user_id = u.id 
-              WHERE s.session_token = ? AND s.expires_at > datetime('now')`,
-        args: [token]
-    });
+    try {
+        const JWT_SECRET = process.env.JWT_SECRET;
+        if (!JWT_SECRET) return null;
 
-    if (r.rows.length === 0) return null;
-    const row = r.rows[0];
-    return { id: row.user_id, username: row.x_username, avatar: row.avatar_url || '' };
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (!decoded || !decoded.userId) return null;
+
+        return {
+            id: decoded.userId,
+            username: decoded.xUsername || 'Player',
+            avatar: decoded.avatarUrl || ''
+        };
+    } catch (e) {
+        return null;
+    }
 }
 
 // ============================================================
@@ -542,16 +547,28 @@ export default async function handler(req, res) {
 
     await ensureTables();
 
-    // Parse body
+    // Parse body — robust: handles both Vercel auto-parsed and raw stream
     let body = {};
     try {
-        const chunks = [];
-        for await (const chunk of req) chunks.push(chunk);
-        const raw = Buffer.concat(chunks).toString('utf8');
-        if (raw) body = JSON.parse(raw);
-    } catch (e) {}
+        if (req.body && typeof req.body === 'object' && Object.keys(req.body).length > 0) {
+            // Vercel already parsed it (bodyParser was on or default)
+            body = req.body;
+        } else {
+            // Manual parsing (bodyParser: false)
+            const chunks = [];
+            for await (const chunk of req) chunks.push(chunk);
+            const raw = Buffer.concat(chunks).toString('utf8');
+            if (raw) body = JSON.parse(raw);
+        }
+    } catch (e) {
+        console.error('Body parse error:', e);
+    }
 
     const { action } = body;
+
+    if (!action) {
+        return res.status(400).json({ error: 'Missing action', debug: { hasBody: !!req.body, bodyKeys: Object.keys(body) } });
+    }
 
     // Auth
     const user = await getUser(req);
