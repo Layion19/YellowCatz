@@ -861,8 +861,9 @@ export default async function handler(req, res) {
             if (!table || table.phase !== 'playing') return res.json({ error: 'Not in play' });
 
             const seats = await getSeats(tableId);
-            const mySeat = seats.find(s => s.userId === user.id);
-            if (!mySeat || mySeat.seatIndex !== table.activeSeat) {
+            // Find MY seat that is the active seat (important for 2-seat players)
+            const mySeat = seats.find(s => s.userId === user.id && s.seatIndex === table.activeSeat);
+            if (!mySeat) {
                 return res.json({ error: 'Not your turn' });
             }
             if (mySeat.status !== 'playing') return res.json({ error: 'Already done' });

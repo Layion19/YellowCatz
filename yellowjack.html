@@ -130,10 +130,16 @@
         .chat-message.system{color:var(--purple)}
         .chat-message.player{color:var(--green)}
         
-        .chat-input-wrap{position:fixed;bottom:58px;left:15px;display:flex;gap:4px;z-index:100;width:220px;transition:all .3s}
-        .chat-input{flex:1;background:rgba(0,0,0,.7);border:1px solid #444;color:#fff;padding:5px 10px;border-radius:15px;font-family:'Poppins',sans-serif;font-size:11px;outline:none;height:30px}
+        .chat-input-wrap{position:fixed;bottom:55px;left:15px;display:flex;gap:4px;z-index:100;width:60px;transition:width .3s}
+        .chat-input-wrap.expanded{width:200px}
+        .chat-input{flex:1;background:rgba(0,0,0,.7);border:1px solid #444;color:#fff;padding:4px 8px;border-radius:12px;font-family:'Poppins',sans-serif;font-size:10px;outline:none;height:26px;width:0;opacity:0;transition:all .3s}
+        .chat-input-wrap.expanded .chat-input{width:auto;opacity:1}
         .chat-input:focus{border-color:var(--gold)}
-        .chat-send-btn{background:var(--gold);color:#000;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center}
+        .chat-say-btn{background:rgba(0,0,0,.7);color:var(--gold);border:1px solid #444;border-radius:12px;padding:4px 10px;font-family:'Poppins',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;height:26px}
+        .chat-say-btn:hover{border-color:var(--gold)}
+        .chat-send-btn{background:var(--gold);color:#000;border:none;border-radius:50%;width:24px;height:24px;min-width:24px;cursor:pointer;font-size:10px;display:none;align-items:center;justify-content:center}
+        .chat-input-wrap.expanded .chat-send-btn{display:flex}
+        .chat-input-wrap.expanded .chat-say-btn{display:none}
         
         .bottom-left-ui{position:fixed;bottom:15px;left:15px;display:flex;flex-direction:column;gap:8px;z-index:100}
         .stats-row{display:flex;gap:8px}
@@ -161,8 +167,8 @@
         .turn-indicator.your-turn{border-color:var(--green);color:var(--green)}
         .turn-indicator.waiting{border-color:#888;color:#888}
         
-        @media(max-width:900px){.tables-grid{grid-template-columns:repeat(2,1fr)}.chat-zone{width:160px;max-height:80px;font-size:10px}.chat-input-wrap{width:160px;bottom:55px}.table-name{display:none!important}.turn-indicator{display:none!important}.music-player{left:70px;top:10px}.back-btn{top:10px;left:10px;font-size:10px;padding:4px 8px}.lb-h-stat,.lb-stat{width:55px;font-size:10px}.lb-name{font-size:11px}.lb-pfp{width:22px;height:22px}}
-        @media(max-width:600px){.tables-grid{grid-template-columns:1fr}.chip{width:30px;height:30px;font-size:8px}.chat-zone{width:140px}.chat-input-wrap{width:140px}.stat-box{min-width:65px;padding:5px 8px}.stat-value{font-size:11px}.stat-label{font-size:8px}.login-logo{font-size:42px}.lb-h-stat,.lb-stat{width:45px;font-size:9px}.bottom-left-ui{bottom:8px;left:8px}}
+        @media(max-width:900px){.tables-grid{grid-template-columns:repeat(2,1fr)}.chat-zone{width:140px;max-height:80px;font-size:10px}.chat-input-wrap.expanded{width:150px}.table-name{display:none!important}.turn-indicator{display:none!important}.music-player{left:70px;top:10px}.back-btn{top:10px;left:10px;font-size:10px;padding:4px 8px}.lb-h-stat,.lb-stat{width:55px;font-size:10px}.lb-name{font-size:11px}.lb-pfp{width:22px;height:22px}}
+        @media(max-width:600px){.tables-grid{grid-template-columns:1fr}.chip{width:30px;height:30px;font-size:8px}.chat-zone{width:120px}.chat-input-wrap.expanded{width:130px}.stat-box{min-width:65px;padding:5px 8px}.stat-value{font-size:11px}.stat-label{font-size:8px}.login-logo{font-size:42px}.lb-h-stat,.lb-stat{width:45px;font-size:9px}.bottom-left-ui{bottom:8px;left:8px}}
     </style>
 </head>
 <body>
@@ -254,7 +260,8 @@
                 
                 <div class="chat-zone" id="chatZone"></div>
                 <div class="chat-input-wrap" id="chatInputWrap">
-                    <input class="chat-input" id="chatInput" type="text" placeholder="Say something..." maxlength="120">
+                    <button class="chat-say-btn" onclick="expandChat()">Say</button>
+                    <input class="chat-input" id="chatInput" type="text" placeholder="Message..." maxlength="120">
                     <button class="chat-send-btn" onclick="sendChat()">➤</button>
                 </div>
                 
@@ -888,10 +895,11 @@ function render() {
         return;
     }
     
-    drawSeats();
+    aBtns = []; // Reset clickable areas
+    drawSeats();   // Adds leave X buttons
     drawDealerCards();
     drawHandPanel();
-    drawActions();
+    drawActions(); // Adds action buttons (doesn't reset aBtns)
     
     // Play card sound for each new card appearing during deal animation
     if (dealAnimStart > 0 && tableState.phase === 'playing') {
@@ -904,8 +912,10 @@ function render() {
         }
     }
     
-    // Keep animating during deal phase (stagger effect)
-    if (dealAnimStart > 0 && Date.now() - dealAnimStart < 4000) {
+    // Keep animating: deal stagger + golden border rotation during my turn
+    const needsAnim = (dealAnimStart > 0 && Date.now() - dealAnimStart < 4000) ||
+        (tableState && tableState.phase === 'playing' && mySeats.includes(tableState.activeSeat));
+    if (needsAnim) {
         requestAnimationFrame(render);
     }
 }
@@ -971,20 +981,23 @@ function drawSeats() {
             // Cards — staggered deal animation
             if (seatData.hand && seatData.hand.length > 0) {
                 const mobileScale = isMobile ? 0.7 : 1;
-                const cw = Math.max(Math.min(dw * 0.035 * mobileScale, 40), isMobile ? 20 : 28);
+                const isMyTurn = isActive && isMe;
+                // Active player's cards slightly bigger
+                const sizeBoost = isMyTurn ? 1.2 : 1;
+                const cw = Math.max(Math.min(dw * 0.035 * mobileScale * sizeBoost, 48), isMobile ? 20 : 28);
                 const ch = cw * 1.42, g = cw * 0.15;
                 const cy = sy - ch - dw * (isMobile ? 0.02 : 0.03);
                 
-                // Determine how many cards to show (stagger animation)
+                // Stagger animation — right-to-left seat order
                 let visibleCount = seatData.hand.length;
                 if (dealAnimStart > 0 && tableState.phase === 'playing') {
                     const elapsed = Date.now() - dealAnimStart;
-                    // Each card appears 350ms after the previous, offset by seat position
-                    const seatOrder = tableState.seats.filter(s => s.hand && s.hand.length > 0)
-                        .findIndex(s => s.seatIndex === seatData.seatIndex);
+                    const handSeats = tableState.seats.filter(s => s.hand && s.hand.length > 0)
+                        .sort((a, b) => b.seatIndex - a.seatIndex); // right to left
+                    const seatOrder = handSeats.findIndex(s => s.seatIndex === seatData.seatIndex);
                     visibleCount = 0;
                     for (let ci = 0; ci < seatData.hand.length; ci++) {
-                        const cardDelay = (ci * tableState.seats.filter(s => s.hand?.length > 0).length + seatOrder) * 350;
+                        const cardDelay = (ci * handSeats.length + seatOrder) * 350;
                         if (elapsed >= cardDelay) visibleCount++;
                     }
                 }
@@ -992,17 +1005,38 @@ function drawSeats() {
                 const showCards = seatData.hand.slice(0, visibleCount);
                 const stx = sx - ((showCards.length * (cw + g)) - g) / 2;
                 
+                // Golden rotating border for active player (only visible to that player)
+                if (isMyTurn && showCards.length > 0) {
+                    cx.save();
+                    const bx = stx - 4, by = cy - 4;
+                    const bw = showCards.length * (cw + g) - g + 8, bh = ch + 8;
+                    const angle = (Date.now() % 3000) / 3000 * Math.PI * 2;
+                    const grad = cx.createLinearGradient(
+                        bx + bw / 2 + Math.cos(angle) * bw / 2, by,
+                        bx + bw / 2 + Math.cos(angle + Math.PI) * bw / 2, by + bh
+                    );
+                    grad.addColorStop(0, '#E8A000');
+                    grad.addColorStop(0.5, '#FFD700');
+                    grad.addColorStop(1, '#E8A000');
+                    cx.strokeStyle = grad;
+                    cx.lineWidth = 2;
+                    cx.shadowColor = '#E8A000'; cx.shadowBlur = 8;
+                    roundRect(cx, bx, by, bw, bh, 6); cx.stroke();
+                    cx.shadowBlur = 0;
+                    cx.restore();
+                }
+                
                 showCards.forEach((c, ci) => {
-                    // Slide-in effect for newly appearing cards
                     let cardY = cy;
                     if (dealAnimStart > 0 && tableState.phase === 'playing') {
-                        const seatOrder = tableState.seats.filter(s => s.hand?.length > 0)
-                            .findIndex(s => s.seatIndex === seatData.seatIndex);
-                        const cardDelay = (ci * tableState.seats.filter(s => s.hand?.length > 0).length + seatOrder) * 350;
+                        const handSeats = tableState.seats.filter(s => s.hand?.length > 0)
+                            .sort((a, b) => b.seatIndex - a.seatIndex);
+                        const seatOrder = handSeats.findIndex(s => s.seatIndex === seatData.seatIndex);
+                        const cardDelay = (ci * handSeats.length + seatOrder) * 350;
                         const cardAge = Date.now() - dealAnimStart - cardDelay;
                         if (cardAge < 200) {
                             const t = Math.max(0, cardAge) / 200;
-                            cardY = cy - (1 - t) * 40; // Slide down from above
+                            cardY = cy - (1 - t) * 40;
                             cx.globalAlpha = t;
                         }
                     }
@@ -1074,18 +1108,17 @@ function drawSeats() {
                 cx.fillStyle = '#2ecc71'; cx.fill();
             }
             
-            // Leave X button for own seats (only during waiting phase)
+            // Leave X button for own seats (only during waiting/done)
             if (isMe && (tableState.phase === 'waiting' || tableState.phase === 'done')) {
-                const xSize = isMobile ? 8 : 10;
-                const xX = sx + (isMobile ? 20 : 28), xY = sy + sr + 2;
-                cx.fillStyle = 'rgba(0,0,0,0.7)';
+                const xSize = isMobile ? 12 : 14;
+                const xX = sx + (isMobile ? 26 : 34), xY = sy + sr - 2;
+                cx.fillStyle = 'rgba(200,50,50,0.8)';
                 cx.beginPath(); cx.arc(xX, xY, xSize, 0, Math.PI * 2); cx.fill();
-                cx.strokeStyle = '#666'; cx.lineWidth = 1; cx.stroke();
-                cx.fillStyle = '#888'; cx.font = '700 ' + (xSize + 2) + 'px Poppins';
+                cx.fillStyle = '#fff'; cx.font = '900 ' + (xSize + 4) + 'px Poppins';
                 cx.textAlign = 'center'; cx.textBaseline = 'middle';
-                cx.fillText('×', xX, xY);
-                // Register clickable area
-                aBtns.push({ x: xX - xSize, y: xY - xSize, w: xSize * 2, h: xSize * 2, action: function() { leaveSeat(i); } });
+                cx.fillText('×', xX, xY + 1);
+                // Big click area
+                aBtns.push({ x: xX - xSize - 4, y: xY - xSize - 4, w: (xSize + 4) * 2, h: (xSize + 4) * 2, action: function() { leaveSeat(i); } });
             }
             
             cx.restore();
@@ -1223,7 +1256,6 @@ function drawHandPanel() {
 }
 
 function drawActions() {
-    aBtns = [];
     
     // --- BETTING COUNTDOWN TIMER ---
     if (tableState && tableState.phase === 'waiting' && tableState.betStartTime) {
@@ -1384,8 +1416,7 @@ function onClick(ex, ey) {
     const mx = ex - r.left, my = ey - r.top;
     
     for (const b of aBtns) {
-        const bcx = b.x + b.w / 2, bcy = b.y + b.h / 2;
-        if (Math.sqrt((mx - bcx) * (mx - bcx) + (my - bcy) * (my - bcy)) < b.w / 2) {
+        if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
             b.action();
             return;
         }
@@ -1486,11 +1517,29 @@ function addPlayerChat(name, text) {
     renderChat();
 }
 
+function expandChat() {
+    const wrap = document.getElementById('chatInputWrap');
+    wrap.classList.add('expanded');
+    document.getElementById('chatInput').focus();
+}
+
+function collapseChat() {
+    const wrap = document.getElementById('chatInputWrap');
+    if (!document.getElementById('chatInput').value) {
+        wrap.classList.remove('expanded');
+    }
+}
+
+// Collapse chat when clicking on the game canvas
+cv.addEventListener('mousedown', collapseChat);
+cv.addEventListener('touchstart', collapseChat, { passive: true });
+
 async function sendChat() {
     const input = document.getElementById('chatInput');
     const msg = input.value.trim();
     if (!msg || !curTable) return;
     input.value = '';
+    collapseChat();
     
     // Show locally immediately
     addPlayerChat(twName || 'You', msg);
