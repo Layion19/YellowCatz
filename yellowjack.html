@@ -7,9 +7,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
         :root{--gold:#E8A000;--gold-dark:#8B5A00;--black:#0a0a0a;--dark:#111;--dark2:#1a1a1a;--dark3:#222;--red:#e74c3c;--green:#2ecc71;--purple:#9b59b6;--white:#fff}
-        *{margin:0;padding:0;box-sizing:border-box}
-        html,body{height:100%;overflow:hidden}
-        body{min-height:100vh;background:var(--black);font-family:'Poppins',sans-serif;color:var(--white)}
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+        html,body{height:100%;overflow:hidden;-webkit-user-select:none;user-select:none}
+        body{min-height:100vh;background:var(--black);font-family:'Poppins',sans-serif;color:var(--white);touch-action:manipulation}
+        img,canvas{-webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
+        input,textarea{-webkit-user-select:text;user-select:text}
         
         .rotate-warning{display:none;position:fixed;inset:0;background:var(--black);z-index:99999;flex-direction:column;justify-content:center;align-items:center;gap:20px;text-align:center;padding:40px}
         .rotate-warning .phone-icon{font-size:60px;animation:rP 2s ease-in-out infinite}
@@ -106,7 +108,7 @@
         
         .game-view{display:none;position:fixed;inset:0;background:#000}
         .game-view.active{display:flex;justify-content:center;align-items:center}
-        #gameCanvas{display:block;border-radius:15px}
+        #gameCanvas{display:block;border-radius:15px;touch-action:none}
         .game-ui{display:none}
         .game-view.active .game-ui{display:block}
         
