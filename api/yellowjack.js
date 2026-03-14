@@ -11,7 +11,7 @@ const db = createClient({
 // ============================================================
 // CONFIG
 // ============================================================
-const BETTING_WAIT = 12;        // seconds after first bet to start dealing
+const BETTING_WAIT = 10;        // seconds after first bet to start dealing
 const TURN_TIMEOUT = 30;        // seconds per player turn
 const DONE_DISPLAY = 4;         // seconds to show results
 const HEARTBEAT_TIMEOUT = 45;   // seconds before removing inactive player
@@ -373,10 +373,10 @@ async function dealCards(table, seats) {
     // Dealer gets 2 cards
     const dealerHand = [draw(deck), draw(deck)];
 
-    // Find first active player
+    // Find first active player — rightmost seat starts first
     const firstActive = bettors
         .filter(s => s.status === 'playing')
-        .sort((a, b) => a.seatIndex - b.seatIndex)[0];
+        .sort((a, b) => b.seatIndex - a.seatIndex)[0];
 
     table.deck = deck;
     table.dealerHand = dealerHand;
@@ -394,10 +394,10 @@ async function dealCards(table, seats) {
 }
 
 async function advanceTurn(table, seats) {
-    // Find next player who needs to act
+    // Find next player — right to left (descending seat index)
     const active = seats
-        .filter(s => s.bet > 0 && s.status === 'playing' && s.seatIndex > table.activeSeat)
-        .sort((a, b) => a.seatIndex - b.seatIndex);
+        .filter(s => s.bet > 0 && s.status === 'playing' && s.seatIndex < table.activeSeat)
+        .sort((a, b) => b.seatIndex - a.seatIndex);
 
     if (active.length > 0) {
         table.activeSeat = active[0].seatIndex;
@@ -539,6 +539,7 @@ function buildTableResponse(table, seats, myUserId) {
         phase: table.phase,
         activeSeat: table.activeSeat,
         turnStartTime: table.turnStartTime,
+        betStartTime: table.betStartTime,
         dealerHand: clientDealerHand,
         seats: seats.map(s => ({
             seatIndex: s.seatIndex,
@@ -694,8 +695,17 @@ export default async function handler(req, res) {
             // Check has points
             if (p.points <= 0) return res.json({ error: 'No points. Ask admin for refill!' });
 
-            // Remove from other tables
-            await removeUserFromAllTables(user.id);
+            // Max 2 seats per player on the same table
+            const mySeatsHere = seats.filter(s => s.userId === user.id);
+            if (mySeatsHere.length >= 2) {
+                return res.json({ error: 'Max 2 seats per table' });
+            }
+
+            // Remove from OTHER tables (can only play at 1 table)
+            await db.execute({
+                sql: 'DELETE FROM yj_seats WHERE user_id = ? AND table_id != ?',
+                args: [user.id, tableId]
+            });
 
             // Sit down
             await saveSeat({
@@ -716,42 +726,28 @@ export default async function handler(req, res) {
         if (action === 'leaveTable') {
             const { tableId } = body;
 
-            // Find my seat (search given table, or all tables)
-            let mySeat = null;
-            let searchTables = tableId ? [tableId] : [1, 2, 3, 4, 5, 6];
-            
-            for (const tid of searchTables) {
-                const seats = await getSeats(tid);
-                const found = seats.find(s => s.userId === user.id);
-                if (found) { mySeat = found; break; }
-            }
+            if (tableId) {
+                const seats = await getSeats(tableId);
+                const mySeatsHere = seats.filter(s => s.userId === user.id);
+                const table = await getTable(tableId);
 
-            if (mySeat) {
-                const table = await getTable(mySeat.tableId);
+                for (const mySeat of mySeatsHere) {
+                    await removeSeat(tableId, mySeat.seatIndex);
 
-                // If in active round with bet and still playing, forfeit
-                if (table && table.phase === 'playing' && mySeat.status === 'playing' && mySeat.bet > 0) {
-                    // Points already deducted at bet time, no extra penalty
-                }
-
-                await removeSeat(mySeat.tableId, mySeat.seatIndex);
-
-                // If it was my turn, advance
-                if (table && table.phase === 'playing' && table.activeSeat === mySeat.seatIndex) {
-                    const remaining = await getSeats(table.id);
-                    await advanceTurn(table, remaining);
+                    // If it was this seat's turn, advance
+                    if (table && table.phase === 'playing' && table.activeSeat === mySeat.seatIndex) {
+                        const remaining = await getSeats(tableId);
+                        await advanceTurn(table, remaining);
+                    }
                 }
 
                 // If table empty, reset
-                const remaining = await getSeats(mySeat.tableId);
+                const remaining = await getSeats(tableId);
                 if (remaining.length === 0 && table) {
                     table.phase = 'waiting';
-                    table.deck = [];
-                    table.dealerHand = [];
+                    table.deck = []; table.dealerHand = [];
                     table.activeSeat = -1;
-                    table.betStartTime = null;
-                    table.turnStartTime = null;
-                    table.doneTime = null;
+                    table.betStartTime = null; table.turnStartTime = null; table.doneTime = null;
                     await saveTable(table);
                 }
             } else {
@@ -762,10 +758,48 @@ export default async function handler(req, res) {
         }
 
         // ==================================================
+        // leaveSeat — leave one specific seat
+        // ==================================================
+        if (action === 'leaveSeat') {
+            const { tableId, seatIndex } = body;
+            if (!tableId || seatIndex === undefined) return res.json({ error: 'Missing data' });
+
+            const seats = await getSeats(tableId);
+            const seat = seats.find(s => s.userId === user.id && s.seatIndex === seatIndex);
+            if (!seat) return res.json({ error: 'Not your seat' });
+
+            const table = await getTable(tableId);
+
+            // Can't leave during active play on this seat
+            if (table && table.phase === 'playing' && seat.status === 'playing' && table.activeSeat === seatIndex) {
+                return res.json({ error: 'Finish your turn first' });
+            }
+
+            await removeSeat(tableId, seatIndex);
+
+            // If it was this seat's turn, advance
+            if (table && table.phase === 'playing' && table.activeSeat === seatIndex) {
+                const remaining = await getSeats(tableId);
+                await advanceTurn(table, remaining);
+            }
+
+            // If table empty, reset
+            const remaining = await getSeats(tableId);
+            if (remaining.length === 0 && table) {
+                table.phase = 'waiting'; table.deck = []; table.dealerHand = [];
+                table.activeSeat = -1; table.betStartTime = null;
+                table.turnStartTime = null; table.doneTime = null;
+                await saveTable(table);
+            }
+
+            return res.json({ success: true });
+        }
+
+        // ==================================================
         // placeBet
         // ==================================================
         if (action === 'placeBet') {
-            const { tableId, bet, chips } = body;
+            const { tableId, bet, chips, seatIndex } = body;
 
             const table = await getTable(tableId);
             if (!table) return res.json({ error: 'Table not found' });
@@ -775,9 +809,15 @@ export default async function handler(req, res) {
             }
 
             const seats = await getSeats(tableId);
-            const mySeat = seats.find(s => s.userId === user.id);
-            if (!mySeat) return res.json({ error: 'Not seated' });
-            if (mySeat.bet > 0) return res.json({ error: 'Already bet' });
+            // Find the specific seat (by seatIndex if given, otherwise first unbetted seat)
+            let mySeat;
+            if (seatIndex !== undefined && seatIndex !== null) {
+                mySeat = seats.find(s => s.userId === user.id && s.seatIndex === seatIndex);
+            } else {
+                mySeat = seats.find(s => s.userId === user.id && s.bet === 0);
+            }
+            if (!mySeat) return res.json({ error: 'Seat not found' });
+            if (mySeat.bet > 0) return res.json({ error: 'Already bet on this seat' });
 
             const p = await getPlayer(user.id);
             if (!p || p.points < bet) return res.json({ error: 'Not enough points' });

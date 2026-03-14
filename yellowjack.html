@@ -17,7 +17,7 @@
         .rotate-warning h2{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);letter-spacing:3px}
         .rotate-warning p{color:#888;font-size:14px}
         body.is-mobile .rotate-warning{display:none}
-        @media(max-width:900px)and(orientation:portrait){body.is-mobile .rotate-warning{display:flex!important}body.is-mobile .app-container{display:none!important}}
+        @media(max-width:900px)and(orientation:landscape){body.is-mobile .rotate-warning{display:flex!important}body.is-mobile .app-container{display:none!important}}
         
         .menu-btn{position:fixed;top:15px;right:15px;width:36px;height:36px;cursor:pointer;z-index:1000;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;background:rgba(0,0,0,.6);border-radius:8px;padding:8px}
         .menu-btn span{display:block;width:20px;height:2px;background:var(--gold);border-radius:2px;transition:all .3s}
@@ -130,8 +130,8 @@
         .chat-message.system{color:var(--purple)}
         .chat-message.player{color:var(--green)}
         
-        .chat-input-wrap{position:fixed;top:240px;left:15px;display:flex;gap:4px;z-index:100;width:220px}
-        .chat-input{flex:1;background:rgba(0,0,0,.7);border:1px solid #444;color:#fff;padding:5px 10px;border-radius:15px;font-family:'Poppins',sans-serif;font-size:11px;outline:none}
+        .chat-input-wrap{position:fixed;bottom:58px;left:15px;display:flex;gap:4px;z-index:100;width:220px;transition:all .3s}
+        .chat-input{flex:1;background:rgba(0,0,0,.7);border:1px solid #444;color:#fff;padding:5px 10px;border-radius:15px;font-family:'Poppins',sans-serif;font-size:11px;outline:none;height:30px}
         .chat-input:focus{border-color:var(--gold)}
         .chat-send-btn{background:var(--gold);color:#000;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center}
         
@@ -161,15 +161,15 @@
         .turn-indicator.your-turn{border-color:var(--green);color:var(--green)}
         .turn-indicator.waiting{border-color:#888;color:#888}
         
-        @media(max-width:900px){.tables-grid{grid-template-columns:repeat(2,1fr)}.chat-zone{width:160px;max-height:100px;font-size:10px}.chat-input-wrap{width:160px;top:auto;bottom:60px}.lb-h-stat,.lb-stat{width:55px;font-size:10px}.lb-name{font-size:11px}.lb-pfp{width:22px;height:22px}}
-        @media(max-width:600px){.tables-grid{grid-template-columns:1fr}.chip{width:30px;height:30px;font-size:8px}.chat-zone{width:140px}.chat-input-wrap{width:140px}.stat-box{min-width:70px;padding:6px 10px}.stat-value{font-size:12px}.login-logo{font-size:42px}.lb-h-stat,.lb-stat{width:45px;font-size:9px}}
+        @media(max-width:900px){.tables-grid{grid-template-columns:repeat(2,1fr)}.chat-zone{width:160px;max-height:80px;font-size:10px}.chat-input-wrap{width:160px;bottom:55px}.table-name{display:none!important}.turn-indicator{display:none!important}.music-player{left:70px;top:10px}.back-btn{top:10px;left:10px;font-size:10px;padding:4px 8px}.lb-h-stat,.lb-stat{width:55px;font-size:10px}.lb-name{font-size:11px}.lb-pfp{width:22px;height:22px}}
+        @media(max-width:600px){.tables-grid{grid-template-columns:1fr}.chip{width:30px;height:30px;font-size:8px}.chat-zone{width:140px}.chat-input-wrap{width:140px}.stat-box{min-width:65px;padding:5px 8px}.stat-value{font-size:11px}.stat-label{font-size:8px}.login-logo{font-size:42px}.lb-h-stat,.lb-stat{width:45px;font-size:9px}.bottom-left-ui{bottom:8px;left:8px}}
     </style>
 </head>
 <body>
     <div class="rotate-warning">
         <div class="phone-icon">📱</div>
-        <h2>Please Rotate Your Device</h2>
-        <p>YellowJack is best played in landscape mode</p>
+        <h2>Stay in Portrait Mode</h2>
+        <p>YellowJack is optimized for portrait</p>
     </div>
     
     <div class="menu-btn" id="menuBtn"><span></span><span></span><span></span></div>
@@ -400,14 +400,15 @@ const TABLE_IMAGES = { 1: 'images/yellowjack-table.png', 2: 'images/yellowjack-t
 // ============================================================
 // STATE
 // ============================================================
-let curTable = null, mySeat = null, myBet = 0, myChips = [];
+let curTable = null, mySeats = [], myBets = {}; // myBets = { seatIndex: { bet, chips } }
+let activeBetSeat = null; // which seat is currently being bet on
 let tableState = null, pollInterval = null, heartbeatInterval = null;
 let chatMessages = [], aBtns = [];
 let tImg = null, tLoaded = false;
 let pfpCache = {};
-let dealAnimStart = 0; // timestamp when cards were dealt — for stagger animation
-let dealSoundsPlayed = 0; // how many card sounds have been played this deal
-let seenChatKeys = new Set(); // track which chat messages we've already shown
+let dealAnimStart = 0;
+let dealSoundsPlayed = 0;
+let seenChatKeys = new Set();
 
 function showErr(m) {
     const t = document.getElementById('errorToast');
@@ -516,9 +517,9 @@ setInterval(() => {
 // ============================================================
 async function joinTable(id) {
     curTable = id;
-    mySeat = null;
-    myBet = 0;
-    myChips = [];
+    mySeats = [];
+    myBets = {};
+    activeBetSeat = null;
     tableState = null;
     chatMessages = [];
     
@@ -542,7 +543,7 @@ async function joinTable(id) {
 }
 
 async function leaveTable() {
-    if (curTable && mySeat !== null) {
+    if (curTable && mySeats.length > 0) {
         try {
             await fetch('/api/yellowjack', {
                 method: 'POST',
@@ -556,7 +557,9 @@ async function leaveTable() {
     stopPolling();
     stopHeartbeat();
     curTable = null;
-    mySeat = null;
+    mySeats = [];
+    myBets = {};
+    activeBetSeat = null;
     tableState = null;
     chatMessages = [];
     seenChatKeys = new Set();
@@ -621,9 +624,8 @@ async function pollTable() {
             myUserId = d.myUserId;
             
             const mySeatData = d.seats.find(s => s.userId === myUserId);
-            if (mySeatData) {
-                mySeat = mySeatData.seatIndex;
-            }
+            // Track all my seats
+            mySeats = d.seats.filter(s => s.userId === myUserId).map(s => s.seatIndex);
             
             // Update status text
             let statusText = '';
@@ -642,8 +644,8 @@ async function pollTable() {
             
             // Turn indicator
             const turnInd = document.getElementById('turnIndicator');
-            if (d.phase === 'playing' && mySeat !== null) {
-                const isMyTurn = d.activeSeat === mySeat;
+            if (d.phase === 'playing' && mySeats.length > 0) {
+                const isMyTurn = mySeats.includes(d.activeSeat);
                 turnInd.classList.add('active');
                 turnInd.classList.toggle('your-turn', isMyTurn);
                 turnInd.classList.toggle('waiting', !isMyTurn);
@@ -652,10 +654,12 @@ async function pollTable() {
                 turnInd.classList.remove('active');
             }
             
-            // Bet overlay
-            if (d.phase === 'waiting' && mySeat !== null) {
-                const mySeatData2 = d.seats.find(s => s.seatIndex === mySeat);
-                if (mySeatData2 && mySeatData2.status === 'waiting') {
+            // Bet overlay — show if any of my seats needs betting
+            if (d.phase === 'waiting' && mySeats.length > 0) {
+                const needsBet = d.seats.find(s => mySeats.includes(s.seatIndex) && s.status === 'waiting' && s.bet === 0);
+                if (needsBet) {
+                    activeBetSeat = needsBet.seatIndex;
+                    if (!myBets[activeBetSeat]) myBets[activeBetSeat] = { bet: 0, chips: [] };
                     showBet();
                 } else {
                     hideBet();
@@ -677,23 +681,22 @@ async function pollTable() {
                     startFastPoll();
                 }
                 if (d.phase === 'done') {
-                    const mySeatResult = d.seats.find(s => s.userId === myUserId);
-                    if (mySeatResult && mySeatResult.bet > 0) {
-                        const st = mySeatResult.status;
-                        const bet = mySeatResult.bet;
-                        if (st === 'win') { playSound('sndWin'); addSystemChat('You won +' + bet + ' points!'); }
-                        else if (st === 'blackjack') { playSound('sndWin'); addSystemChat('BLACKJACK! +' + Math.floor(bet * 1.5) + ' points!'); }
-                        else if (st === 'bust') { addSystemChat('Bust! -' + bet + ' points'); }
-                        else if (st === 'lose') { addSystemChat('Dealer wins. -' + bet + ' points'); }
-                        else if (st === 'push') { addSystemChat('Push — bet returned'); }
-                    }
+                    // Show results for ALL my seats
+                    d.seats.filter(s => mySeats.includes(s.seatIndex) && s.bet > 0).forEach(ms => {
+                        const st = ms.status, bet = ms.bet, sn = ms.seatIndex + 1;
+                        const prefix = mySeats.length > 1 ? 'Seat ' + sn + ': ' : '';
+                        if (st === 'win') { playSound('sndWin'); addSystemChat(prefix + 'Win +' + bet); }
+                        else if (st === 'blackjack') { playSound('sndWin'); addSystemChat(prefix + 'BLACKJACK +' + Math.floor(bet * 1.5)); }
+                        else if (st === 'bust') { addSystemChat(prefix + 'Bust -' + bet); }
+                        else if (st === 'lose') { addSystemChat(prefix + 'Lose -' + bet); }
+                        else if (st === 'push') { addSystemChat(prefix + 'Push ±0'); }
+                    });
                     setTimeout(loadPlayerPoints, 1500);
-                    // Keep fast polling during done to catch transition to new round
                     startFastPoll();
                 }
                 if (d.phase === 'waiting' && (oldPhase === 'done' || oldPhase === null)) {
-                    myBet = 0;
-                    myChips = [];
+                    myBets = {};
+                    activeBetSeat = null;
                     dealAnimStart = 0;
                     dealSoundsPlayed = 0;
                     updateUI();
@@ -758,42 +761,47 @@ function stopHeartbeat() {
 // BETTING
 // ============================================================
 function addBet(a) {
-    if (myBet + a > pts) { showErr('Not enough points'); return; }
+    if (!activeBetSeat && activeBetSeat !== 0) return;
+    const b = myBets[activeBetSeat] || { bet: 0, chips: [] };
+    if (b.bet + a > pts) { showErr('Not enough points'); return; }
     playSound('sndChip');
-    myBet += a;
-    myChips.push(a);
+    b.bet += a;
+    b.chips.push(a);
+    myBets[activeBetSeat] = b;
     updateUI();
-    render(); // Immediate visual feedback — show chips on canvas
+    render();
 }
 
 function clearBet() {
-    myBet = 0;
-    myChips = [];
+    if (activeBetSeat !== null) myBets[activeBetSeat] = { bet: 0, chips: [] };
     updateUI();
     render();
 }
 
 async function confirmBet() {
-    if (myBet <= 0) { showErr('Place a bet first'); return; }
-    if (myBet > pts) { showErr('Not enough points'); return; }
+    if (activeBetSeat === null) return;
+    const b = myBets[activeBetSeat] || { bet: 0, chips: [] };
+    if (b.bet <= 0) { showErr('Place a bet first'); return; }
+    if (b.bet > pts) { showErr('Not enough points'); return; }
     
     try {
         const r = await fetch('/api/yellowjack', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ action: 'placeBet', tableId: curTable, bet: myBet, chips: myChips })
+            body: JSON.stringify({ action: 'placeBet', tableId: curTable, bet: b.bet, chips: b.chips, seatIndex: activeBetSeat })
         });
         const d = await r.json();
         if (d.error) { showErr(d.error); return; }
         
-        pts -= myBet;
-        hideBet();
-        addSystemChat('You bet ' + myBet + ' points');
-        updateUI();
-        render(); // Immediate visual update
+        pts -= b.bet;
+        addSystemChat('Seat ' + (activeBetSeat + 1) + ': bet ' + b.bet);
         
-        // Poll immediately + fast poll for 5s to catch the deal
+        // Check if another of my seats needs betting
+        activeBetSeat = null;
+        hideBet();
+        updateUI();
+        render();
         pollTable();
         startFastPoll();
     } catch (e) {
@@ -808,9 +816,9 @@ function hideBet() { document.getElementById('betOverlay').classList.remove('act
 // PLAYER ACTIONS
 // ============================================================
 async function playerAction(actionType) {
-    if (!curTable || mySeat === null) return;
+    if (!curTable || mySeats.length === 0) return;
     if (!tableState || tableState.phase !== 'playing') return;
-    if (tableState.activeSeat !== mySeat) { showErr('Not your turn'); return; }
+    if (!mySeats.includes(tableState.activeSeat)) { showErr('Not your turn'); return; }
     
     try {
         const r = await fetch('/api/yellowjack', {
@@ -923,7 +931,7 @@ function drawSeats() {
         const seatData = tableState.seats.find(s => s.seatIndex === i);
         
         if (!seatData) {
-            if (mySeat === null) {
+            if (mySeats.length < 2) {
                 cx.save();
                 cx.beginPath(); cx.arc(sx, sy, sr, 0, Math.PI * 2);
                 cx.strokeStyle = 'rgba(232,160,0,0.6)'; cx.lineWidth = 2; cx.setLineDash([5, 5]); cx.stroke();
@@ -931,12 +939,13 @@ function drawSeats() {
                 cv.style.cursor = 'pointer';
             }
         } else {
-            const isMe = seatData.userId === myUserId;
+            const isMe = mySeats.includes(i);
             const isActive = tableState.activeSeat === i && tableState.phase === 'playing';
             
             // Chips — show local chips if server doesn't have them yet (during betting)
-            const displayChips = (isMe && myChips.length > 0 && (!seatData.chips || seatData.chips.length === 0))
-                ? myChips : (seatData.chips || []);
+            const localBetChips = (isMe && myBets[i]) ? myBets[i].chips : [];
+            const displayChips = (isMe && localBetChips.length > 0 && (!seatData.chips || seatData.chips.length === 0))
+                ? localBetChips : (seatData.chips || []);
             if (displayChips.length > 0) {
                 const cr = Math.max(dw * (isMobile ? 0.008 : 0.012), isMobile ? 7 : 10);
                 displayChips.forEach((v, ci) => {
@@ -1065,6 +1074,20 @@ function drawSeats() {
                 cx.fillStyle = '#2ecc71'; cx.fill();
             }
             
+            // Leave X button for own seats (only during waiting phase)
+            if (isMe && (tableState.phase === 'waiting' || tableState.phase === 'done')) {
+                const xSize = isMobile ? 8 : 10;
+                const xX = sx + (isMobile ? 20 : 28), xY = sy + sr + 2;
+                cx.fillStyle = 'rgba(0,0,0,0.7)';
+                cx.beginPath(); cx.arc(xX, xY, xSize, 0, Math.PI * 2); cx.fill();
+                cx.strokeStyle = '#666'; cx.lineWidth = 1; cx.stroke();
+                cx.fillStyle = '#888'; cx.font = '700 ' + (xSize + 2) + 'px Poppins';
+                cx.textAlign = 'center'; cx.textBaseline = 'middle';
+                cx.fillText('×', xX, xY);
+                // Register clickable area
+                aBtns.push({ x: xX - xSize, y: xY - xSize, w: xSize * 2, h: xSize * 2, action: function() { leaveSeat(i); } });
+            }
+            
             cx.restore();
         }
     });
@@ -1136,64 +1159,64 @@ function drawDealerCards() {
 function drawHandPanel() {
     if (!tableState || !tableState.dealerHand || tableState.dealerHand.length === 0) return;
     
-    const mySeatData = mySeat !== null ? tableState.seats.find(s => s.seatIndex === mySeat) : null;
-    if (!mySeatData || !mySeatData.hand || mySeatData.hand.length === 0) return;
+    const myHandSeats = tableState.seats.filter(s => mySeats.includes(s.seatIndex) && s.hand && s.hand.length > 0);
+    if (myHandSeats.length === 0) return;
     
     const panelX = W - (isMobile ? 140 : 180);
-    const panelY = 50;
-    const cw = isMobile ? 24 : 32, ch = cw * 1.42, g = 4;
+    const panelY = isMobile ? 40 : 50;
+    const cw = isMobile ? 22 : 32, ch = cw * 1.42, g = 3;
     const panelW = isMobile ? 130 : 170;
     const labelFs = isMobile ? 8 : 10;
     const valueFs = isMobile ? 12 : 15;
+    const rowH = ch + 25;
     
-    // Panel background
+    // Panel background — dynamic height
+    const totalH = rowH + myHandSeats.length * rowH + 10;
     cx.save();
     cx.fillStyle = 'rgba(0,0,0,0.75)';
-    roundRect(cx, panelX - 10, panelY - 5, panelW, ch * 2 + 65, 10);
+    roundRect(cx, panelX - 10, panelY - 5, panelW, totalH, 10);
     cx.fill();
     
     // --- DEALER ---
+    let curY = panelY;
     cx.font = '700 ' + labelFs + 'px Poppins';
-    cx.fillStyle = '#888';
-    cx.textAlign = 'left';
-    cx.fillText('DEALER', panelX, panelY + 8);
+    cx.fillStyle = '#888'; cx.textAlign = 'left';
+    cx.fillText('DEALER', panelX, curY + 8);
     
-    // Dealer value
     const dealerVisible = tableState.dealerHand.filter(c => c.rank !== '?');
     const dv = handValue(dealerVisible);
     const showFull = tableState.phase === 'done' || tableState.phase === 'dealer';
     cx.font = '900 ' + valueFs + 'px Poppins';
-    cx.fillStyle = G;
-    cx.textAlign = 'right';
-    cx.fillText(showFull ? dv : dv + '+?', panelX + panelW - 15, panelY + 10);
+    cx.fillStyle = G; cx.textAlign = 'right';
+    cx.fillText(showFull ? dv : dv + '+?', panelX + panelW - 15, curY + 10);
     
-    // Dealer cards
-    const dCardY = panelY + 15;
+    curY += 15;
     tableState.dealerHand.forEach((c, i) => {
         const x = panelX + i * (cw + g);
-        if (c.rank === '?') cardBack(cx, x, dCardY, cw, ch);
-        else cardFace(cx, c, x, dCardY, cw, ch);
+        if (c.rank === '?') cardBack(cx, x, curY, cw, ch);
+        else cardFace(cx, c, x, curY, cw, ch);
     });
+    curY += ch + 10;
     
-    // --- YOU ---
-    const youY = dCardY + ch + 10;
-    cx.font = '700 ' + labelFs + 'px Poppins';
-    cx.fillStyle = G;
-    cx.textAlign = 'left';
-    cx.fillText('YOU', panelX, youY + 8);
-    
-    // My value
-    const mv = handValue(mySeatData.hand);
-    const myBJ = mySeatData.hand.length === 2 && mv === 21;
-    cx.font = '900 ' + valueFs + 'px Poppins';
-    cx.fillStyle = mv > 21 ? '#e74c3c' : myBJ ? GOLD_BJ : '#fff';
-    cx.textAlign = 'right';
-    cx.fillText(myBJ ? 'BJ' : mv, panelX + panelW - 15, youY + 10);
-    
-    // My cards
-    const mCardY = youY + 15;
-    mySeatData.hand.forEach((c, i) => {
-        cardFace(cx, c, panelX + i * (cw + g), mCardY, cw, ch);
+    // --- MY SEATS ---
+    myHandSeats.forEach((seat, si) => {
+        const label = myHandSeats.length > 1 ? ('SEAT ' + (seat.seatIndex + 1)) : 'YOU';
+        cx.font = '700 ' + labelFs + 'px Poppins';
+        cx.fillStyle = G; cx.textAlign = 'left';
+        cx.fillText(label, panelX, curY + 8);
+        
+        const mv = handValue(seat.hand);
+        const myBJ = seat.hand.length === 2 && mv === 21;
+        cx.font = '900 ' + valueFs + 'px Poppins';
+        cx.fillStyle = mv > 21 ? '#e74c3c' : myBJ ? GOLD_BJ : '#fff';
+        cx.textAlign = 'right';
+        cx.fillText(myBJ ? 'BJ' : mv, panelX + panelW - 15, curY + 10);
+        
+        curY += 15;
+        seat.hand.forEach((c, i) => {
+            cardFace(cx, c, panelX + i * (cw + g), curY, cw, ch);
+        });
+        curY += ch + 8;
     });
     
     cx.restore();
@@ -1202,9 +1225,32 @@ function drawHandPanel() {
 function drawActions() {
     aBtns = [];
     
+    // --- BETTING COUNTDOWN TIMER ---
+    if (tableState && tableState.phase === 'waiting' && tableState.betStartTime) {
+        const tsParsed = tableState.betStartTime.endsWith && tableState.betStartTime.endsWith('Z') ? tableState.betStartTime : (tableState.betStartTime + 'Z');
+        const elapsed = (Date.now() - new Date(tsParsed).getTime()) / 1000;
+        const remaining = Math.max(0, 10 - elapsed);
+        if (remaining > 0 && remaining < 10) {
+            const acx = dx + dw / 2, acy = dy + dh * 0.35;
+            cx.save();
+            cx.fillStyle = 'rgba(0,0,0,0.7)';
+            roundRect(cx, acx - 60, acy - 14, 120, 28, 14); cx.fill();
+            cx.font = '900 14px Poppins'; cx.fillStyle = remaining <= 4 ? '#e74c3c' : '#E8A000';
+            cx.textAlign = 'center'; cx.textBaseline = 'middle';
+            cx.fillText('BET  ' + Math.ceil(remaining) + 's', acx, acy);
+            // Bar
+            const barW = 100, barH = 3, barX = acx - barW / 2, barY = acy + 18;
+            cx.fillStyle = 'rgba(255,255,255,.15)';
+            roundRect(cx, barX, barY, barW, barH, 2); cx.fill();
+            cx.fillStyle = remaining <= 4 ? '#e74c3c' : '#E8A000';
+            roundRect(cx, barX, barY, barW * (remaining / 10), barH, 2); cx.fill();
+            cx.restore();
+        }
+    }
+    
     // --- RESULT BANNER during 'done' phase ---
-    if (tableState && tableState.phase === 'done' && mySeat !== null) {
-        const mySeatData = tableState.seats.find(s => s.seatIndex === mySeat);
+    if (tableState && tableState.phase === 'done' && mySeats.length > 0) {
+        const mySeatData = tableState.seats.find(s => mySeats.includes(s.seatIndex) && s.bet > 0);
         if (mySeatData && mySeatData.status && mySeatData.bet > 0) {
             const acx = dx + dw / 2, acy = dy + dh * 0.48;
             const status = mySeatData.status;
@@ -1236,13 +1282,16 @@ function drawActions() {
     
     // --- ACTION BUTTONS during 'playing' phase ---
     if (!tableState || tableState.phase !== 'playing') return;
-    if (mySeat === null || tableState.activeSeat !== mySeat) return;
+    if (mySeats.length === 0 || !mySeats.includes(tableState.activeSeat)) return;
     
-    const mySeatData = tableState.seats.find(s => s.seatIndex === mySeat);
+    const mySeatData = tableState.seats.find(s => s.seatIndex === tableState.activeSeat);
     if (!mySeatData || mySeatData.status !== 'playing') return;
     
-    const acx = dx + dw / 2, acy = dy + dh * 0.48;
-    const btnR = Math.max(dw * 0.024, 24), gap = btnR * 2.6;
+    // On mobile: smaller buttons below the table image. On desktop: center of table
+    const acx = W / 2;
+    const acy = isMobile ? dy + dh + 25 : dy + dh * 0.48;
+    const btnR = isMobile ? Math.max(W * 0.045, 16) : Math.max(dw * 0.024, 24);
+    const gap = btnR * (isMobile ? 2.8 : 2.6);
     
     const canDouble = mySeatData.hand.length === 2 && mySeatData.bet <= pts;
     
@@ -1256,38 +1305,37 @@ function drawActions() {
     let sx = acx - (enabledBtns.length * gap) / 2 + gap / 2;
     
     enabledBtns.forEach(b => {
-        // Shadow
         cx.save();
-        cx.beginPath(); cx.arc(sx, acy + 3, btnR, 0, Math.PI * 2);
+        cx.beginPath(); cx.arc(sx, acy + 2, btnR, 0, Math.PI * 2);
         cx.fillStyle = 'rgba(0,0,0,.5)'; cx.fill();
-        // Button
         cx.beginPath(); cx.arc(sx, acy, btnR, 0, Math.PI * 2);
         const grad = cx.createRadialGradient(sx - btnR * 0.3, acy - btnR * 0.3, 0, sx, acy, btnR);
         grad.addColorStop(0, b.c); grad.addColorStop(1, shadeColor(b.c, -30));
         cx.fillStyle = grad; cx.fill();
         cx.strokeStyle = 'rgba(255,255,255,.3)'; cx.lineWidth = 2; cx.stroke();
-        // Icon
         cx.fillStyle = '#fff'; cx.font = '900 ' + btnR * 0.55 + 'px Poppins';
         cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(b.icon, sx, acy);
-        // Label
-        cx.font = '700 ' + Math.max(btnR * 0.35, 8) + 'px Poppins';
-        cx.fillStyle = '#fff'; cx.fillText(b.l, sx, acy + btnR + 12);
+        // Labels only on desktop
+        if (!isMobile) {
+            cx.font = '700 ' + Math.max(btnR * 0.35, 8) + 'px Poppins';
+            cx.fillStyle = '#fff'; cx.fillText(b.l, sx, acy + btnR + 12);
+        }
         cx.restore();
         aBtns.push({ x: sx - btnR, y: acy - btnR, w: btnR * 2, h: btnR * 2, action: b.a });
         sx += gap;
     });
     
-    // Turn timer bar
+    // Turn timer bar — gold/orange (not green, to contrast with table felt)
     if (tableState.turnStartTime) {
         const tsParsed = tableState.turnStartTime.endsWith('Z') ? tableState.turnStartTime : tableState.turnStartTime + 'Z';
         const elapsed = (Date.now() - new Date(tsParsed).getTime()) / 1000;
         const remaining = Math.max(0, 30 - elapsed);
         const barW = Math.min(dw * 0.15, 140), barH = 4;
-        const barX = acx - barW / 2, barY = acy + btnR + 25;
+        const barX = acx - barW / 2, barY = acy + btnR + (isMobile ? 8 : 25);
         cx.save();
         cx.fillStyle = 'rgba(0,0,0,.5)';
         roundRect(cx, barX, barY, barW, barH, 2); cx.fill();
-        cx.fillStyle = remaining <= 8 ? '#e74c3c' : '#2ecc71';
+        cx.fillStyle = remaining <= 8 ? '#e74c3c' : '#E8A000';
         roundRect(cx, barX, barY, barW * (remaining / 30), barH, 2); cx.fill();
         cx.restore();
     }
@@ -1307,7 +1355,24 @@ function handValue(hand) {
 
 function shadeColor(color, percent) { const num = parseInt(color.replace('#', ''), 16); const amt = Math.round(2.55 * percent); const R = (num >> 16) + amt; const Gr = (num >> 8 & 0x00FF) + amt; const B = (num & 0x0000FF) + amt; return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (Gr < 255 ? Gr < 1 ? 0 : Gr : 255) * 0x100 + (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1); }
 function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath(); }
-function cardFace(c, cd, x, y, w, h) { c.save(); c.fillStyle = 'rgba(0,0,0,.3)'; roundRect(c, x + 2, y + 2, w, h, 4); c.fill(); c.fillStyle = '#fff'; roundRect(c, x, y, w, h, 4); c.fill(); c.fillStyle = (cd.suit === '♥' || cd.suit === '♦') ? '#e74c3c' : '#111'; c.font = '900 ' + Math.max(w * 0.28, 10) + 'px Poppins'; c.textAlign = 'left'; c.fillText(cd.rank, x + 4, y + Math.max(w * 0.28, 10) + 2); c.font = Math.max(w * 0.4, 14) + 'px sans-serif'; c.textAlign = 'center'; c.fillText(cd.suit, x + w / 2, y + h / 2 + Math.max(w * 0.4, 14) * 0.25); c.restore(); }
+function cardFace(c, cd, x, y, w, h) {
+    const isRed = cd.suit === '♥' || cd.suit === '♦';
+    const color = isRed ? '#e74c3c' : '#111';
+    const rankFs = Math.max(w * 0.32, 9);
+    const suitFs = Math.max(w * 0.28, 8);
+    c.save();
+    // Shadow
+    c.fillStyle = 'rgba(0,0,0,.3)'; roundRect(c, x + 2, y + 2, w, h, 4); c.fill();
+    // Card body
+    c.fillStyle = '#fff'; roundRect(c, x, y, w, h, 4); c.fill();
+    // Rank top-left
+    c.fillStyle = color; c.font = '900 ' + rankFs + 'px Poppins'; c.textAlign = 'left'; c.textBaseline = 'top';
+    c.fillText(cd.rank, x + 3, y + 2);
+    // Suit bottom-right
+    c.font = suitFs + 'px sans-serif'; c.textAlign = 'right'; c.textBaseline = 'bottom';
+    c.fillText(cd.suit, x + w - 3, y + h - 2);
+    c.restore();
+}
 function cardBack(c, x, y, w, h) { c.save(); c.fillStyle = 'rgba(0,0,0,.3)'; roundRect(c, x + 2, y + 2, w, h, 4); c.fill(); c.fillStyle = G; roundRect(c, x, y, w, h, 4); c.fill(); c.fillStyle = '#8B5A00'; roundRect(c, x + 3, y + 3, w - 6, h - 6, 3); c.fill(); c.font = Math.max(w * 0.4, 14) + 'px sans-serif'; c.textAlign = 'center'; c.fillText('🐱', x + w / 2, y + h / 2 + Math.max(w * 0.4, 14) * 0.3); c.restore(); }
 
 // ============================================================
@@ -1326,7 +1391,7 @@ function onClick(ex, ey) {
         }
     }
     
-    if (mySeat === null && tableState) {
+    if (mySeats.length < 2 && tableState) {
         const sr = Math.max(dw * 0.020, 14);
         for (let i = 0; i < SPOTS.length; i++) {
             const seatData = tableState.seats.find(s => s.seatIndex === i);
@@ -1352,7 +1417,7 @@ async function joinSeat(seatIndex) {
         const d = await r.json();
         if (d.error) { showErr(d.error); return; }
         
-        mySeat = seatIndex;
+        if (!mySeats.includes(seatIndex)) mySeats.push(seatIndex);
         if (d.points) pts = d.points;
         addSystemChat('You joined seat ' + (seatIndex + 1));
         showBet();
@@ -1361,6 +1426,22 @@ async function joinSeat(seatIndex) {
     } catch (e) {
         showErr('Failed to join seat');
     }
+}
+
+async function leaveSeat(seatIndex) {
+    try {
+        await fetch('/api/yellowjack', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'leaveSeat', tableId: curTable, seatIndex: seatIndex })
+        });
+        mySeats = mySeats.filter(s => s !== seatIndex);
+        delete myBets[seatIndex];
+        addSystemChat('Left seat ' + (seatIndex + 1));
+        updateUI();
+        pollTable();
+    } catch (e) {}
 }
 
 cv.addEventListener('click', function(e) { onClick(e.clientX, e.clientY); });
@@ -1374,9 +1455,20 @@ function updateUI() {
     document.getElementById('lobbyUserPoints').textContent = pts;
     
     const betBox = document.getElementById('betBox');
-    if (myBet > 0) {
+    // Total bet across all my seats (local + server)
+    let totalBet = 0;
+    Object.values(myBets).forEach(b => { totalBet += b.bet || 0; });
+    // Also check server state
+    if (tableState && mySeats.length > 0) {
+        tableState.seats.forEach(s => {
+            if (mySeats.includes(s.seatIndex) && s.bet > 0) {
+                if (!myBets[s.seatIndex] || myBets[s.seatIndex].bet === 0) totalBet += s.bet;
+            }
+        });
+    }
+    if (totalBet > 0) {
         betBox.style.display = 'block';
-        document.getElementById('betDisplay').textContent = '🎰 ' + myBet;
+        document.getElementById('betDisplay').textContent = '🎰 ' + totalBet;
     } else {
         betBox.style.display = 'none';
     }
