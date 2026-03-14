@@ -84,6 +84,26 @@
         .table-card-btn.watch{background:transparent;color:var(--gold);border:1px solid var(--gold-dark)}
         .table-card-btn:hover{transform:scale(1.02)}
         
+        .leaderboard-section{margin-top:30px;padding-bottom:40px}
+        .lb-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--gold);text-align:center;margin-bottom:15px}
+        .lb-header{display:flex;align-items:center;padding:8px 12px;background:rgba(232,160,0,.1);border-radius:8px;margin-bottom:6px;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px}
+        .lb-h-rank{width:30px;text-align:center}
+        .lb-h-player{flex:1}
+        .lb-h-stat{width:70px;text-align:right}
+        .lb-row{display:flex;align-items:center;padding:10px 12px;border-bottom:1px solid #222;transition:background .2s}
+        .lb-row:hover{background:rgba(232,160,0,.05)}
+        .lb-row.top3{background:rgba(232,160,0,.08)}
+        .lb-rank{width:30px;text-align:center;font-weight:900;font-size:14px;color:var(--gold)}
+        .lb-rank.r1{color:#f1c40f;font-size:16px}
+        .lb-rank.r2{color:#bdc3c7}
+        .lb-rank.r3{color:#cd7f32}
+        .lb-player{flex:1;display:flex;align-items:center;gap:8px}
+        .lb-pfp{width:28px;height:28px;border-radius:50%;border:2px solid #333;object-fit:cover}
+        .lb-name{font-size:13px;font-weight:600;color:var(--gold)}
+        .lb-stat{width:70px;text-align:right;font-size:12px;color:#888}
+        .lb-stat.points{color:var(--green);font-weight:700}
+        .lb-stat.volume{color:var(--gold);font-weight:900;font-size:13px}
+        
         .game-view{display:none;position:fixed;inset:0;background:#000}
         .game-view.active{display:flex;justify-content:center;align-items:center}
         #gameCanvas{display:block;border-radius:15px}
@@ -109,6 +129,11 @@
         .chat-message{font-size:11px;padding:2px 0;text-shadow:0 1px 3px rgba(0,0,0,.9)}
         .chat-message.system{color:var(--purple)}
         .chat-message.player{color:var(--green)}
+        
+        .chat-input-wrap{position:fixed;top:240px;left:15px;display:flex;gap:4px;z-index:100;width:220px}
+        .chat-input{flex:1;background:rgba(0,0,0,.7);border:1px solid #444;color:#fff;padding:5px 10px;border-radius:15px;font-family:'Poppins',sans-serif;font-size:11px;outline:none}
+        .chat-input:focus{border-color:var(--gold)}
+        .chat-send-btn{background:var(--gold);color:#000;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center}
         
         .bottom-left-ui{position:fixed;bottom:15px;left:15px;display:flex;flex-direction:column;gap:8px;z-index:100}
         .stats-row{display:flex;gap:8px}
@@ -136,8 +161,8 @@
         .turn-indicator.your-turn{border-color:var(--green);color:var(--green)}
         .turn-indicator.waiting{border-color:#888;color:#888}
         
-        @media(max-width:900px){.tables-grid{grid-template-columns:repeat(2,1fr)}.chat-zone{width:160px;max-height:100px;font-size:10px}}
-        @media(max-width:600px){.tables-grid{grid-template-columns:1fr}.chip{width:30px;height:30px;font-size:8px}.chat-zone{width:140px}.stat-box{min-width:70px;padding:6px 10px}.stat-value{font-size:12px}.login-logo{font-size:42px}}
+        @media(max-width:900px){.tables-grid{grid-template-columns:repeat(2,1fr)}.chat-zone{width:160px;max-height:100px;font-size:10px}.chat-input-wrap{width:160px;top:auto;bottom:60px}.lb-h-stat,.lb-stat{width:55px;font-size:10px}.lb-name{font-size:11px}.lb-pfp{width:22px;height:22px}}
+        @media(max-width:600px){.tables-grid{grid-template-columns:1fr}.chip{width:30px;height:30px;font-size:8px}.chat-zone{width:140px}.chat-input-wrap{width:140px}.stat-box{min-width:70px;padding:6px 10px}.stat-value{font-size:12px}.login-logo{font-size:42px}.lb-h-stat,.lb-stat{width:45px;font-size:9px}}
     </style>
 </head>
 <body>
@@ -196,6 +221,18 @@
                 <p>Join a table with other players or start your own!</p>
             </div>
             <div class="tables-grid" id="tablesGrid"></div>
+            
+            <div class="leaderboard-section" id="leaderboardSection">
+                <div class="lb-title">LEADERBOARD</div>
+                <div class="lb-header">
+                    <span class="lb-h-rank">#</span>
+                    <span class="lb-h-player">Player</span>
+                    <span class="lb-h-stat">Games</span>
+                    <span class="lb-h-stat">Points</span>
+                    <span class="lb-h-stat">Volume</span>
+                </div>
+                <div class="lb-list" id="lbList"></div>
+            </div>
         </div>
         
         <div class="game-view" id="gameView">
@@ -216,6 +253,10 @@
                 <div class="turn-indicator" id="turnIndicator">YOUR TURN</div>
                 
                 <div class="chat-zone" id="chatZone"></div>
+                <div class="chat-input-wrap" id="chatInputWrap">
+                    <input class="chat-input" id="chatInput" type="text" placeholder="Say something..." maxlength="120">
+                    <button class="chat-send-btn" onclick="sendChat()">➤</button>
+                </div>
                 
                 <div class="bottom-left-ui">
                     <div class="stats-row">
@@ -366,6 +407,7 @@ let tImg = null, tLoaded = false;
 let pfpCache = {};
 let dealAnimStart = 0; // timestamp when cards were dealt — for stagger animation
 let dealSoundsPlayed = 0; // how many card sounds have been played this deal
+let seenChatKeys = new Set(); // track which chat messages we've already shown
 
 function showErr(m) {
     const t = document.getElementById('errorToast');
@@ -407,6 +449,44 @@ async function loadTables() {
         console.log('Failed to load tables');
         renderLobby([]);
     }
+    loadLeaderboard();
+}
+
+async function loadLeaderboard() {
+    try {
+        const r = await fetch('/api/yellowjack', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'getLeaderboard' })
+        });
+        const d = await r.json();
+        renderLeaderboard(d.players || []);
+    } catch (e) {}
+}
+
+function renderLeaderboard(players) {
+    const list = document.getElementById('lbList');
+    if (!list) return;
+    list.innerHTML = '';
+    
+    if (players.length === 0) {
+        list.innerHTML = '<div style="text-align:center;color:#555;padding:20px;font-size:12px;">No players yet</div>';
+        return;
+    }
+    
+    players.forEach(function(p, i) {
+        const rank = i + 1;
+        const volume = (p.total_won || 0) + (p.total_lost || 0);
+        const div = document.createElement('div');
+        div.className = 'lb-row' + (rank <= 3 ? ' top3' : '');
+        div.innerHTML = '<div class="lb-rank ' + (rank === 1 ? 'r1' : rank === 2 ? 'r2' : rank === 3 ? 'r3' : '') + '">' + (rank <= 3 ? ['', '👑', '🥈', '🥉'][rank] : rank) + '</div>' +
+            '<div class="lb-player"><img class="lb-pfp" src="' + (p.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png') + '"><span class="lb-name">' + (p.x_username || 'Player') + '</span></div>' +
+            '<div class="lb-stat">' + (p.games_played || 0) + '</div>' +
+            '<div class="lb-stat points">' + (p.points || 0) + '</div>' +
+            '<div class="lb-stat volume">' + volume + '</div>';
+        list.appendChild(div);
+    });
 }
 
 function renderLobby(tables) {
@@ -478,6 +558,8 @@ async function leaveTable() {
     curTable = null;
     mySeat = null;
     tableState = null;
+    chatMessages = [];
+    seenChatKeys = new Set();
     
     document.getElementById('gameView').classList.remove('active');
     document.getElementById('lobbyView').classList.remove('hidden');
@@ -628,6 +710,20 @@ async function pollTable() {
                     img.src = seat.avatar;
                     pfpCache[seat.avatar] = null;
                 }
+            }
+            
+            // Process chat from other players
+            if (d.chat && d.chat.length > 0) {
+                d.chat.forEach(function(msg) {
+                    // Skip our own messages (already shown locally)
+                    if (msg.userId === myUserId) return;
+                    // Check if already displayed (by timestamp)
+                    const key = msg.userId + ':' + msg.createdAt;
+                    if (!seenChatKeys.has(key)) {
+                        seenChatKeys.add(key);
+                        addPlayerChat(msg.username, msg.message);
+                    }
+                });
             }
             
             render();
@@ -944,18 +1040,19 @@ function drawSeats() {
             cx.textAlign = 'center';
             cx.fillText(nmTrunc, sx, tY + tH - (isMobile ? 2 : 4));
             
-            // PFP — hide on mobile to save space
-            if (!isMobile) {
-                const pfpR = Math.max(sr * 0.6, 10), pfpY = tY + tH + pfpR + 4;
+            // PFP — smaller on mobile
+            {
+                const pfpR = isMobile ? Math.max(sr * 0.4, 7) : Math.max(sr * 0.6, 10);
+                const pfpY = tY + tH + pfpR + (isMobile ? 2 : 4);
                 cx.beginPath(); cx.arc(sx, pfpY, pfpR, 0, Math.PI * 2);
                 cx.fillStyle = 'rgba(0,0,0,.6)'; cx.fill();
-                cx.strokeStyle = isMe ? G : '#555'; cx.lineWidth = 2; cx.stroke();
+                cx.strokeStyle = isMe ? G : '#555'; cx.lineWidth = isMobile ? 1 : 2; cx.stroke();
                 
                 const pfpImg = pfpCache[seatData.avatar];
                 if (pfpImg && pfpImg.complete) {
                     cx.save();
-                    cx.beginPath(); cx.arc(sx, pfpY, pfpR - 2, 0, Math.PI * 2); cx.clip();
-                    cx.drawImage(pfpImg, sx - pfpR + 2, pfpY - pfpR + 2, (pfpR - 2) * 2, (pfpR - 2) * 2);
+                    cx.beginPath(); cx.arc(sx, pfpY, pfpR - 1, 0, Math.PI * 2); cx.clip();
+                    cx.drawImage(pfpImg, sx - pfpR + 1, pfpY - pfpR + 1, (pfpR - 1) * 2, (pfpR - 1) * 2);
                     cx.restore();
                 } else {
                     cx.font = pfpR + 'px sans-serif'; cx.fillStyle = '#666'; cx.textAlign = 'center';
@@ -1218,7 +1315,8 @@ function cardBack(c, x, y, w, h) { c.save(); c.fillStyle = 'rgba(0,0,0,.3)'; rou
 // ============================================================
 function onClick(ex, ey) {
     const r = cv.getBoundingClientRect();
-    const mx = (ex - r.left) * (cv.width / r.width), my = (ey - r.top) * (cv.height / r.height);
+    // Use CSS coordinates directly — drawing uses setTransform(dpr) so coords match CSS pixels
+    const mx = ex - r.left, my = ey - r.top;
     
     for (const b of aBtns) {
         const bcx = b.x + b.w / 2, bcy = b.y + b.h / 2;
@@ -1286,9 +1384,39 @@ function updateUI() {
 
 function addSystemChat(text) {
     chatMessages.push({ text: text, system: true });
-    if (chatMessages.length > 30) chatMessages.shift();
+    if (chatMessages.length > 40) chatMessages.shift();
     renderChat();
 }
+
+function addPlayerChat(name, text) {
+    chatMessages.push({ text: text, name: name, system: false });
+    if (chatMessages.length > 40) chatMessages.shift();
+    renderChat();
+}
+
+async function sendChat() {
+    const input = document.getElementById('chatInput');
+    const msg = input.value.trim();
+    if (!msg || !curTable) return;
+    input.value = '';
+    
+    // Show locally immediately
+    addPlayerChat(twName || 'You', msg);
+    
+    try {
+        await fetch('/api/yellowjack', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ action: 'sendChat', tableId: curTable, message: msg })
+        });
+    } catch (e) {}
+}
+
+// Enter key to send
+document.getElementById('chatInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') sendChat();
+});
 
 function renderChat() {
     const zone = document.getElementById('chatZone');
@@ -1296,7 +1424,7 @@ function renderChat() {
     chatMessages.forEach(function(msg) {
         const div = document.createElement('div');
         div.className = 'chat-message ' + (msg.system ? 'system' : 'player');
-        div.textContent = msg.text;
+        div.textContent = msg.system ? msg.text : (msg.name + ': ' + msg.text);
         zone.appendChild(div);
     });
     zone.scrollTop = zone.scrollHeight;

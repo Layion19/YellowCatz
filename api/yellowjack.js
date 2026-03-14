@@ -72,6 +72,17 @@ async function ensureTables() {
         )
     `);
 
+    await db.execute(`
+        CREATE TABLE IF NOT EXISTS yj_chat (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            table_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            username TEXT NOT NULL,
+            message TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    `);
+
     // Init 6 tables
     for (let i = 1; i <= NUM_TABLES; i++) {
         await db.execute({
@@ -637,7 +648,22 @@ export default async function handler(req, res) {
             table = await getTable(tableId);
             seats = await getSeats(tableId);
 
-            return res.json(buildTableResponse(table, seats, user.id));
+            // Get recent chat for this table (last 20 messages)
+            const chatResult = await db.execute({
+                sql: `SELECT user_id, username, message, created_at FROM yj_chat 
+                      WHERE table_id = ? ORDER BY id DESC LIMIT 20`,
+                args: [tableId]
+            });
+            const chat = chatResult.rows.reverse().map(r => ({
+                userId: r.user_id,
+                username: r.username,
+                message: r.message,
+                createdAt: r.created_at
+            }));
+
+            const resp = buildTableResponse(table, seats, user.id);
+            resp.chat = chat;
+            return res.json(resp);
         }
 
         // ==================================================
@@ -871,6 +897,48 @@ export default async function handler(req, res) {
             }
 
             return res.json({ error: 'Unknown action type' });
+        }
+
+        // ==================================================
+        // getLeaderboard — sorted by volume (total_won + total_lost)
+        // ==================================================
+        if (action === 'getLeaderboard') {
+            const result = await db.execute(`
+                SELECT yj.user_id, yj.points, yj.games_played, yj.total_won, yj.total_lost,
+                       u.x_username, u.avatar_url
+                FROM yellowjack_players yj
+                JOIN users u ON yj.user_id = u.id
+                WHERE yj.is_blocked = 0 AND yj.games_played > 0
+                ORDER BY (yj.total_won + yj.total_lost) DESC
+                LIMIT 30
+            `);
+            return res.json({ players: result.rows });
+        }
+
+        // ==================================================
+        // sendChat — store a chat message
+        // ==================================================
+        if (action === 'sendChat') {
+            const { tableId, message } = body;
+            if (!message || !tableId) return res.json({ error: 'Missing data' });
+
+            const clean = message.trim().substring(0, 120);
+            if (clean.length === 0) return res.json({ error: 'Empty message' });
+
+            await db.execute({
+                sql: `INSERT INTO yj_chat (table_id, user_id, username, message) VALUES (?, ?, ?, ?)`,
+                args: [tableId, user.id, user.username, clean]
+            });
+
+            // Cleanup old messages (keep last 50 per table)
+            await db.execute({
+                sql: `DELETE FROM yj_chat WHERE table_id = ? AND id NOT IN (
+                    SELECT id FROM yj_chat WHERE table_id = ? ORDER BY id DESC LIMIT 50
+                )`,
+                args: [tableId, tableId]
+            });
+
+            return res.json({ success: true });
         }
 
         // ==================================================
