@@ -130,7 +130,7 @@
         .chat-message.system{color:var(--purple)}
         .chat-message.player{color:var(--green)}
         
-        .chat-input-wrap{position:fixed;bottom:55px;left:15px;display:flex;gap:4px;z-index:100;width:60px;transition:width .3s}
+        .chat-input-wrap{position:fixed;bottom:75px;left:15px;display:flex;gap:4px;z-index:100;width:60px;transition:width .3s}
         .chat-input-wrap.expanded{width:200px}
         .chat-input{flex:1;background:rgba(0,0,0,.7);border:1px solid #444;color:#fff;padding:4px 8px;border-radius:12px;font-family:'Poppins',sans-serif;font-size:10px;outline:none;height:26px;width:0;opacity:0;transition:all .3s}
         .chat-input-wrap.expanded .chat-input{width:auto;opacity:1}
@@ -978,22 +978,23 @@ function drawSeats() {
                 cx.restore();
             }
             
-            // Cards — staggered deal animation
+            // Cards — stacked overlapping (like real blackjack)
             if (seatData.hand && seatData.hand.length > 0) {
                 const mobileScale = isMobile ? 0.7 : 1;
                 const isMyTurn = isActive && isMe;
-                // Active player's cards slightly bigger
-                const sizeBoost = isMyTurn ? 1.2 : 1;
+                const sizeBoost = isMyTurn ? 1.15 : 1;
                 const cw = Math.max(Math.min(dw * 0.035 * mobileScale * sizeBoost, 48), isMobile ? 20 : 28);
-                const ch = cw * 1.42, g = cw * 0.15;
-                const cy = sy - ch - dw * (isMobile ? 0.02 : 0.03);
+                const ch = cw * 1.42;
+                // Overlap: each card offset by 30% of card width (shows rank corner)
+                const overlap = cw * 0.32;
+                const cy = sy - ch - dw * (isMobile ? 0.015 : 0.025);
                 
                 // Stagger animation — right-to-left seat order
                 let visibleCount = seatData.hand.length;
                 if (dealAnimStart > 0 && tableState.phase === 'playing') {
                     const elapsed = Date.now() - dealAnimStart;
                     const handSeats = tableState.seats.filter(s => s.hand && s.hand.length > 0)
-                        .sort((a, b) => b.seatIndex - a.seatIndex); // right to left
+                        .sort((a, b) => b.seatIndex - a.seatIndex);
                     const seatOrder = handSeats.findIndex(s => s.seatIndex === seatData.seatIndex);
                     visibleCount = 0;
                     for (let ci = 0; ci < seatData.hand.length; ci++) {
@@ -1003,13 +1004,15 @@ function drawSeats() {
                 }
                 
                 const showCards = seatData.hand.slice(0, visibleCount);
-                const stx = sx - ((showCards.length * (cw + g)) - g) / 2;
+                // Total pile width = first card full + rest overlapping
+                const pileW = showCards.length > 0 ? cw + (showCards.length - 1) * overlap : 0;
+                const stx = sx - pileW / 2;
                 
-                // Golden rotating border for active player (only visible to that player)
+                // Golden rotating border for active player
                 if (isMyTurn && showCards.length > 0) {
                     cx.save();
                     const bx = stx - 4, by = cy - 4;
-                    const bw = showCards.length * (cw + g) - g + 8, bh = ch + 8;
+                    const bw = pileW + 8, bh = ch + 8;
                     const angle = (Date.now() % 3000) / 3000 * Math.PI * 2;
                     const grad = cx.createLinearGradient(
                         bx + bw / 2 + Math.cos(angle) * bw / 2, by,
@@ -1040,7 +1043,8 @@ function drawSeats() {
                             cx.globalAlpha = t;
                         }
                     }
-                    cardFace(cx, c, stx + ci * (cw + g), cardY, cw, ch);
+                    // Each card offset by overlap amount
+                    cardFace(cx, c, stx + ci * overlap, cardY, cw, ch);
                     cx.globalAlpha = 1;
                 });
                 
@@ -1132,7 +1136,8 @@ function drawDealerCards() {
     const dcx = dx + DPO.x * dw, dcy = dy + DPO.y * dh;
     const mobileScale = isMobile ? 0.75 : 1;
     const cw = Math.max(Math.min(dw * 0.045 * mobileScale, 50), isMobile ? 26 : 35);
-    const ch = cw * 1.42, g = cw * 0.2;
+    const ch = cw * 1.42;
+    const overlap = cw * 0.35;
     const hand = tableState.dealerHand;
     
     // Stagger: dealer cards appear after all player cards
@@ -1140,7 +1145,6 @@ function drawDealerCards() {
     if (dealAnimStart > 0 && tableState.phase === 'playing') {
         const elapsed = Date.now() - dealAnimStart;
         const numPlayerSeats = tableState.seats.filter(s => s.hand?.length > 0).length;
-        // Dealer card 1 appears after all first player cards, dealer card 2 after all second player cards
         visibleCount = 0;
         for (let ci = 0; ci < hand.length; ci++) {
             const dealerDelay = ((ci + 1) * numPlayerSeats + ci) * 350;
@@ -1149,11 +1153,11 @@ function drawDealerCards() {
     }
     
     const showHand = hand.slice(0, visibleCount);
-    const startX = dcx - ((showHand.length * (cw + g)) - g) / 2;
+    const pileW = showHand.length > 0 ? cw + (showHand.length - 1) * overlap : 0;
+    const startX = dcx - pileW / 2;
     
     showHand.forEach((c, i) => {
         let cardY = dcy;
-        // Slide-in animation
         if (dealAnimStart > 0 && tableState.phase === 'playing') {
             const numPlayerSeats = tableState.seats.filter(s => s.hand?.length > 0).length;
             const dealerDelay = ((i + 1) * numPlayerSeats + i) * 350;
@@ -1164,7 +1168,7 @@ function drawDealerCards() {
                 cx.globalAlpha = t;
             }
         }
-        const x = startX + i * (cw + g);
+        const x = startX + i * overlap;
         if (c.rank === '?') cardBack(cx, x, cardY, cw, ch);
         else cardFace(cx, c, x, cardY, cw, ch);
         cx.globalAlpha = 1;
@@ -1197,7 +1201,8 @@ function drawHandPanel() {
     
     const panelX = W - (isMobile ? 140 : 180);
     const panelY = isMobile ? 40 : 50;
-    const cw = isMobile ? 22 : 32, ch = cw * 1.42, g = 3;
+    const cw = isMobile ? 22 : 32, ch = cw * 1.42;
+    const panelOverlap = cw * 0.35;
     const panelW = isMobile ? 130 : 170;
     const labelFs = isMobile ? 8 : 10;
     const valueFs = isMobile ? 12 : 15;
@@ -1225,7 +1230,7 @@ function drawHandPanel() {
     
     curY += 15;
     tableState.dealerHand.forEach((c, i) => {
-        const x = panelX + i * (cw + g);
+        const x = panelX + i * panelOverlap;
         if (c.rank === '?') cardBack(cx, x, curY, cw, ch);
         else cardFace(cx, c, x, curY, cw, ch);
     });
@@ -1247,7 +1252,7 @@ function drawHandPanel() {
         
         curY += 15;
         seat.hand.forEach((c, i) => {
-            cardFace(cx, c, panelX + i * (cw + g), curY, cw, ch);
+            cardFace(cx, c, panelX + i * panelOverlap, curY, cw, ch);
         });
         curY += ch + 8;
     });
