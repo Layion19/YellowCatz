@@ -418,6 +418,8 @@ let pfpCache = {};
 let dealAnimStart = 0;
 let dealSoundsPlayed = 0;
 let seenChatKeys = new Set();
+let tableBgCache = null; // Offscreen canvas for table background
+let tableBgDirty = true; // Needs redraw?
 
 function showErr(m) {
     const t = document.getElementById('errorToast');
@@ -829,6 +831,17 @@ async function playerAction(actionType) {
     if (!tableState || tableState.phase !== 'playing') return;
     if (!mySeats.includes(tableState.activeSeat)) { showErr('Not your turn'); return; }
     
+    // Optimistic HIT — immediately show a card back on the active seat
+    if (actionType === 'hit' && tableState) {
+        const seat = tableState.seats.find(s => s.seatIndex === tableState.activeSeat);
+        if (seat && seat.hand) {
+            seat.hand.push({ rank: '?', suit: '?' }); // Temp card back
+            render();
+        }
+    }
+    
+    playSound('sndCard');
+    
     try {
         const r = await fetch('/api/yellowjack', {
             method: 'POST',
@@ -837,14 +850,13 @@ async function playerAction(actionType) {
             body: JSON.stringify({ action: 'playerAction', tableId: curTable, actionType })
         });
         const d = await r.json();
-        if (d.error) { showErr(d.error); return; }
+        if (d.error) { showErr(d.error); pollTable(); return; }
         
-        playSound('sndCard');
-        // Immediate poll + fast poll to see result instantly
         pollTable();
         startFastPoll();
     } catch (e) {
         showErr('Action failed');
+        pollTable();
     }
 }
 
@@ -874,50 +886,61 @@ function resize() {
     const ir = tImg.width / tImg.height, cr = W / H;
     if (cr > ir) { dh = H; dw = dh * ir; dx = (W - dw) / 2; dy = 0; } 
     else { dw = W; dh = dw / ir; dx = 0; dy = (H - dh) / 2; }
+    tableBgDirty = true;
+}
+
+function cacheTableBg() {
+    if (!tLoaded || !tImg) return;
+    const dpr = window.devicePixelRatio || 1;
+    if (!tableBgCache) tableBgCache = document.createElement('canvas');
+    tableBgCache.width = W * dpr; tableBgCache.height = H * dpr;
+    const bgCx = tableBgCache.getContext('2d');
+    bgCx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    bgCx.fillStyle = '#0a0a0a'; bgCx.fillRect(0, 0, W, H);
+    bgCx.save();
+    roundRectPath(bgCx, dx, dy, dw, dh, 15);
+    bgCx.clip();
+    bgCx.drawImage(tImg, dx, dy, dw, dh);
+    bgCx.restore();
+    tableBgDirty = false;
 }
 
 window.addEventListener('resize', () => { if (curTable) { resize(); render(); } });
 window.addEventListener('orientationchange', () => setTimeout(() => { if (curTable) { resize(); render(); } }, 100));
 
 function render() {
-    cx.fillStyle = '#0a0a0a';
-    cx.fillRect(0, 0, W, H);
-    if (!tLoaded) return;
+    if (tableBgDirty) cacheTableBg();
     
-    cx.save();
-    roundRectPath(cx, dx, dy, dw, dh, 15);
-    cx.clip();
-    cx.drawImage(tImg, dx, dy, dw, dh);
-    cx.restore();
+    // Blit cached background (fast — no drawImage of full table)
+    if (tableBgCache) {
+        cx.drawImage(tableBgCache, 0, 0, W, H);
+    } else {
+        cx.fillStyle = '#0a0a0a'; cx.fillRect(0, 0, W, H);
+        if (!tLoaded) return;
+        cx.save(); roundRectPath(cx, dx, dy, dw, dh, 15); cx.clip();
+        cx.drawImage(tImg, dx, dy, dw, dh); cx.restore();
+    }
     
     cv.style.cursor = 'default';
     
-    if (!tableState) {
-        drawEmptySpots();
-        return;
-    }
+    if (!tableState) { drawEmptySpots(); return; }
     
-    aBtns = []; // Reset clickable areas
-    drawSeats();   // Adds leave X buttons
+    aBtns = [];
+    drawSeats();
     drawDealerCards();
     drawHandPanel();
-    drawActions(); // Adds action buttons (doesn't reset aBtns)
+    drawActions();
     
-    // Play card sound for each new card appearing during deal animation
+    // Card deal sounds
     if (dealAnimStart > 0 && tableState.phase === 'playing') {
         const elapsed = Date.now() - dealAnimStart;
         const totalCards = tableState.seats.reduce((a, s) => a + (s.hand?.length || 0), 0) + (tableState.dealerHand?.length || 0);
         const cardsVisible = Math.min(totalCards, Math.floor(elapsed / 350) + 1);
-        if (cardsVisible > dealSoundsPlayed) {
-            playSound('sndCard');
-            dealSoundsPlayed = cardsVisible;
-        }
+        if (cardsVisible > dealSoundsPlayed) { playSound('sndCard'); dealSoundsPlayed = cardsVisible; }
     }
     
-    // Keep animating: deal stagger + golden border rotation during my turn
-    const needsAnim = (dealAnimStart > 0 && Date.now() - dealAnimStart < 4000) ||
-        (tableState && tableState.phase === 'playing' && mySeats.includes(tableState.activeSeat));
-    if (needsAnim) {
+    // Only animate during deal stagger (not 60fps for golden border — it updates on poll)
+    if (dealAnimStart > 0 && Date.now() - dealAnimStart < 4000) {
         requestAnimationFrame(render);
     }
 }
@@ -937,6 +960,9 @@ function drawEmptySpots() {
 
 function drawSeats() {
     const sr = Math.max(dw * 0.020, 14);
+    // Pre-compute sorted hand seats once (used for stagger animation)
+    const _handSeats = tableState.seats.filter(s => s.hand && s.hand.length > 0)
+        .sort((a, b) => b.seatIndex - a.seatIndex);
     
     SPOTS.forEach((p, i) => {
         const sx = dx + p.x * dw, sy = dy + p.y * dh;
@@ -984,30 +1010,24 @@ function drawSeats() {
             if (seatData.hand && seatData.hand.length > 0) {
                 const mobileScale = isMobile ? 0.7 : 1;
                 const isMyTurn = isActive && isMe;
-                const sizeBoost = isMyTurn ? 1.15 : 1;
-                const cw = Math.max(Math.min(dw * 0.035 * mobileScale * sizeBoost, 48), isMobile ? 20 : 28);
+                const sizeBoost = isMyTurn ? 1.28 : 1;
+                const cw = Math.max(Math.min(dw * 0.035 * mobileScale * sizeBoost, 52), isMobile ? 20 : 28);
                 const ch = cw * 1.42;
-                // Vertical stack: each card shifts down 22% of height, right 12% of width
                 const offY = ch * 0.22;
                 const offX = cw * 0.12;
                 
-                // Total pile dimensions
                 const pileH = ch + (seatData.hand.length - 1) * offY;
                 const pileW = cw + (seatData.hand.length - 1) * offX;
-                // Position: pile sits above the seat spot, centered
                 const baseX = sx - pileW / 2;
                 const baseY = sy - pileH - dw * (isMobile ? 0.01 : 0.02);
                 
-                // Stagger animation — right-to-left seat order
                 let visibleCount = seatData.hand.length;
                 if (dealAnimStart > 0 && tableState.phase === 'playing') {
                     const elapsed = Date.now() - dealAnimStart;
-                    const handSeats = tableState.seats.filter(s => s.hand && s.hand.length > 0)
-                        .sort((a, b) => b.seatIndex - a.seatIndex);
-                    const seatOrder = handSeats.findIndex(s => s.seatIndex === seatData.seatIndex);
+                    const seatOrder = _handSeats.findIndex(s => s.seatIndex === seatData.seatIndex);
                     visibleCount = 0;
                     for (let ci = 0; ci < seatData.hand.length; ci++) {
-                        const cardDelay = (ci * handSeats.length + seatOrder) * 350;
+                        const cardDelay = (ci * _handSeats.length + seatOrder) * 350;
                         if (elapsed >= cardDelay) visibleCount++;
                     }
                 }
@@ -1016,36 +1036,12 @@ function drawSeats() {
                 const showPileW = cw + (showCards.length - 1) * offX;
                 const showBaseX = sx - showPileW / 2;
                 
-                // Golden rotating border for active player
-                if (isMyTurn && showCards.length > 0) {
-                    cx.save();
-                    const showPileH = ch + (showCards.length - 1) * offY;
-                    const bx = showBaseX - 4, by = baseY - 4;
-                    const bw = showPileW + 8, bh = showPileH + 8;
-                    const angle = (Date.now() % 3000) / 3000 * Math.PI * 2;
-                    const grad = cx.createLinearGradient(
-                        bx + bw / 2 + Math.cos(angle) * bw / 2, by,
-                        bx + bw / 2 + Math.cos(angle + Math.PI) * bw / 2, by + bh
-                    );
-                    grad.addColorStop(0, '#E8A000');
-                    grad.addColorStop(0.5, '#FFD700');
-                    grad.addColorStop(1, '#E8A000');
-                    cx.strokeStyle = grad;
-                    cx.lineWidth = 2;
-                    cx.shadowColor = '#E8A000'; cx.shadowBlur = 8;
-                    roundRect(cx, bx, by, bw, bh, 6); cx.stroke();
-                    cx.shadowBlur = 0;
-                    cx.restore();
-                }
-                
                 showCards.forEach((c, ci) => {
                     let cardX = showBaseX + ci * offX;
                     let cardY = baseY + ci * offY;
                     if (dealAnimStart > 0 && tableState.phase === 'playing') {
-                        const handSeats = tableState.seats.filter(s => s.hand?.length > 0)
-                            .sort((a, b) => b.seatIndex - a.seatIndex);
-                        const seatOrder = handSeats.findIndex(s => s.seatIndex === seatData.seatIndex);
-                        const cardDelay = (ci * handSeats.length + seatOrder) * 350;
+                        const seatOrder = _handSeats.findIndex(s => s.seatIndex === seatData.seatIndex);
+                        const cardDelay = (ci * _handSeats.length + seatOrder) * 350;
                         const cardAge = Date.now() - dealAnimStart - cardDelay;
                         if (cardAge < 200) {
                             const t = Math.max(0, cardAge) / 200;
@@ -1053,7 +1049,8 @@ function drawSeats() {
                             cx.globalAlpha = t;
                         }
                     }
-                    cardFace(cx, c, cardX, cardY, cw, ch);
+                    if (c.rank === '?') cardBack(cx, cardX, cardY, cw, ch);
+                    else cardFace(cx, c, cardX, cardY, cw, ch);
                     cx.globalAlpha = 1;
                 });
                 
@@ -1329,19 +1326,21 @@ function drawActions() {
     const mySeatData = tableState.seats.find(s => s.seatIndex === tableState.activeSeat);
     if (!mySeatData || mySeatData.status !== 'playing') return;
     
-    // On mobile: smaller buttons below the table image. On desktop: center of table
+    // On mobile: below the table. On desktop: center of table
     const acx = W / 2;
-    const acy = isMobile ? dy + dh + 25 : dy + dh * 0.48;
-    const btnR = isMobile ? Math.max(W * 0.045, 16) : Math.max(dw * 0.024, 24);
-    const gap = btnR * (isMobile ? 2.8 : 2.6);
+    const acy = isMobile ? dy + dh + 30 : dy + dh * 0.48;
+    const btnR = isMobile ? Math.max(W * 0.04, 15) : Math.max(dw * 0.022, 22);
+    const gap = btnR * (isMobile ? 2.5 : 2.6);
     
     const canDouble = mySeatData.hand.length === 2 && mySeatData.bet <= pts;
+    const canSplit = mySeatData.hand.length === 2 && mySeatData.hand[0].rank === mySeatData.hand[1].rank && mySeatData.bet <= pts;
     
     const btns = [
-        { l: 'DOUBLE', c: '#f39c12', icon: '2x', a: function() { playerAction('double'); }, enabled: canDouble },
-        { l: 'HIT', c: '#2ecc71', icon: '+', a: function() { playerAction('hit'); }, enabled: true },
-        { l: 'STAND', c: '#e74c3c', icon: '−', a: function() { playerAction('stand'); }, enabled: true },
+        { l: '2x', c: '#f39c12', a: function() { playerAction('double'); }, enabled: canDouble },
+        { l: 'HIT', c: '#2ecc71', a: function() { playerAction('hit'); }, enabled: true },
+        { l: 'STAND', c: '#e74c3c', a: function() { playerAction('stand'); }, enabled: true },
     ];
+    if (canSplit) btns.push({ l: 'SPLIT', c: '#3498db', a: function() { playerAction('split'); }, enabled: true });
     
     const enabledBtns = btns.filter(b => b.enabled);
     let sx = acx - (enabledBtns.length * gap) / 2 + gap / 2;
@@ -1355,13 +1354,11 @@ function drawActions() {
         grad.addColorStop(0, b.c); grad.addColorStop(1, shadeColor(b.c, -30));
         cx.fillStyle = grad; cx.fill();
         cx.strokeStyle = 'rgba(255,255,255,.3)'; cx.lineWidth = 2; cx.stroke();
-        cx.fillStyle = '#fff'; cx.font = '900 ' + btnR * 0.55 + 'px Poppins';
-        cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(b.icon, sx, acy);
-        // Labels only on desktop
-        if (!isMobile) {
-            cx.font = '700 ' + Math.max(btnR * 0.35, 8) + 'px Poppins';
-            cx.fillStyle = '#fff'; cx.fillText(b.l, sx, acy + btnR + 12);
-        }
+        // Label inside button
+        cx.fillStyle = '#fff';
+        cx.font = '900 ' + Math.max(btnR * (isMobile ? 0.5 : 0.45), 7) + 'px Poppins';
+        cx.textAlign = 'center'; cx.textBaseline = 'middle';
+        cx.fillText(b.l, sx, acy);
         cx.restore();
         aBtns.push({ x: sx - btnR, y: acy - btnR, w: btnR * 2, h: btnR * 2, action: b.a });
         sx += gap;
