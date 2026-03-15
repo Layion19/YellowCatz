@@ -338,11 +338,28 @@ async function tickTable(table, seats) {
         const elapsed = (now - parseTime(table.turnStartTime)) / 1000;
         if (elapsed >= TURN_TIMEOUT) {
             const seat = seats.find(s => s.seatIndex === table.activeSeat);
-            if (seat && seat.status === 'playing') {
-                seat.status = 'stand';
-                await saveSeat(seat);
+            if (seat) {
+                const sp = seat.splitPhase || 0;
+                if (sp === 1) {
+                    // Auto-stand right hand → move to left
+                    seat.status2 = 'stand';
+                    seat.splitPhase = 2;
+                    seat.status = 'playing';
+                    table.turnStartTime = new Date().toISOString();
+                    await saveSeat(seat); await saveTable(table);
+                } else if (sp === 2) {
+                    // Auto-stand left hand → advance
+                    seat.status = 'stand';
+                    await saveSeat(seat);
+                    await advanceTurn(table, seats);
+                } else if (seat.status === 'playing') {
+                    seat.status = 'stand';
+                    await saveSeat(seat);
+                    await advanceTurn(table, seats);
+                }
+            } else {
+                await advanceTurn(table, seats);
             }
-            await advanceTurn(table, seats);
         }
         return;
     }
@@ -370,6 +387,9 @@ async function dealCards(table, seats) {
     const bettors = seats.filter(s => s.bet > 0);
     for (const s of bettors) {
         s.hand = [draw(deck), draw(deck)];
+        s.hand2 = [];
+        s.status2 = '';
+        s.splitPhase = 0;
         s.status = isBJ(s.hand) ? 'blackjack' : 'playing';
         await saveSeat(s);
     }

@@ -555,7 +555,7 @@ async function joinTable(id) {
 
 function confirmLeaveTable() {
     if (curTable && mySeats.length > 0) {
-        if (!confirm('Are you sure you want to leave the table ?.')) return;
+        if (!confirm('Quitter la table ? Tu seras déconnecté.')) return;
     }
     leaveTable();
 }
@@ -718,15 +718,25 @@ async function pollTable() {
                     startFastPoll();
                 }
                 if (d.phase === 'done') {
-                    // Show results for ALL my seats
                     d.seats.filter(s => mySeats.includes(s.seatIndex) && s.bet > 0).forEach(ms => {
-                        const st = ms.status, bet = ms.bet, sn = ms.seatIndex + 1;
+                        const bet = ms.bet, sn = ms.seatIndex + 1;
                         const prefix = mySeats.length > 1 ? 'Seat ' + sn + ': ' : '';
-                        if (st === 'win') { playSound('sndWin'); addSystemChat(prefix + 'Win +' + bet); }
-                        else if (st === 'blackjack') { playSound('sndWin'); addSystemChat(prefix + 'BLACKJACK +' + Math.floor(bet * 1.5)); }
-                        else if (st === 'bust') { addSystemChat(prefix + 'Bust -' + bet); }
-                        else if (st === 'lose') { addSystemChat(prefix + 'Lose -' + bet); }
-                        else if (st === 'push') { addSystemChat(prefix + 'Push ±0'); }
+                        const isSplit = ms.splitPhase > 0 && ms.hand2 && ms.hand2.length > 0;
+                        
+                        function showResult(st, label) {
+                            if (st === 'win') { playSound('sndWin'); addSystemChat(label + 'Win +' + bet); }
+                            else if (st === 'blackjack') { playSound('sndWin'); addSystemChat(label + 'BJ +' + Math.floor(bet * 1.5)); }
+                            else if (st === 'bust') { addSystemChat(label + 'Bust -' + bet); }
+                            else if (st === 'lose') { addSystemChat(label + 'Lose -' + bet); }
+                            else if (st === 'push') { addSystemChat(label + 'Push ±0'); }
+                        }
+                        
+                        if (isSplit) {
+                            showResult(ms.status, prefix + 'L: ');
+                            showResult(ms.status2, prefix + 'R: ');
+                        } else {
+                            showResult(ms.status, prefix);
+                        }
                     });
                     setTimeout(loadPlayerPoints, 1500);
                     startFastPoll();
@@ -1418,7 +1428,15 @@ function drawActions() {
     if (mySeats.length === 0 || !mySeats.includes(tableState.activeSeat)) return;
     
     const mySeatData = tableState.seats.find(s => s.seatIndex === tableState.activeSeat);
-    if (!mySeatData || mySeatData.status !== 'playing') return;
+    if (!mySeatData) return;
+    
+    // Check correct status based on split phase
+    const sp = mySeatData.splitPhase || 0;
+    const activeStatus = (sp === 1) ? mySeatData.status2 : mySeatData.status;
+    if (activeStatus !== 'playing') return;
+    
+    // Determine which hand is active for canSplit/canDouble checks
+    const activeHand = (sp === 1) ? (mySeatData.hand2 || []) : (mySeatData.hand || []);
     
     // On mobile: below the table. On desktop: center of table
     const acx = W / 2;
@@ -1426,10 +1444,10 @@ function drawActions() {
     const btnR = isMobile ? Math.max(W * 0.04, 15) : Math.max(dw * 0.022, 22);
     const gap = btnR * (isMobile ? 2.5 : 2.6);
     
-    const canDouble = !mySeatData.splitPhase && mySeatData.hand.length === 2 && mySeatData.bet <= pts;
+    const canDouble = !sp && activeHand.length === 2 && mySeatData.bet <= pts;
     function cardVal(r) { return ['J','Q','K'].includes(r) ? 10 : r === 'A' ? 11 : parseInt(r); }
-    const canSplit = mySeatData.hand.length === 2 && !mySeatData.splitPhase && 
-        cardVal(mySeatData.hand[0].rank) === cardVal(mySeatData.hand[1].rank) && mySeatData.bet <= pts;
+    const canSplit = !sp && activeHand.length === 2 && 
+        cardVal(activeHand[0].rank) === cardVal(activeHand[1].rank) && mySeatData.bet <= pts;
     
     const btns = [
         { l: '2x', c: '#f39c12', a: function() { playerAction('double'); }, enabled: canDouble },
