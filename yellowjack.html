@@ -247,7 +247,7 @@
             <canvas id="gameCanvas"></canvas>
             
             <div class="game-ui">
-                <button class="back-btn" onclick="leaveTable()">← Lobby</button>
+                <button class="back-btn" onclick="confirmLeaveTable()">← Lobby</button>
                 
                 <div class="music-player">
                     <button class="music-btn" onclick="prevTrack()">⏮</button>
@@ -553,6 +553,13 @@ async function joinTable(id) {
     addSystemChat('Click on an empty spot to join');
 }
 
+function confirmLeaveTable() {
+    if (curTable && mySeats.length > 0) {
+        if (!confirm('Quitter la table ? Tu seras déconnecté.')) return;
+    }
+    leaveTable();
+}
+
 async function leaveTable() {
     if (curTable && mySeats.length > 0) {
         try {
@@ -581,6 +588,24 @@ async function leaveTable() {
     loadTables();
     loadPlayerPoints();
 }
+
+// --- Auto-disconnect on page close / refresh / navigate away ---
+function beaconLeave() {
+    if (curTable && mySeats.length > 0) {
+        const data = new Blob([JSON.stringify({ action: 'leaveTable', tableId: curTable })], { type: 'application/json' });
+        navigator.sendBeacon('/api/yellowjack', data);
+    }
+}
+
+window.addEventListener('beforeunload', function(e) {
+    if (curTable && mySeats.length > 0) {
+        beaconLeave();
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+
+window.addEventListener('pagehide', beaconLeave);
 
 // ============================================================
 // POLLING — adaptive speed
