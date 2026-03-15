@@ -410,9 +410,10 @@ async function advanceTurn(table, seats) {
     // - status === 'playing' (normal or hand1 of split)
     // - OR splitPhase === 2 and status2 === 'playing' (hand2 of split)
     function needsPlay(s) {
-        if (s.status === 'playing') return true;
-        if (s.splitPhase === 2 && s.status2 === 'playing') return true;
-        return false;
+        const sp = s.splitPhase || 0;
+        if (sp === 1) return s.status2 === 'playing'; // right hand active
+        if (sp === 2) return s.status === 'playing';  // left hand active
+        return s.status === 'playing';
     }
 
     // Find next player — right to left (descending seat index)
@@ -452,8 +453,9 @@ async function playDealer(table, seats) {
     const dealerBust = dealerVal > 21;
     const dealerBJ = isBJ(table.dealerHand);
 
-    // Resolve each player
+    // Resolve each player (skip already resolved)
     for (const s of bettors) {
+        if (['win','lose','push','blackjack'].includes(s.status)) continue; // already resolved
         let totalPayout = 0;
         let totalWon = 0, totalLost = 0;
 
@@ -900,56 +902,52 @@ export default async function handler(req, res) {
             if (!mySeat) {
                 return res.json({ error: 'Not your turn' });
             }
-            // Check if still playing (normal or split hand2)
+            // Check if still playing
             let sp = mySeat.splitPhase || 0;
-            if (sp === 2) {
+            if (sp === 1) {
+                // Playing right hand (hand2)
                 if (mySeat.status2 !== 'playing') return res.json({ error: 'Already done' });
+            } else if (sp === 2) {
+                // Playing left hand (hand1)
+                if (mySeat.status !== 'playing') return res.json({ error: 'Already done' });
             } else {
                 if (mySeat.status !== 'playing') return res.json({ error: 'Already done' });
             }
 
             let deck = table.deck.length > 10 ? table.deck : createDeck();
 
-            // Which hand are we playing? (splitPhase: 0=normal, 1=hand1, 2=hand2)
-            sp = mySeat.splitPhase || 0; // refresh in case split just happened
-            const activeHand = (sp === 2) ? mySeat.hand2 : mySeat.hand;
+            // Split phases: 0=normal, 1=playing right hand (hand2), 2=playing left hand (hand1)
+            // Right-to-left: hand2 first, then hand1
+            sp = mySeat.splitPhase || 0;
+            const activeHand = (sp === 1) ? mySeat.hand2 : mySeat.hand;
 
             // --- HIT ---
             if (actionType === 'hit') {
                 activeHand.push(draw(deck));
                 const val = handValue(activeHand);
-                let handDone = false;
+                let handDone = val > 21 || val === 21;
 
-                if (val > 21) { handDone = true; }
-                else if (val === 21) { handDone = true; }
-
-                // Write back
-                if (sp === 2) { mySeat.hand2 = activeHand; } else { mySeat.hand = activeHand; }
+                if (sp === 1) { mySeat.hand2 = activeHand; } else { mySeat.hand = activeHand; }
                 table.deck = deck;
 
                 if (handDone) {
                     const handStatus = val > 21 ? 'bust' : 'stand';
                     if (sp === 0) {
-                        // Normal play
                         mySeat.status = handStatus;
                         await saveSeat(mySeat); await saveTable(table);
                         await advanceTurn(table, seats);
                     } else if (sp === 1) {
-                        // Hand1 done → move to hand2
-                        mySeat.status = handStatus;
+                        // Right hand done → move to left hand
+                        mySeat.status2 = handStatus;
                         mySeat.splitPhase = 2;
-                        mySeat.status2 = 'playing';
+                        mySeat.status = 'playing';
                         table.turnStartTime = new Date().toISOString();
                         await saveSeat(mySeat); await saveTable(table);
                     } else {
-                        // Hand2 done → both done, advance
-                        mySeat.status2 = handStatus;
-                        // Mark seat as done (use hand1 status for advanceTurn check)
-                        if (mySeat.status !== 'playing') {
-                            // Both hands done
-                            await saveSeat(mySeat); await saveTable(table);
-                            await advanceTurn(table, seats);
-                        }
+                        // Left hand done → both done
+                        mySeat.status = handStatus;
+                        await saveSeat(mySeat); await saveTable(table);
+                        await advanceTurn(table, seats);
                     }
                 } else {
                     await saveSeat(mySeat);
@@ -967,13 +965,15 @@ export default async function handler(req, res) {
                     await saveSeat(mySeat);
                     await advanceTurn(table, seats);
                 } else if (sp === 1) {
-                    mySeat.status = 'stand';
+                    // Right hand stand → move to left hand
+                    mySeat.status2 = 'stand';
                     mySeat.splitPhase = 2;
-                    mySeat.status2 = 'playing';
+                    mySeat.status = 'playing';
                     table.turnStartTime = new Date().toISOString();
                     await saveSeat(mySeat); await saveTable(table);
                 } else {
-                    mySeat.status2 = 'stand';
+                    // Left hand stand → both done
+                    mySeat.status = 'stand';
                     await saveSeat(mySeat);
                     await advanceTurn(table, seats);
                 }
@@ -983,6 +983,7 @@ export default async function handler(req, res) {
             // --- DOUBLE ---
             if (actionType === 'double') {
                 if (activeHand.length !== 2) return res.json({ error: 'Can only double on 2 cards' });
+                if (sp > 0) return res.json({ error: 'Cannot double on split hands' });
 
                 const p = await getPlayer(user.id);
                 if (!p || p.points < mySeat.bet) return res.json({ error: 'Not enough points' });
@@ -995,26 +996,12 @@ export default async function handler(req, res) {
                 mySeat.bet *= 2;
                 activeHand.push(draw(deck));
                 const val = handValue(activeHand);
-                const handStatus = val > 21 ? 'bust' : 'stand';
-
-                if (sp === 2) { mySeat.hand2 = activeHand; } else { mySeat.hand = activeHand; }
+                mySeat.status = val > 21 ? 'bust' : 'stand';
+                mySeat.hand = activeHand;
                 table.deck = deck;
 
-                if (sp === 0) {
-                    mySeat.status = handStatus;
-                    await saveSeat(mySeat); await saveTable(table);
-                    await advanceTurn(table, seats);
-                } else if (sp === 1) {
-                    mySeat.status = handStatus;
-                    mySeat.splitPhase = 2;
-                    mySeat.status2 = 'playing';
-                    table.turnStartTime = new Date().toISOString();
-                    await saveSeat(mySeat); await saveTable(table);
-                } else {
-                    mySeat.status2 = handStatus;
-                    await saveSeat(mySeat); await saveTable(table);
-                    await advanceTurn(table, seats);
-                }
+                await saveSeat(mySeat); await saveTable(table);
+                await advanceTurn(table, seats);
 
                 return res.json({ success: true });
             }
@@ -1022,8 +1009,12 @@ export default async function handler(req, res) {
             // --- SPLIT ---
             if (actionType === 'split') {
                 if (mySeat.hand.length !== 2) return res.json({ error: 'Need exactly 2 cards' });
-                if (mySeat.hand[0].rank !== mySeat.hand[1].rank) return res.json({ error: 'Cards must match' });
                 if (mySeat.splitPhase > 0) return res.json({ error: 'Already split' });
+
+                // Check same value (not just same rank — K and 10 both = 10)
+                const v1 = ['J','Q','K'].includes(mySeat.hand[0].rank) ? 10 : (mySeat.hand[0].rank === 'A' ? 11 : parseInt(mySeat.hand[0].rank));
+                const v2 = ['J','Q','K'].includes(mySeat.hand[1].rank) ? 10 : (mySeat.hand[1].rank === 'A' ? 11 : parseInt(mySeat.hand[1].rank));
+                if (v1 !== v2) return res.json({ error: 'Cards must have same value' });
 
                 const p = await getPlayer(user.id);
                 if (!p || p.points < mySeat.bet) return res.json({ error: 'Not enough points' });
@@ -1034,14 +1025,15 @@ export default async function handler(req, res) {
                     args: [mySeat.bet, user.id]
                 });
 
-                // Split the cards
-                const card1 = mySeat.hand[0];
-                const card2 = mySeat.hand[1];
-                mySeat.hand = [card1, draw(deck)];
-                mySeat.hand2 = [card2, draw(deck)];
+                // Split: hand = left card + new, hand2 = right card + new
+                const cardLeft = mySeat.hand[0];
+                const cardRight = mySeat.hand[1];
+                mySeat.hand = [cardLeft, draw(deck)];
+                mySeat.hand2 = [cardRight, draw(deck)];
+                // Start with right hand (hand2) = splitPhase 1
                 mySeat.splitPhase = 1;
-                mySeat.status = 'playing';
-                mySeat.status2 = 'waiting';
+                mySeat.status = 'waiting'; // left hand waits
+                mySeat.status2 = 'playing'; // right hand plays first
 
                 table.deck = deck;
                 table.turnStartTime = new Date().toISOString();

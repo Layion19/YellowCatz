@@ -555,7 +555,7 @@ async function joinTable(id) {
 
 function confirmLeaveTable() {
     if (curTable && mySeats.length > 0) {
-        if (!confirm('Quitter la table ? Tu seras déconnecté.')) return;
+        if (!confirm('Are you sure you want to leave the table ?.')) return;
     }
     leaveTable();
 }
@@ -692,7 +692,8 @@ async function pollTable() {
             
             // Bet overlay — show if any of my seats needs betting
             if (d.phase === 'waiting' && mySeats.length > 0) {
-                const needsBet = d.seats.find(s => mySeats.includes(s.seatIndex) && s.status === 'waiting' && s.bet === 0);
+                const needsBet = [...d.seats].sort((a,b) => b.seatIndex - a.seatIndex)
+                    .find(s => mySeats.includes(s.seatIndex) && s.status === 'waiting' && s.bet === 0);
                 if (needsBet) {
                     activeBetSeat = needsBet.seatIndex;
                     if (!myBets[activeBetSeat]) myBets[activeBetSeat] = { bet: 0, chips: [] };
@@ -856,11 +857,14 @@ async function playerAction(actionType) {
     if (!tableState || tableState.phase !== 'playing') return;
     if (!mySeats.includes(tableState.activeSeat)) { showErr('Not your turn'); return; }
     
-    // Optimistic HIT — immediately show a card back on the active seat
+    // Optimistic HIT — immediately show a card back on the active hand
     if (actionType === 'hit' && tableState) {
         const seat = tableState.seats.find(s => s.seatIndex === tableState.activeSeat);
-        if (seat && seat.hand) {
-            seat.hand.push({ rank: '?', suit: '?' }); // Temp card back
+        if (seat) {
+            const sp = seat.splitPhase || 0;
+            const targetHand = (sp === 1) ? (seat.hand2 || []) : (seat.hand || []);
+            targetHand.push({ rank: '?', suit: '?' });
+            if (sp === 1) seat.hand2 = targetHand; else seat.hand = targetHand;
             render();
         }
     }
@@ -1085,10 +1089,10 @@ function drawSeats() {
                     const maxH = Math.max(maxH1, maxH2);
                     const baseY = sy - maxH - dw * (isMobile ? 0.01 : 0.02);
                     
-                    const isH1Active = isMyTurn && seatData.splitPhase === 1;
-                    const isH2Active = isMyTurn && seatData.splitPhase === 2;
-                    drawPile(seatData.hand, startX, baseY, isH1Active);
-                    drawPile(seatData.hand2, startX + pile1W + hGap - cw, baseY, isH2Active);
+                    const isLeftActive = isMyTurn && seatData.splitPhase === 2;
+                    const isRightActive = isMyTurn && seatData.splitPhase === 1;
+                    drawPile(seatData.hand, startX, baseY, isLeftActive);
+                    drawPile(seatData.hand2, startX + pile1W + hGap - cw, baseY, isRightActive);
                 } else {
                     // Normal single pile with stagger animation
                     const pileH = ch + (seatData.hand.length - 1) * offY;
@@ -1422,8 +1426,10 @@ function drawActions() {
     const btnR = isMobile ? Math.max(W * 0.04, 15) : Math.max(dw * 0.022, 22);
     const gap = btnR * (isMobile ? 2.5 : 2.6);
     
-    const canDouble = mySeatData.hand.length === 2 && mySeatData.bet <= pts;
-    const canSplit = mySeatData.hand.length === 2 && mySeatData.hand[0].rank === mySeatData.hand[1].rank && mySeatData.bet <= pts;
+    const canDouble = !mySeatData.splitPhase && mySeatData.hand.length === 2 && mySeatData.bet <= pts;
+    function cardVal(r) { return ['J','Q','K'].includes(r) ? 10 : r === 'A' ? 11 : parseInt(r); }
+    const canSplit = mySeatData.hand.length === 2 && !mySeatData.splitPhase && 
+        cardVal(mySeatData.hand[0].rank) === cardVal(mySeatData.hand[1].rank) && mySeatData.bet <= pts;
     
     const btns = [
         { l: '2x', c: '#f39c12', a: function() { playerAction('double'); }, enabled: canDouble },
