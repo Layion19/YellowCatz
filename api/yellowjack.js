@@ -66,11 +66,19 @@ async function ensureTables() {
             bet INTEGER DEFAULT 0,
             chips TEXT DEFAULT '[]',
             hand TEXT DEFAULT '[]',
+            hand2 TEXT DEFAULT '[]',
             status TEXT DEFAULT 'waiting',
+            status2 TEXT DEFAULT '',
+            split_phase INTEGER DEFAULT 0,
             last_seen TEXT DEFAULT (datetime('now')),
             PRIMARY KEY (table_id, seat_index)
         )
     `);
+
+    // Migration: add split columns if missing
+    try { await db.execute("ALTER TABLE yj_seats ADD COLUMN hand2 TEXT DEFAULT '[]'"); } catch(e) {}
+    try { await db.execute("ALTER TABLE yj_seats ADD COLUMN status2 TEXT DEFAULT ''"); } catch(e) {}
+    try { await db.execute("ALTER TABLE yj_seats ADD COLUMN split_phase INTEGER DEFAULT 0"); } catch(e) {}
 
     await db.execute(`
         CREATE TABLE IF NOT EXISTS yj_chat (
@@ -209,7 +217,10 @@ async function getSeats(tableId) {
         bet: s.bet || 0,
         chips: JSON.parse(s.chips || '[]'),
         hand: JSON.parse(s.hand || '[]'),
+        hand2: JSON.parse(s.hand2 || '[]'),
         status: s.status || 'waiting',
+        status2: s.status2 || '',
+        splitPhase: s.split_phase || 0,
         lastSeen: s.last_seen
     }));
 }
@@ -217,12 +228,13 @@ async function getSeats(tableId) {
 async function saveSeat(s) {
     await db.execute({
         sql: `INSERT OR REPLACE INTO yj_seats 
-              (table_id, seat_index, user_id, username, avatar, bet, chips, hand, status, last_seen)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+              (table_id, seat_index, user_id, username, avatar, bet, chips, hand, hand2, status, status2, split_phase, last_seen)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
         args: [
             s.tableId, s.seatIndex, s.userId, s.username, s.avatar || '',
             s.bet || 0, JSON.stringify(s.chips || []),
-            JSON.stringify(s.hand || []), s.status || 'waiting'
+            JSON.stringify(s.hand || []), JSON.stringify(s.hand2 || []),
+            s.status || 'waiting', s.status2 || '', s.splitPhase || 0
         ]
     });
 }
@@ -394,9 +406,18 @@ async function dealCards(table, seats) {
 }
 
 async function advanceTurn(table, seats) {
+    // A seat still needs to play if:
+    // - status === 'playing' (normal or hand1 of split)
+    // - OR splitPhase === 2 and status2 === 'playing' (hand2 of split)
+    function needsPlay(s) {
+        if (s.status === 'playing') return true;
+        if (s.splitPhase === 2 && s.status2 === 'playing') return true;
+        return false;
+    }
+
     // Find next player — right to left (descending seat index)
     const active = seats
-        .filter(s => s.bet > 0 && s.status === 'playing' && s.seatIndex < table.activeSeat)
+        .filter(s => s.bet > 0 && needsPlay(s) && s.seatIndex < table.activeSeat)
         .sort((a, b) => b.seatIndex - a.seatIndex);
 
     if (active.length > 0) {
@@ -404,7 +425,6 @@ async function advanceTurn(table, seats) {
         table.turnStartTime = new Date().toISOString();
         await saveTable(table);
     } else {
-        // All players done → dealer
         table.phase = 'dealer';
         table.activeSeat = -1;
         table.turnStartTime = null;
@@ -434,52 +454,60 @@ async function playDealer(table, seats) {
 
     // Resolve each player
     for (const s of bettors) {
-        const pVal = handValue(s.hand);
-        const pBJ = isBJ(s.hand);
-        let payout = 0;
-        let result = '';
+        let totalPayout = 0;
+        let totalWon = 0, totalLost = 0;
 
-        if (s.status === 'bust' || pVal > 21) {
-            result = 'lose';
-            payout = 0; // already deducted on bet
-        } else if (pBJ && dealerBJ) {
-            result = 'push';
-            payout = s.bet; // return bet
-        } else if (pBJ) {
-            result = 'blackjack';
-            payout = s.bet + Math.floor(s.bet * 1.5); // bet + 1.5x
-        } else if (dealerBJ) {
-            result = 'lose';
-            payout = 0;
-        } else if (dealerBust) {
-            result = 'win';
-            payout = s.bet * 2; // bet + winnings
-        } else if (pVal > dealerVal) {
-            result = 'win';
-            payout = s.bet * 2;
-        } else if (pVal < dealerVal) {
-            result = 'lose';
-            payout = 0;
-        } else {
-            result = 'push';
-            payout = s.bet; // return bet
+        // Helper: resolve one hand against dealer
+        function resolveHand(hand, status) {
+            const pVal = handValue(hand);
+            const pBJ = isBJ(hand);
+            let payout = 0, result = '';
+
+            if (status === 'bust' || pVal > 21) {
+                result = 'lose'; payout = 0;
+            } else if (pBJ && dealerBJ) {
+                result = 'push'; payout = s.bet;
+            } else if (pBJ) {
+                result = 'blackjack'; payout = s.bet + Math.floor(s.bet * 1.5);
+            } else if (dealerBJ) {
+                result = 'lose'; payout = 0;
+            } else if (dealerBust) {
+                result = 'win'; payout = s.bet * 2;
+            } else if (pVal > dealerVal) {
+                result = 'win'; payout = s.bet * 2;
+            } else if (pVal < dealerVal) {
+                result = 'lose'; payout = 0;
+            } else {
+                result = 'push'; payout = s.bet;
+            }
+            return { result, payout };
         }
 
-        s.status = result;
+        // Hand 1
+        const r1 = resolveHand(s.hand, s.status);
+        s.status = r1.result;
+        totalPayout += r1.payout;
+
+        // Hand 2 (if split)
+        if (s.splitPhase > 0 && s.hand2 && s.hand2.length > 0) {
+            const r2 = resolveHand(s.hand2, s.status2);
+            s.status2 = r2.result;
+            totalPayout += r2.payout;
+        }
+
         await saveSeat(s);
 
-        // Update player points (points were deducted when bet was placed)
-        // Now add back the payout
-        if (payout > 0) {
+        if (totalPayout > 0) {
             await db.execute({
                 sql: 'UPDATE yellowjack_players SET points = points + ?, last_played = datetime("now") WHERE user_id = ?',
-                args: [payout, s.userId]
+                args: [totalPayout, s.userId]
             });
         }
 
-        // Stats
-        const won = payout > s.bet ? payout - s.bet : 0;
-        const lost = payout === 0 ? s.bet : 0;
+        // Stats — for split, bet was deducted twice so total invested = bet * 2
+        const invested = s.splitPhase > 0 ? s.bet * 2 : s.bet;
+        totalWon = totalPayout > invested ? totalPayout - invested : 0;
+        totalLost = totalPayout < invested ? invested - totalPayout : 0;
         await db.execute({
             sql: `UPDATE yellowjack_players SET 
                   games_played = games_played + 1,
@@ -487,7 +515,7 @@ async function playDealer(table, seats) {
                   total_lost = total_lost + ?,
                   last_played = datetime("now")
                   WHERE user_id = ?`,
-            args: [won, lost, s.userId]
+            args: [totalWon, totalLost, s.userId]
         });
     }
 
@@ -505,7 +533,10 @@ async function resetForNewRound(table) {
         s.bet = 0;
         s.chips = [];
         s.hand = [];
+        s.hand2 = [];
         s.status = 'waiting';
+        s.status2 = '';
+        s.splitPhase = 0;
         await saveSeat(s);
     }
 
@@ -549,7 +580,10 @@ function buildTableResponse(table, seats, myUserId) {
             bet: s.bet,
             chips: s.chips,
             hand: s.hand,
-            status: s.status
+            hand2: s.hand2 || [],
+            status: s.status,
+            status2: s.status2 || '',
+            splitPhase: s.splitPhase || 0
         }))
     };
 }
@@ -866,29 +900,59 @@ export default async function handler(req, res) {
             if (!mySeat) {
                 return res.json({ error: 'Not your turn' });
             }
-            if (mySeat.status !== 'playing') return res.json({ error: 'Already done' });
+            // Check if still playing (normal or split hand2)
+            let sp = mySeat.splitPhase || 0;
+            if (sp === 2) {
+                if (mySeat.status2 !== 'playing') return res.json({ error: 'Already done' });
+            } else {
+                if (mySeat.status !== 'playing') return res.json({ error: 'Already done' });
+            }
 
             let deck = table.deck.length > 10 ? table.deck : createDeck();
 
+            // Which hand are we playing? (splitPhase: 0=normal, 1=hand1, 2=hand2)
+            sp = mySeat.splitPhase || 0; // refresh in case split just happened
+            const activeHand = (sp === 2) ? mySeat.hand2 : mySeat.hand;
+
             // --- HIT ---
             if (actionType === 'hit') {
-                mySeat.hand.push(draw(deck));
-                const val = handValue(mySeat.hand);
+                activeHand.push(draw(deck));
+                const val = handValue(activeHand);
+                let handDone = false;
 
-                if (val > 21) {
-                    mySeat.status = 'bust';
-                } else if (val === 21) {
-                    mySeat.status = 'stand';
-                }
+                if (val > 21) { handDone = true; }
+                else if (val === 21) { handDone = true; }
 
+                // Write back
+                if (sp === 2) { mySeat.hand2 = activeHand; } else { mySeat.hand = activeHand; }
                 table.deck = deck;
-                await saveSeat(mySeat);
-                await saveTable(table);
 
-                if (mySeat.status !== 'playing') {
-                    await advanceTurn(table, seats);
+                if (handDone) {
+                    const handStatus = val > 21 ? 'bust' : 'stand';
+                    if (sp === 0) {
+                        // Normal play
+                        mySeat.status = handStatus;
+                        await saveSeat(mySeat); await saveTable(table);
+                        await advanceTurn(table, seats);
+                    } else if (sp === 1) {
+                        // Hand1 done → move to hand2
+                        mySeat.status = handStatus;
+                        mySeat.splitPhase = 2;
+                        mySeat.status2 = 'playing';
+                        table.turnStartTime = new Date().toISOString();
+                        await saveSeat(mySeat); await saveTable(table);
+                    } else {
+                        // Hand2 done → both done, advance
+                        mySeat.status2 = handStatus;
+                        // Mark seat as done (use hand1 status for advanceTurn check)
+                        if (mySeat.status !== 'playing') {
+                            // Both hands done
+                            await saveSeat(mySeat); await saveTable(table);
+                            await advanceTurn(table, seats);
+                        }
+                    }
                 } else {
-                    // Reset turn timer
+                    await saveSeat(mySeat);
                     table.turnStartTime = new Date().toISOString();
                     await saveTable(table);
                 }
@@ -898,43 +962,93 @@ export default async function handler(req, res) {
 
             // --- STAND ---
             if (actionType === 'stand') {
-                mySeat.status = 'stand';
-                await saveSeat(mySeat);
-                await advanceTurn(table, seats);
+                if (sp === 0) {
+                    mySeat.status = 'stand';
+                    await saveSeat(mySeat);
+                    await advanceTurn(table, seats);
+                } else if (sp === 1) {
+                    mySeat.status = 'stand';
+                    mySeat.splitPhase = 2;
+                    mySeat.status2 = 'playing';
+                    table.turnStartTime = new Date().toISOString();
+                    await saveSeat(mySeat); await saveTable(table);
+                } else {
+                    mySeat.status2 = 'stand';
+                    await saveSeat(mySeat);
+                    await advanceTurn(table, seats);
+                }
                 return res.json({ success: true });
             }
 
             // --- DOUBLE ---
             if (actionType === 'double') {
-                if (mySeat.hand.length !== 2) return res.json({ error: 'Can only double on 2 cards' });
+                if (activeHand.length !== 2) return res.json({ error: 'Can only double on 2 cards' });
 
                 const p = await getPlayer(user.id);
                 if (!p || p.points < mySeat.bet) return res.json({ error: 'Not enough points' });
 
-                // Deduct extra bet
                 await db.execute({
                     sql: 'UPDATE yellowjack_players SET points = points - ? WHERE user_id = ?',
                     args: [mySeat.bet, user.id]
                 });
 
                 mySeat.bet *= 2;
-                mySeat.hand.push(draw(deck));
-                const val = handValue(mySeat.hand);
-                mySeat.status = val > 21 ? 'bust' : 'stand';
+                activeHand.push(draw(deck));
+                const val = handValue(activeHand);
+                const handStatus = val > 21 ? 'bust' : 'stand';
 
+                if (sp === 2) { mySeat.hand2 = activeHand; } else { mySeat.hand = activeHand; }
                 table.deck = deck;
-                await saveSeat(mySeat);
-                await saveTable(table);
-                await advanceTurn(table, seats);
+
+                if (sp === 0) {
+                    mySeat.status = handStatus;
+                    await saveSeat(mySeat); await saveTable(table);
+                    await advanceTurn(table, seats);
+                } else if (sp === 1) {
+                    mySeat.status = handStatus;
+                    mySeat.splitPhase = 2;
+                    mySeat.status2 = 'playing';
+                    table.turnStartTime = new Date().toISOString();
+                    await saveSeat(mySeat); await saveTable(table);
+                } else {
+                    mySeat.status2 = handStatus;
+                    await saveSeat(mySeat); await saveTable(table);
+                    await advanceTurn(table, seats);
+                }
 
                 return res.json({ success: true });
             }
 
             // --- SPLIT ---
             if (actionType === 'split') {
-                // Simplified: for now, don't support split to keep it clean
-                // Can be added later
-                return res.json({ error: 'Split not yet available' });
+                if (mySeat.hand.length !== 2) return res.json({ error: 'Need exactly 2 cards' });
+                if (mySeat.hand[0].rank !== mySeat.hand[1].rank) return res.json({ error: 'Cards must match' });
+                if (mySeat.splitPhase > 0) return res.json({ error: 'Already split' });
+
+                const p = await getPlayer(user.id);
+                if (!p || p.points < mySeat.bet) return res.json({ error: 'Not enough points' });
+
+                // Deduct second bet
+                await db.execute({
+                    sql: 'UPDATE yellowjack_players SET points = points - ? WHERE user_id = ?',
+                    args: [mySeat.bet, user.id]
+                });
+
+                // Split the cards
+                const card1 = mySeat.hand[0];
+                const card2 = mySeat.hand[1];
+                mySeat.hand = [card1, draw(deck)];
+                mySeat.hand2 = [card2, draw(deck)];
+                mySeat.splitPhase = 1;
+                mySeat.status = 'playing';
+                mySeat.status2 = 'waiting';
+
+                table.deck = deck;
+                table.turnStartTime = new Date().toISOString();
+                await saveSeat(mySeat);
+                await saveTable(table);
+
+                return res.json({ success: true });
             }
 
             return res.json({ error: 'Unknown action type' });

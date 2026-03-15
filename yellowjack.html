@@ -1006,72 +1006,123 @@ function drawSeats() {
                 cx.restore();
             }
             
-            // Cards — stacked vertically (cascade down, slight right offset)
+            // Cards rendering
             if (seatData.hand && seatData.hand.length > 0) {
                 const mobileScale = isMobile ? 0.7 : 1;
                 const isMyTurn = isActive && isMe;
-                const sizeBoost = isMyTurn ? 1.28 : 1;
-                const cw = Math.max(Math.min(dw * 0.035 * mobileScale * sizeBoost, 52), isMobile ? 20 : 28);
+                const cardScale = isMyTurn ? 0.045 : 0.035;
+                const cw = Math.max(Math.min(dw * cardScale * mobileScale, 52), isMobile ? 20 : 28);
                 const ch = cw * 1.42;
-                const offY = ch * 0.22;
-                const offX = cw * 0.12;
+                const offY = ch * 0.22, offX = cw * 0.12;
+                const isSplit = seatData.splitPhase > 0 && seatData.hand2 && seatData.hand2.length > 0;
                 
-                const pileH = ch + (seatData.hand.length - 1) * offY;
-                const pileW = cw + (seatData.hand.length - 1) * offX;
-                const baseX = sx - pileW / 2;
-                const baseY = sy - pileH - dw * (isMobile ? 0.01 : 0.02);
-                
-                let visibleCount = seatData.hand.length;
-                if (dealAnimStart > 0 && tableState.phase === 'playing') {
-                    const elapsed = Date.now() - dealAnimStart;
-                    const seatOrder = _handSeats.findIndex(s => s.seatIndex === seatData.seatIndex);
-                    visibleCount = 0;
-                    for (let ci = 0; ci < seatData.hand.length; ci++) {
-                        const cardDelay = (ci * _handSeats.length + seatOrder) * 350;
-                        if (elapsed >= cardDelay) visibleCount++;
+                // Helper: draw one pile of cards
+                function drawPile(cards, pileBaseX, pileBaseY, highlight) {
+                    cards.forEach((c, ci) => {
+                        const cardX = pileBaseX + ci * offX;
+                        const cardY = pileBaseY + ci * offY;
+                        if (c.rank === '?') cardBack(cx, cardX, cardY, cw, ch);
+                        else cardFace(cx, c, cardX, cardY, cw, ch);
+                    });
+                    // Value badge
+                    if (cards.length > 0) {
+                        const v = handValue(cards);
+                        const hasBJ = cards.length === 2 && v === 21;
+                        cx.save();
+                        if (hasBJ) cx.fillStyle = GOLD_BJ;
+                        else if (v > 21) cx.fillStyle = '#e74c3c';
+                        else if (v === 21) cx.fillStyle = '#2ecc71';
+                        else cx.fillStyle = 'rgba(0,0,0,.7)';
+                        if (highlight) { cx.strokeStyle = '#E8A000'; cx.lineWidth = 1.5; }
+                        const bw = isMobile ? (hasBJ ? 24 : 18) : (hasBJ ? 34 : 26);
+                        const bh = isMobile ? 14 : 18;
+                        const bx = pileBaseX + (cards.length - 1) * offX / 2 + cw / 2 - bw / 2;
+                        const by = pileBaseY - bh - 3;
+                        roundRect(cx, bx, by, bw, bh, bh / 2); cx.fill();
+                        if (highlight) { roundRect(cx, bx, by, bw, bh, bh / 2); cx.stroke(); }
+                        cx.font = '900 ' + (isMobile ? 7 : 10) + 'px Poppins';
+                        cx.fillStyle = hasBJ ? '#000' : '#fff';
+                        cx.textAlign = 'center';
+                        cx.fillText(hasBJ ? 'BJ' : v, bx + bw / 2, by + bh - (isMobile ? 3 : 4));
+                        cx.restore();
                     }
                 }
                 
-                const showCards = seatData.hand.slice(0, visibleCount);
-                const showPileW = cw + (showCards.length - 1) * offX;
-                const showBaseX = sx - showPileW / 2;
-                
-                showCards.forEach((c, ci) => {
-                    let cardX = showBaseX + ci * offX;
-                    let cardY = baseY + ci * offY;
+                if (isSplit) {
+                    // Two piles side by side (like dealer)
+                    const hGap = cw + (isMobile ? 6 : 10); // gap between two piles
+                    const pile1W = cw + (seatData.hand.length - 1) * offX;
+                    const pile2W = cw + (seatData.hand2.length - 1) * offX;
+                    const totalW = pile1W + hGap + pile2W - cw;
+                    const startX = sx - totalW / 2;
+                    const maxH1 = ch + (seatData.hand.length - 1) * offY;
+                    const maxH2 = ch + (seatData.hand2.length - 1) * offY;
+                    const maxH = Math.max(maxH1, maxH2);
+                    const baseY = sy - maxH - dw * (isMobile ? 0.01 : 0.02);
+                    
+                    const isH1Active = isMyTurn && seatData.splitPhase === 1;
+                    const isH2Active = isMyTurn && seatData.splitPhase === 2;
+                    drawPile(seatData.hand, startX, baseY, isH1Active);
+                    drawPile(seatData.hand2, startX + pile1W + hGap - cw, baseY, isH2Active);
+                } else {
+                    // Normal single pile with stagger animation
+                    const pileH = ch + (seatData.hand.length - 1) * offY;
+                    const pileW = cw + (seatData.hand.length - 1) * offX;
+                    const baseX = sx - pileW / 2;
+                    const baseY = sy - pileH - dw * (isMobile ? 0.01 : 0.02);
+                    
+                    let visibleCount = seatData.hand.length;
                     if (dealAnimStart > 0 && tableState.phase === 'playing') {
+                        const elapsed = Date.now() - dealAnimStart;
                         const seatOrder = _handSeats.findIndex(s => s.seatIndex === seatData.seatIndex);
-                        const cardDelay = (ci * _handSeats.length + seatOrder) * 350;
-                        const cardAge = Date.now() - dealAnimStart - cardDelay;
-                        if (cardAge < 200) {
-                            const t = Math.max(0, cardAge) / 200;
-                            cardY = (baseY + ci * offY) - (1 - t) * 40;
-                            cx.globalAlpha = t;
+                        visibleCount = 0;
+                        for (let ci = 0; ci < seatData.hand.length; ci++) {
+                            const cardDelay = (ci * _handSeats.length + seatOrder) * 350;
+                            if (elapsed >= cardDelay) visibleCount++;
                         }
                     }
-                    if (c.rank === '?') cardBack(cx, cardX, cardY, cw, ch);
-                    else cardFace(cx, c, cardX, cardY, cw, ch);
-                    cx.globalAlpha = 1;
-                });
-                
-                // Hand value badge — above the pile
-                if (visibleCount >= seatData.hand.length) {
-                    const v = handValue(seatData.hand);
-                    const hasBJ = seatData.hand.length === 2 && v === 21;
-                    cx.save();
-                    if (hasBJ) cx.fillStyle = GOLD_BJ;
-                    else if (v > 21) cx.fillStyle = '#e74c3c';
-                    else if (v === 21) cx.fillStyle = '#2ecc71';
-                    else cx.fillStyle = 'rgba(0,0,0,.7)';
-                    const badgeW = isMobile ? (hasBJ ? 28 : 22) : (hasBJ ? 38 : 30);
-                    const badgeH = isMobile ? 16 : 22;
-                    const badgeY = baseY - badgeH - 4;
-                    roundRect(cx, sx - badgeW/2, badgeY, badgeW, badgeH, badgeH/2); cx.fill();
-                    cx.font = '900 ' + (isMobile ? Math.max(dw * 0.012, 8) : Math.max(dw * 0.014, 11)) + 'px Poppins';
-                    cx.fillStyle = hasBJ ? '#000' : '#fff';
-                    cx.textAlign = 'center';
-                    cx.fillText(hasBJ ? 'BJ' : (seatData.status === 'bust' ? 'BUST' : v), sx, badgeY + badgeH - (isMobile ? 3 : 5));
-                    cx.restore();
+                    
+                    const showCards = seatData.hand.slice(0, visibleCount);
+                    const showPileW = cw + (showCards.length - 1) * offX;
+                    const showBaseX = sx - showPileW / 2;
+                    
+                    showCards.forEach((c, ci) => {
+                        let cardX = showBaseX + ci * offX;
+                        let cardY = baseY + ci * offY;
+                        if (dealAnimStart > 0 && tableState.phase === 'playing') {
+                            const seatOrder = _handSeats.findIndex(s => s.seatIndex === seatData.seatIndex);
+                            const cardDelay = (ci * _handSeats.length + seatOrder) * 350;
+                            const cardAge = Date.now() - dealAnimStart - cardDelay;
+                            if (cardAge < 200) {
+                                const t = Math.max(0, cardAge) / 200;
+                                cardY = (baseY + ci * offY) - (1 - t) * 40;
+                                cx.globalAlpha = t;
+                            }
+                        }
+                        if (c.rank === '?') cardBack(cx, cardX, cardY, cw, ch);
+                        else cardFace(cx, c, cardX, cardY, cw, ch);
+                        cx.globalAlpha = 1;
+                    });
+                    
+                    // Value badge
+                    if (visibleCount >= seatData.hand.length) {
+                        const v = handValue(seatData.hand);
+                        const hasBJ = seatData.hand.length === 2 && v === 21;
+                        cx.save();
+                        if (hasBJ) cx.fillStyle = GOLD_BJ;
+                        else if (v > 21) cx.fillStyle = '#e74c3c';
+                        else if (v === 21) cx.fillStyle = '#2ecc71';
+                        else cx.fillStyle = 'rgba(0,0,0,.7)';
+                        const badgeW = isMobile ? (hasBJ ? 28 : 22) : (hasBJ ? 38 : 30);
+                        const badgeH = isMobile ? 16 : 22;
+                        const badgeY2 = baseY - badgeH - 4;
+                        roundRect(cx, sx - badgeW/2, badgeY2, badgeW, badgeH, badgeH/2); cx.fill();
+                        cx.font = '900 ' + (isMobile ? Math.max(dw * 0.012, 8) : Math.max(dw * 0.014, 11)) + 'px Poppins';
+                        cx.fillStyle = hasBJ ? '#000' : '#fff';
+                        cx.textAlign = 'center';
+                        cx.fillText(hasBJ ? 'BJ' : (seatData.status === 'bust' ? 'BUST' : v), sx, badgeY2 + badgeH - (isMobile ? 3 : 5));
+                        cx.restore();
+                    }
                 }
             }
             
@@ -1138,11 +1189,9 @@ function drawDealerCards() {
     const mobileScale = isMobile ? 0.75 : 1;
     const cw = Math.max(Math.min(dw * 0.045 * mobileScale, 50), isMobile ? 26 : 35);
     const ch = cw * 1.42;
-    const offY = ch * 0.22;
-    const offX = cw * 0.12;
+    const hGap = cw * 0.38; // horizontal overlap
     const hand = tableState.dealerHand;
     
-    // Stagger: dealer cards appear after all player cards
     let visibleCount = hand.length;
     if (dealAnimStart > 0 && tableState.phase === 'playing') {
         const elapsed = Date.now() - dealAnimStart;
@@ -1155,19 +1204,19 @@ function drawDealerCards() {
     }
     
     const showHand = hand.slice(0, visibleCount);
-    const pileW = cw + (showHand.length - 1) * offX;
-    const startX = dcx - pileW / 2;
+    const totalW = showHand.length > 0 ? cw + (showHand.length - 1) * hGap : 0;
+    const startX = dcx - totalW / 2;
     
     showHand.forEach((c, i) => {
-        let cardX = startX + i * offX;
-        let cardY = dcy + i * offY;
+        let cardX = startX + i * hGap;
+        let cardY = dcy;
         if (dealAnimStart > 0 && tableState.phase === 'playing') {
             const numPlayerSeats = tableState.seats.filter(s => s.hand?.length > 0).length;
             const dealerDelay = ((i + 1) * numPlayerSeats + i) * 350;
             const cardAge = Date.now() - dealAnimStart - dealerDelay;
             if (cardAge < 200) {
                 const t = Math.max(0, cardAge) / 200;
-                cardY = (dcy + i * offY) - (1 - t) * 40;
+                cardY = dcy - (1 - t) * 40;
                 cx.globalAlpha = t;
             }
         }
@@ -1211,7 +1260,8 @@ function drawHandPanel() {
     const rowH = ch + 25;
     
     // Panel background — dynamic height
-    const totalH = rowH + myHandSeats.length * rowH + 10;
+    const splitCount = myHandSeats.filter(s => s.splitPhase > 0 && s.hand2 && s.hand2.length > 0).length;
+    const totalH = rowH + (myHandSeats.length + splitCount) * rowH + 10;
     cx.save();
     cx.fillStyle = 'rgba(0,0,0,0.75)';
     roundRect(cx, panelX - 10, panelY - 5, panelW, totalH, 10);
@@ -1240,23 +1290,38 @@ function drawHandPanel() {
     
     // --- MY SEATS ---
     myHandSeats.forEach((seat, si) => {
+        const isSplit = seat.splitPhase > 0 && seat.hand2 && seat.hand2.length > 0;
         const label = myHandSeats.length > 1 ? ('SEAT ' + (seat.seatIndex + 1)) : 'YOU';
         cx.font = '700 ' + labelFs + 'px Poppins';
         cx.fillStyle = G; cx.textAlign = 'left';
         cx.fillText(label, panelX, curY + 8);
         
-        const mv = handValue(seat.hand);
-        const myBJ = seat.hand.length === 2 && mv === 21;
-        cx.font = '900 ' + valueFs + 'px Poppins';
-        cx.fillStyle = mv > 21 ? '#e74c3c' : myBJ ? GOLD_BJ : '#fff';
-        cx.textAlign = 'right';
-        cx.fillText(myBJ ? 'BJ' : mv, panelX + panelW - 15, curY + 10);
-        
-        curY += 15;
-        seat.hand.forEach((c, i) => {
-            cardFace(cx, c, panelX + i * panelOverlap, curY, cw, ch);
-        });
-        curY += ch + 8;
+        if (isSplit) {
+            // Show H1 value
+            const v1 = handValue(seat.hand), v2 = handValue(seat.hand2);
+            cx.font = '900 ' + valueFs + 'px Poppins';
+            cx.fillStyle = v1 > 21 ? '#e74c3c' : '#fff'; cx.textAlign = 'right';
+            cx.fillText(v1 + '/' + v2, panelX + panelW - 15, curY + 10);
+            
+            curY += 15;
+            // H1 cards
+            seat.hand.forEach((c, i) => { cardFace(cx, c, panelX + i * panelOverlap, curY, cw, ch); });
+            curY += ch + 4;
+            // H2 cards
+            seat.hand2.forEach((c, i) => { cardFace(cx, c, panelX + i * panelOverlap, curY, cw, ch); });
+            curY += ch + 8;
+        } else {
+            const mv = handValue(seat.hand);
+            const myBJ = seat.hand.length === 2 && mv === 21;
+            cx.font = '900 ' + valueFs + 'px Poppins';
+            cx.fillStyle = mv > 21 ? '#e74c3c' : myBJ ? GOLD_BJ : '#fff';
+            cx.textAlign = 'right';
+            cx.fillText(myBJ ? 'BJ' : mv, panelX + panelW - 15, curY + 10);
+            
+            curY += 15;
+            seat.hand.forEach((c, i) => { cardFace(cx, c, panelX + i * panelOverlap, curY, cw, ch); });
+            curY += ch + 8;
+        }
     });
     
     cx.restore();
