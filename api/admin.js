@@ -268,6 +268,15 @@ export default async function handler(req, res) {
         WHERE yj.is_blocked = 1
       `);
 
+      // Current season info
+      let seasonInfo = null;
+      try {
+        const s = await db.execute("SELECT * FROM yj_season WHERE id = 1");
+        if (s.rows.length > 0) {
+          seasonInfo = { seasonNum: s.rows[0].season_num || 1, startTime: s.rows[0].start_time };
+        }
+      } catch(e) {}
+
       return res.status(200).json({
         totalPlayers: totalPlayers.rows[0]?.count || 0,
         blockedPlayers: blockedPlayers.rows[0]?.count || 0,
@@ -276,8 +285,76 @@ export default async function handler(req, res) {
         totalGames: totals.rows[0]?.games || 0,
         topPlayers: topPlayers.rows,
         recentPlayers: recentPlayers.rows,
-        blockedList: blockedList.rows
+        blockedList: blockedList.rows,
+        seasonInfo
       });
+    }
+
+    // ============================================================
+    // YELLOWJACK SEASON WINNERS — all past seasons
+    // ============================================================
+    if (action === 'yellowjackSeasonWinners') {
+      const winners = await db.execute(`
+        SELECT * FROM yj_season_winners
+        ORDER BY season_num DESC, rank ASC
+      `);
+
+      // Group by season
+      const seasons = {};
+      for (const w of winners.rows) {
+        const sn = w.season_num;
+        if (!seasons[sn]) seasons[sn] = { seasonNum: sn, endedAt: w.ended_at, winners: [] };
+        seasons[sn].winners.push({
+          rank: w.rank,
+          username: w.username,
+          avatarUrl: w.avatar_url,
+          points: w.points,
+          volume: w.volume,
+          gamesPlayed: w.games_played
+        });
+      }
+
+      return res.status(200).json({ seasons: Object.values(seasons) });
+    }
+
+    // ============================================================
+    // YELLOWJACK FORCE SEASON RESET (admin manual trigger)
+    // ============================================================
+    if (action === 'yellowjackForceReset') {
+      // Save current winners first
+      try {
+        const s = await db.execute("SELECT * FROM yj_season WHERE id = 1");
+        const currentSeason = s.rows[0]?.season_num || 1;
+        
+        // Get top 3
+        const top3 = await db.execute(`
+          SELECT yj.user_id, yj.points, yj.games_played, yj.total_won, yj.total_lost,
+                 u.x_username, u.avatar_url
+          FROM yellowjack_players yj
+          JOIN users u ON yj.user_id = u.id
+          WHERE yj.user_id > 0 AND yj.user_id < 900000 AND yj.is_blocked = 0
+          ORDER BY (yj.total_won + yj.total_lost) DESC
+          LIMIT 3
+        `);
+        
+        const now = new Date().toISOString();
+        for (let i = 0; i < top3.rows.length; i++) {
+          const p = top3.rows[i];
+          await db.execute({
+            sql: `INSERT INTO yj_season_winners (season_num, rank, user_id, username, avatar_url, points, volume, games_played, ended_at)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            args: [currentSeason, i + 1, p.user_id, p.x_username || 'Unknown', p.avatar_url || '', p.points || 0, (p.total_won || 0) + (p.total_lost || 0), p.games_played || 0, now]
+          });
+        }
+
+        const nextSeason = currentSeason + 1;
+        await db.execute("UPDATE yellowjack_players SET points = 20000, games_played = 0, total_won = 0, total_lost = 0");
+        await db.execute({ sql: "UPDATE yj_season SET start_time = ?, season_num = ? WHERE id = 1", args: [now, nextSeason] });
+
+        return res.status(200).json({ success: true, message: `Season ${currentSeason} ended. Winners saved. Season ${nextSeason} started.`, winners: top3.rows });
+      } catch (err) {
+        return res.status(500).json({ error: 'Reset failed: ' + err.message });
+      }
     }
 
     // ============================================================

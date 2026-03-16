@@ -7,532 +7,102 @@
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    body {
-      min-height: 100vh;
-      background: #1a1a1a;
-      font-family: Arial, sans-serif;
-      color: #fff;
-      padding: 20px;
-    }
-
-    /* LOGIN */
-    .login-container {
-      max-width: 400px;
-      margin: 100px auto;
-      text-align: center;
-    }
-
-    .login-container h1 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 48px;
-      color: #E8A000;
-      margin-bottom: 30px;
-    }
-
-    .login-container input {
-      width: 100%;
-      padding: 15px;
-      font-size: 16px;
-      border: 2px solid #E8A000;
-      background: transparent;
-      color: #fff;
-      border-radius: 8px;
-      margin-bottom: 15px;
-    }
-
-    .login-container button {
-      width: 100%;
-      padding: 15px;
-      font-size: 16px;
-      background: #E8A000;
-      color: #1a1a1a;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    /* DASHBOARD */
-    .dashboard {
-      display: none;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-
-    .dashboard.visible {
-      display: block;
-    }
-
-    .dashboard h1 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 48px;
-      color: #E8A000;
-      margin-bottom: 30px;
-    }
-
-    /* TABS */
-    .main-tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 30px;
-      border-bottom: 2px solid #333;
-      padding-bottom: 10px;
-    }
-
-    .main-tab {
-      padding: 12px 25px;
-      background: #2a2a2a;
-      border: none;
-      border-radius: 8px 8px 0 0;
-      color: #888;
-      cursor: pointer;
-      font-size: 16px;
-      font-weight: bold;
-    }
-
-    .main-tab:hover {
-      background: #3a3a3a;
-      color: #fff;
-    }
-
-    .main-tab.active {
-      background: #E8A000;
-      color: #1a1a1a;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    /* STATS CARDS */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 20px;
-      margin-bottom: 40px;
-    }
-
-    .stat-card {
-      background: #2a2a2a;
-      padding: 25px;
-      border-radius: 12px;
-      text-align: center;
-      border: 2px solid #3a3a3a;
-    }
-
-    .stat-card .number {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 48px;
-      color: #E8A000;
-    }
-
-    .stat-card .label {
-      font-size: 14px;
-      color: #888;
-      margin-top: 5px;
-    }
-
-    .stat-card.banned .number {
-      color: #ff4444;
-    }
-
-    .stat-card.green .number {
-      color: #2ecc71;
-    }
-
-    /* SECTIONS */
-    .section {
-      background: #2a2a2a;
-      padding: 25px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
-
-    .section h2 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 24px;
-      color: #E8A000;
-      margin-bottom: 20px;
-    }
-
-    /* TABS */
-    .tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-
-    .tab-btn {
-      padding: 10px 20px;
-      background: #3a3a3a;
-      border: none;
-      border-radius: 6px;
-      color: #fff;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    .tab-btn:hover, .tab-btn.active {
-      background: #E8A000;
-      color: #1a1a1a;
-    }
-
-    /* USER LIST */
-    .user-list {
-      max-height: 400px;
-      overflow-y: auto;
-    }
-
-    .user-item {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding: 12px;
-      border-bottom: 1px solid #3a3a3a;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .user-item:hover {
-      background: #3a3a3a;
-    }
-
-    .user-item:last-child {
-      border-bottom: none;
-    }
-
-    .user-item img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-    }
-
-    .user-item .username {
-      font-weight: bold;
-      color: #E8A000;
-    }
-
-    .user-item .meta {
-      font-size: 12px;
-      color: #888;
-    }
-
-    .user-item.banned {
-      opacity: 0.5;
-      background: rgba(255, 68, 68, 0.1);
-    }
-
-    .user-item.banned .username {
-      color: #ff4444;
-      text-decoration: line-through;
-    }
-
-    /* SEARCH */
-    .search-box {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    .search-box input {
-      flex: 1;
-      padding: 12px;
-      background: #3a3a3a;
-      border: none;
-      border-radius: 6px;
-      color: #fff;
-      font-size: 14px;
-    }
-
-    .search-box button {
-      padding: 12px 20px;
-      background: #E8A000;
-      border: none;
-      border-radius: 6px;
-      color: #1a1a1a;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    /* MODAL */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.8);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .modal.open {
-      display: flex;
-    }
-
-    .modal-content {
-      background: #2a2a2a;
-      padding: 30px;
-      border-radius: 12px;
-      max-width: 500px;
-      width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .modal-header h3 {
-      font-family: 'Bebas Neue', sans-serif;
-      font-size: 28px;
-      color: #E8A000;
-    }
-
-    .close-btn {
-      background: none;
-      border: none;
-      color: #888;
-      font-size: 24px;
-      cursor: pointer;
-    }
-
-    .close-btn:hover {
-      color: #fff;
-    }
-
-    /* USER DETAIL */
-    .user-detail {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    .user-detail img {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      margin-bottom: 10px;
-    }
-
-    .user-detail .username {
-      font-size: 24px;
-      color: #E8A000;
-      font-weight: bold;
-    }
-
-    .user-detail .user-id {
-      font-size: 12px;
-      color: #666;
-    }
-
-    /* BADGES GRID */
-    .badges-manage {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 10px;
-      margin: 20px 0;
-    }
-
-    .badge-item {
-      aspect-ratio: 1;
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 10px;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-align: center;
-      padding: 5px;
-    }
-
-    .badge-item.locked {
-      background: #3a3a3a;
-      border: 2px solid #555;
-      color: #666;
-    }
-
-    .badge-item.unlocked {
-      background: #E8A000;
-      border: 2px solid #8B5A00;
-      color: #000;
-    }
-
-    .badge-item:hover {
-      transform: scale(1.1);
-    }
-
-    /* ACTION BUTTONS */
-    .action-buttons {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-    }
-
-    .btn {
-      flex: 1;
-      padding: 12px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 14px;
-    }
-
-    .btn-danger {
-      background: #ff4444;
-      color: #fff;
-    }
-
-    .btn-success {
-      background: #00c853;
-      color: #fff;
-    }
-
-    .btn-warning {
-      background: #E8A000;
-      color: #1a1a1a;
-    }
-
-    /* FILTER */
-    .filter-row {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-    }
-
-    .filter-row select, .filter-row input {
-      padding: 10px;
-      background: #3a3a3a;
-      border: none;
-      border-radius: 6px;
-      color: #fff;
-      font-size: 14px;
-    }
-
-    /* INPUT FIELD */
-    .input-field {
-      width: 100%;
-      padding: 12px;
-      background: #3a3a3a;
-      border: 1px solid #555;
-      border-radius: 6px;
-      color: #fff;
-      font-size: 14px;
-      margin-bottom: 10px;
-    }
-
-    .input-field:focus {
-      border-color: #E8A000;
-      outline: none;
-    }
-
-    /* LOGOUT */
-    .logout-btn {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 10px 20px;
-      background: #3a3a3a;
-      border: none;
-      border-radius: 6px;
-      color: #fff;
-      cursor: pointer;
-    }
-
-    .logout-btn:hover {
-      background: #E8A000;
-      color: #1a1a1a;
-    }
-
-    .error {
-      color: #ff4444;
-      margin-top: 10px;
-    }
-
-    .success {
-      color: #00c853;
-      margin-top: 10px;
-    }
-
-    /* YELLOWJACK PLAYER CARD */
-    .player-card {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding: 15px;
-      border-bottom: 1px solid #3a3a3a;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .player-card:hover {
-      background: #3a3a3a;
-    }
-
-    .player-card img {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-    }
-
-    .player-card .info {
-      flex: 1;
-    }
-
-    .player-card .username {
-      font-weight: bold;
-      color: #E8A000;
-      font-size: 16px;
-    }
-
-    .player-card .stats {
-      font-size: 12px;
-      color: #888;
-      display: flex;
-      gap: 15px;
-      margin-top: 4px;
-    }
-
-    .player-card .stats span {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .player-card .points {
-      font-weight: bold;
-      font-size: 18px;
-      color: #2ecc71;
-    }
-
-    .player-card.blocked {
-      opacity: 0.5;
-      background: rgba(255, 68, 68, 0.1);
-    }
-
-    .player-card.blocked .username {
-      color: #ff4444;
-    }
+    body { min-height: 100vh; background: #1a1a1a; font-family: Arial, sans-serif; color: #fff; padding: 20px; }
+    .login-container { max-width: 400px; margin: 100px auto; text-align: center; }
+    .login-container h1 { font-family: 'Bebas Neue', sans-serif; font-size: 48px; color: #E8A000; margin-bottom: 30px; }
+    .login-container input { width: 100%; padding: 15px; font-size: 16px; border: 2px solid #E8A000; background: transparent; color: #fff; border-radius: 8px; margin-bottom: 15px; }
+    .login-container button { width: 100%; padding: 15px; font-size: 16px; background: #E8A000; color: #1a1a1a; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    .dashboard { display: none; max-width: 1200px; margin: 0 auto; }
+    .dashboard.visible { display: block; }
+    .dashboard h1 { font-family: 'Bebas Neue', sans-serif; font-size: 48px; color: #E8A000; margin-bottom: 30px; }
+    .main-tabs { display: flex; gap: 10px; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+    .main-tab { padding: 12px 25px; background: #2a2a2a; border: none; border-radius: 8px 8px 0 0; color: #888; cursor: pointer; font-size: 16px; font-weight: bold; }
+    .main-tab:hover { background: #3a3a3a; color: #fff; }
+    .main-tab.active { background: #E8A000; color: #1a1a1a; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; margin-bottom: 40px; }
+    .stat-card { background: #2a2a2a; padding: 25px; border-radius: 12px; text-align: center; border: 2px solid #3a3a3a; }
+    .stat-card .number { font-family: 'Bebas Neue', sans-serif; font-size: 48px; color: #E8A000; }
+    .stat-card .label { font-size: 14px; color: #888; margin-top: 5px; }
+    .stat-card.banned .number { color: #ff4444; }
+    .stat-card.green .number { color: #2ecc71; }
+    .section { background: #2a2a2a; padding: 25px; border-radius: 12px; margin-bottom: 20px; }
+    .section h2 { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: #E8A000; margin-bottom: 20px; }
+    .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab-btn { padding: 10px 20px; background: #3a3a3a; border: none; border-radius: 6px; color: #fff; cursor: pointer; font-size: 14px; }
+    .tab-btn:hover, .tab-btn.active { background: #E8A000; color: #1a1a1a; }
+    .user-list { max-height: 400px; overflow-y: auto; }
+    .user-item { display: flex; align-items: center; gap: 15px; padding: 12px; border-bottom: 1px solid #3a3a3a; cursor: pointer; transition: background 0.2s; }
+    .user-item:hover { background: #3a3a3a; }
+    .user-item:last-child { border-bottom: none; }
+    .user-item img { width: 40px; height: 40px; border-radius: 50%; }
+    .user-item .username { font-weight: bold; color: #E8A000; }
+    .user-item .meta { font-size: 12px; color: #888; }
+    .user-item.banned { opacity: 0.5; background: rgba(255, 68, 68, 0.1); }
+    .user-item.banned .username { color: #ff4444; text-decoration: line-through; }
+    .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+    .search-box input { flex: 1; padding: 12px; background: #3a3a3a; border: none; border-radius: 6px; color: #fff; font-size: 14px; }
+    .search-box button { padding: 12px 20px; background: #E8A000; border: none; border-radius: 6px; color: #1a1a1a; cursor: pointer; font-weight: bold; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+    .modal.open { display: flex; }
+    .modal-content { background: #2a2a2a; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-header h3 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: #E8A000; }
+    .close-btn { background: none; border: none; color: #888; font-size: 24px; cursor: pointer; }
+    .close-btn:hover { color: #fff; }
+    .user-detail { text-align: center; margin-bottom: 20px; }
+    .user-detail img { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px; }
+    .user-detail .username { font-size: 24px; color: #E8A000; font-weight: bold; }
+    .user-detail .user-id { font-size: 12px; color: #666; }
+    .badges-manage { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px 0; }
+    .badge-item { aspect-ratio: 1; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 10px; cursor: pointer; transition: all 0.2s; text-align: center; padding: 5px; }
+    .badge-item.locked { background: #3a3a3a; border: 2px solid #555; color: #666; }
+    .badge-item.unlocked { background: #E8A000; border: 2px solid #8B5A00; color: #000; }
+    .badge-item:hover { transform: scale(1.1); }
+    .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
+    .btn { flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+    .btn-danger { background: #ff4444; color: #fff; }
+    .btn-success { background: #00c853; color: #fff; }
+    .btn-warning { background: #E8A000; color: #1a1a1a; }
+    .filter-row { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+    .filter-row select, .filter-row input { padding: 10px; background: #3a3a3a; border: none; border-radius: 6px; color: #fff; font-size: 14px; }
+    .input-field { width: 100%; padding: 12px; background: #3a3a3a; border: 1px solid #555; border-radius: 6px; color: #fff; font-size: 14px; margin-bottom: 10px; }
+    .input-field:focus { border-color: #E8A000; outline: none; }
+    .logout-btn { position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: #3a3a3a; border: none; border-radius: 6px; color: #fff; cursor: pointer; }
+    .logout-btn:hover { background: #E8A000; color: #1a1a1a; }
+    .error { color: #ff4444; margin-top: 10px; }
+    .success { color: #00c853; margin-top: 10px; }
+    .player-card { display: flex; align-items: center; gap: 15px; padding: 15px; border-bottom: 1px solid #3a3a3a; cursor: pointer; transition: background 0.2s; }
+    .player-card:hover { background: #3a3a3a; }
+    .player-card img { width: 50px; height: 50px; border-radius: 50%; }
+    .player-card .info { flex: 1; }
+    .player-card .username { font-weight: bold; color: #E8A000; font-size: 16px; }
+    .player-card .stats { font-size: 12px; color: #888; display: flex; gap: 15px; margin-top: 4px; }
+    .player-card .stats span { display: flex; align-items: center; gap: 4px; }
+    .player-card .points { font-weight: bold; font-size: 18px; color: #2ecc71; }
+    .player-card.blocked { opacity: 0.5; background: rgba(255, 68, 68, 0.1); }
+    .player-card.blocked .username { color: #ff4444; }
+
+    /* Season Winners */
+    .season-block { background: #1a1a1a; border: 1px solid #3a3a3a; border-radius: 10px; padding: 20px; margin-bottom: 15px; }
+    .season-block h3 { font-family: 'Bebas Neue', sans-serif; color: #E8A000; font-size: 22px; margin-bottom: 5px; }
+    .season-block .ended { font-size: 11px; color: #666; margin-bottom: 12px; }
+    .winner-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #2a2a2a; }
+    .winner-row:last-child { border-bottom: none; }
+    .winner-rank { font-size: 20px; width: 30px; text-align: center; }
+    .winner-row img { width: 36px; height: 36px; border-radius: 50%; }
+    .winner-info { flex: 1; }
+    .winner-info .name { font-weight: bold; color: #E8A000; font-size: 14px; }
+    .winner-info .wstats { font-size: 11px; color: #888; }
+    .winner-vol { font-weight: 900; color: #E8A000; font-size: 15px; }
+    .season-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .season-header .current-info { font-size: 13px; color: #888; background: #3a3a3a; padding: 6px 14px; border-radius: 6px; }
+    .season-header .current-info strong { color: #E8A000; }
   </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div class="login-container" id="loginContainer">
   <h1>🔒 YELLOW ADMIN</h1>
   <input type="password" id="passwordInput" placeholder="Enter admin password">
@@ -540,13 +110,10 @@
   <p class="error" id="loginError"></p>
 </div>
 
-<!-- DASHBOARD -->
 <div class="dashboard" id="dashboard">
   <button class="logout-btn" onclick="logout()">Logout</button>
-  
   <h1>🐱 YELLOW ADMIN DASHBOARD</h1>
 
-  <!-- MAIN TABS -->
   <div class="main-tabs">
     <button class="main-tab active" onclick="switchMainTab('badges')">🏅 Badges & Users</button>
     <button class="main-tab" onclick="switchMainTab('yellowjack')">🃏 YellowJack</button>
@@ -554,170 +121,57 @@
 
   <!-- BADGES TAB -->
   <div class="tab-content active" id="tab-badges">
-    <!-- STATS CARDS -->
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="number" id="totalUsers">-</div>
-        <div class="label">Total Users</div>
-      </div>
-      <div class="stat-card">
-        <div class="number" id="ogBadges">-</div>
-        <div class="label">OG Badges</div>
-      </div>
-      <div class="stat-card">
-        <div class="number" id="totalBadges">-</div>
-        <div class="label">Badges Given</div>
-      </div>
-      <div class="stat-card banned">
-        <div class="number" id="bannedCount">-</div>
-        <div class="label">Banned</div>
-      </div>
+      <div class="stat-card"><div class="number" id="totalUsers">-</div><div class="label">Total Users</div></div>
+      <div class="stat-card"><div class="number" id="ogBadges">-</div><div class="label">OG Badges</div></div>
+      <div class="stat-card"><div class="number" id="totalBadges">-</div><div class="label">Badges Given</div></div>
+      <div class="stat-card banned"><div class="number" id="bannedCount">-</div><div class="label">Banned</div></div>
     </div>
-
-    <!-- SEARCH USER -->
-    <div class="section">
-      <h2>🔍 Search User</h2>
-      <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Enter username (e.g. Yellowcatz_)">
-        <button onclick="searchUser()">Search</button>
-      </div>
-      <div class="user-list" id="searchResults"></div>
-    </div>
-
-    <!-- BADGE STATS -->
-    <div class="section">
-      <h2>📊 Badges Distribution</h2>
-      <div id="badgeStats"></div>
-    </div>
-
-    <!-- USERS BY BADGE -->
-    <div class="section">
-      <h2>👥 Users by Badge</h2>
-      <div class="filter-row">
-        <select id="badgeSelect" onchange="loadUsersByBadge()">
-          <option value="og">OG</option>
-          <option value="badge_2">Badge 2 - Supporter</option>
-          <option value="badge_3">Badge 3 - Yellow Army</option>
-          <option value="badge_4">Badge 4 - Reach the Moon</option>
-          <option value="badge_5">Badge 5 - X Hunter</option>
-          <option value="badge_6">Badge 6 - M Hunter</option>
-          <option value="badge_7">Badge 7 - Doorkeeper</option>
-          <option value="badge_8">Badge 8 - Ambassador</option>
-          <option value="badge_9">Badge 9 - ???</option>
-          <option value="badge_10">Badge 10 - Legend</option>
-        </select>
-      </div>
-      <div class="user-list" id="usersByBadge"></div>
-    </div>
-
-    <!-- USERS BY BADGE COUNT + EXPORT -->
-    <div class="section">
-      <h2>🎯 Users by Badge Count</h2>
-      <div class="filter-row">
-        <select id="badgeCountMode">
-          <option value="exact">Exactly</option>
-          <option value="min">At least</option>
-        </select>
-        <select id="badgeCountValue">
-          <option value="1">1 badge</option>
-          <option value="3">3 badges</option>
-          <option value="4">4 badges</option>
-          <option value="6">6 badges</option>
-          <option value="8">8 badges</option>
-          <option value="10">10 badges</option>
-        </select>
-        <button class="btn btn-warning" onclick="loadUsersByBadgeCount()">Search</button>
-        <button class="btn btn-success" onclick="exportUsersByBadgeCountCSV()">Export CSV</button>
-      </div>
-      <div class="user-list" id="usersByBadgeCount"></div>
-    </div>
-
-    <!-- BANNED USERS -->
-    <div class="section">
-      <h2>🚫 Banned Users</h2>
-      <div class="user-list" id="bannedUsers"></div>
-    </div>
-
-    <!-- RECENT USERS -->
-    <div class="section">
-      <h2>🕐 Recent Users</h2>
-      <div class="user-list" id="recentUsers"></div>
-    </div>
+    <div class="section"><h2>🔍 Search User</h2><div class="search-box"><input type="text" id="searchInput" placeholder="Enter username"><button onclick="searchUser()">Search</button></div><div class="user-list" id="searchResults"></div></div>
+    <div class="section"><h2>📊 Badges Distribution</h2><div id="badgeStats"></div></div>
+    <div class="section"><h2>👥 Users by Badge</h2><div class="filter-row"><select id="badgeSelect" onchange="loadUsersByBadge()"><option value="og">OG</option><option value="badge_2">Supporter</option><option value="badge_3">Yellow Army</option><option value="badge_4">Reach the Moon</option><option value="badge_5">X Hunter</option><option value="badge_6">M Hunter</option><option value="badge_7">Doorkeeper</option><option value="badge_8">Ambassador</option><option value="badge_9">???</option><option value="badge_10">Legend</option></select></div><div class="user-list" id="usersByBadge"></div></div>
+    <div class="section"><h2>🎯 Users by Badge Count</h2><div class="filter-row"><select id="badgeCountMode"><option value="exact">Exactly</option><option value="min">At least</option></select><select id="badgeCountValue"><option value="1">1</option><option value="3">3</option><option value="4">4</option><option value="6">6</option><option value="8">8</option><option value="10">10</option></select><button class="btn btn-warning" onclick="loadUsersByBadgeCount()">Search</button><button class="btn btn-success" onclick="exportUsersByBadgeCountCSV()">Export CSV</button></div><div class="user-list" id="usersByBadgeCount"></div></div>
+    <div class="section"><h2>🚫 Banned Users</h2><div class="user-list" id="bannedUsers"></div></div>
+    <div class="section"><h2>🕐 Recent Users</h2><div class="user-list" id="recentUsers"></div></div>
   </div>
 
   <!-- YELLOWJACK TAB -->
   <div class="tab-content" id="tab-yellowjack">
-    <!-- YELLOWJACK STATS -->
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="number" id="yjTotalPlayers">-</div>
-        <div class="label">Total Players</div>
+      <div class="stat-card"><div class="number" id="yjTotalPlayers">-</div><div class="label">Total Players</div></div>
+      <div class="stat-card green"><div class="number" id="yjTotalWon">-</div><div class="label">Total Won</div></div>
+      <div class="stat-card banned"><div class="number" id="yjTotalLost">-</div><div class="label">Total Lost</div></div>
+      <div class="stat-card"><div class="number" id="yjTotalGames">-</div><div class="label">Games Played</div></div>
+      <div class="stat-card banned"><div class="number" id="yjBlockedPlayers">-</div><div class="label">Blocked</div></div>
+    </div>
+
+    <!-- SEASON WINNERS -->
+    <div class="section">
+      <div class="season-header">
+        <h2>🏆 Season Winners</h2>
+        <span class="current-info" id="seasonInfo">Season <strong>-</strong></span>
       </div>
-      <div class="stat-card green">
-        <div class="number" id="yjTotalWon">-</div>
-        <div class="label">Total Won</div>
-      </div>
-      <div class="stat-card banned">
-        <div class="number" id="yjTotalLost">-</div>
-        <div class="label">Total Lost</div>
-      </div>
-      <div class="stat-card">
-        <div class="number" id="yjTotalGames">-</div>
-        <div class="label">Games Played</div>
-      </div>
-      <div class="stat-card banned">
-        <div class="number" id="yjBlockedPlayers">-</div>
-        <div class="label">Blocked</div>
+      <div id="seasonWinnersList"></div>
+      <div style="margin-top:15px;">
+        <button class="btn btn-danger" onclick="forceSeasonReset()" style="max-width:300px;">⚠️ Force End Season & Reset</button>
       </div>
     </div>
 
-    <!-- SEARCH PLAYER -->
-    <div class="section">
-      <h2>🔍 Search Player</h2>
-      <div class="search-box">
-        <input type="text" id="yjSearchInput" placeholder="Enter username">
-        <button onclick="searchYJPlayer()">Search</button>
-      </div>
-      <div class="user-list" id="yjSearchResults"></div>
-    </div>
-
-    <!-- TOP PLAYERS -->
-    <div class="section">
-      <h2>🏆 Top Players (by Points)</h2>
-      <div class="user-list" id="yjTopPlayers"></div>
-    </div>
-
-    <!-- RECENT PLAYERS -->
-    <div class="section">
-      <h2>🕐 Recently Active</h2>
-      <div class="user-list" id="yjRecentPlayers"></div>
-    </div>
-
-    <!-- BLOCKED PLAYERS -->
-    <div class="section">
-      <h2>🚫 Blocked Players</h2>
-      <div class="user-list" id="yjBlockedPlayers"></div>
-    </div>
+    <div class="section"><h2>🔍 Search Player</h2><div class="search-box"><input type="text" id="yjSearchInput" placeholder="Enter username"><button onclick="searchYJPlayer()">Search</button></div><div class="user-list" id="yjSearchResults"></div></div>
+    <div class="section"><h2>🏆 Top Players (by Points)</h2><div class="user-list" id="yjTopPlayers"></div></div>
+    <div class="section"><h2>🕐 Recently Active</h2><div class="user-list" id="yjRecentPlayers"></div></div>
+    <div class="section"><h2>🚫 Blocked Players</h2><div class="user-list" id="yjBlockedPlayers"></div></div>
   </div>
 </div>
 
-<!-- USER MODAL (Badges) -->
+<!-- USER MODAL -->
 <div class="modal" id="userModal">
   <div class="modal-content">
-    <div class="modal-header">
-      <h3>User Details</h3>
-      <button class="close-btn" onclick="closeModal()">&times;</button>
-    </div>
-    
+    <div class="modal-header"><h3>User Details</h3><button class="close-btn" onclick="closeModal()">&times;</button></div>
     <div class="user-detail" id="modalUserDetail"></div>
-
-    <h4 style="color:#E8A000; margin-bottom:10px;">Badges (click to toggle)</h4>
+    <h4 style="color:#E8A000;margin-bottom:10px;">Badges (click to toggle)</h4>
     <div class="badges-manage" id="modalBadges"></div>
-
-    <div class="action-buttons">
-      <button class="btn btn-danger" id="banBtn" onclick="toggleBan()">Ban User</button>
-    </div>
-
+    <div class="action-buttons"><button class="btn btn-danger" id="banBtn" onclick="toggleBan()">Ban User</button></div>
     <p id="modalMessage"></p>
   </div>
 </div>
@@ -725,516 +179,218 @@
 <!-- YELLOWJACK PLAYER MODAL -->
 <div class="modal" id="yjPlayerModal">
   <div class="modal-content">
-    <div class="modal-header">
-      <h3>🃏 YellowJack Player</h3>
-      <button class="close-btn" onclick="closeYJModal()">&times;</button>
-    </div>
-    
+    <div class="modal-header"><h3>🃏 YellowJack Player</h3><button class="close-btn" onclick="closeYJModal()">&times;</button></div>
     <div class="user-detail" id="yjModalUserDetail"></div>
-
     <div style="background:#3a3a3a;padding:15px;border-radius:8px;margin-bottom:20px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:center;">
-        <div>
-          <div style="color:#888;font-size:12px;">Points</div>
-          <div style="font-size:24px;font-weight:bold;color:#2ecc71;" id="yjModalPoints">0</div>
-        </div>
-        <div>
-          <div style="color:#888;font-size:12px;">Games Played</div>
-          <div style="font-size:24px;font-weight:bold;color:#E8A000;" id="yjModalGames">0</div>
-        </div>
-        <div>
-          <div style="color:#888;font-size:12px;">Total Won</div>
-          <div style="font-size:18px;font-weight:bold;color:#2ecc71;" id="yjModalWon">0</div>
-        </div>
-        <div>
-          <div style="color:#888;font-size:12px;">Total Lost</div>
-          <div style="font-size:18px;font-weight:bold;color:#ff4444;" id="yjModalLost">0</div>
-        </div>
+        <div><div style="color:#888;font-size:12px;">Points</div><div style="font-size:24px;font-weight:bold;color:#2ecc71;" id="yjModalPoints">0</div></div>
+        <div><div style="color:#888;font-size:12px;">Games Played</div><div style="font-size:24px;font-weight:bold;color:#E8A000;" id="yjModalGames">0</div></div>
+        <div><div style="color:#888;font-size:12px;">Total Won</div><div style="font-size:18px;font-weight:bold;color:#2ecc71;" id="yjModalWon">0</div></div>
+        <div><div style="color:#888;font-size:12px;">Total Lost</div><div style="font-size:18px;font-weight:bold;color:#ff4444;" id="yjModalLost">0</div></div>
       </div>
     </div>
-
-    <h4 style="color:#E8A000; margin-bottom:10px;">Set Points</h4>
+    <h4 style="color:#E8A000;margin-bottom:10px;">Set Points</h4>
     <div style="display:flex;gap:10px;margin-bottom:15px;">
-      <input type="number" class="input-field" id="yjNewPoints" placeholder="New points amount" style="margin:0;flex:1;">
+      <input type="number" class="input-field" id="yjNewPoints" placeholder="New points" style="margin:0;flex:1;">
       <button class="btn btn-warning" onclick="setYJPoints()">Set</button>
     </div>
-
-    <h4 style="color:#E8A000; margin-bottom:10px;">Quick Actions</h4>
+    <h4 style="color:#E8A000;margin-bottom:10px;">Quick Actions</h4>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px;">
       <button class="btn btn-success" onclick="addYJPoints(1000)">+1000</button>
       <button class="btn btn-success" onclick="addYJPoints(5000)">+5000</button>
       <button class="btn btn-success" onclick="addYJPoints(10000)">+10000</button>
-      <button class="btn btn-warning" onclick="resetYJPoints()">Reset to 10000</button>
+      <button class="btn btn-warning" onclick="resetYJPoints()">Reset to 20000</button>
     </div>
-
-    <div class="action-buttons">
-      <button class="btn btn-danger" id="yjBlockBtn" onclick="toggleYJBlock()">Block Player</button>
-    </div>
-
+    <div class="action-buttons"><button class="btn btn-danger" id="yjBlockBtn" onclick="toggleYJBlock()">Block Player</button></div>
     <p id="yjModalMessage"></p>
   </div>
 </div>
 
 <script>
 let adminPassword = '';
-let currentUserId = null;
-let currentUserBanned = false;
-let currentYJUserId = null;
-let currentYJBlocked = false;
-let currentYJPoints = 0;
+let currentUserId = null, currentUserBanned = false;
+let currentYJUserId = null, currentYJBlocked = false, currentYJPoints = 0;
 
-// ============================================================
-// MAIN TABS
-// ============================================================
 function switchMainTab(tab) {
   document.querySelectorAll('.main-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  
-  document.querySelector(`[onclick="switchMainTab('${tab}')"]`).classList.add('active');
-  document.getElementById(`tab-${tab}`).classList.add('active');
-  
-  if (tab === 'yellowjack') {
-    loadYellowJackStats();
-  }
+  document.querySelector('[onclick="switchMainTab(\'' + tab + '\')"]').classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'yellowjack') { loadYellowJackStats(); loadSeasonWinners(); }
 }
 
-// ============================================================
-// AUTH
-// ============================================================
 async function login() {
   const password = document.getElementById('passwordInput').value;
-  
   try {
-    const res = await fetch('/api/admin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password, action: 'stats' })
-    });
-
-    if (!res.ok) {
-      document.getElementById('loginError').textContent = 'Invalid password';
-      return;
-    }
-
+    const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password, action: 'stats' }) });
+    if (!res.ok) { document.getElementById('loginError').textContent = 'Invalid password'; return; }
     adminPassword = password;
     document.getElementById('loginContainer').style.display = 'none';
     document.getElementById('dashboard').classList.add('visible');
-    
     loadDashboard();
-  } catch (err) {
-    document.getElementById('loginError').textContent = 'Connection error';
-  }
+  } catch (err) { document.getElementById('loginError').textContent = 'Connection error'; }
 }
 
-function logout() {
-  adminPassword = '';
-  document.getElementById('loginContainer').style.display = 'block';
-  document.getElementById('dashboard').classList.remove('visible');
-  document.getElementById('passwordInput').value = '';
-}
+function logout() { adminPassword = ''; document.getElementById('loginContainer').style.display = 'block'; document.getElementById('dashboard').classList.remove('visible'); document.getElementById('passwordInput').value = ''; }
 
-// ============================================================
-// API CALL
-// ============================================================
 async function apiCall(action, extraData = {}) {
-  const res = await fetch('/api/admin', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password: adminPassword, action, ...extraData })
-  });
+  const res = await fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: adminPassword, action, ...extraData }) });
   return res.json();
 }
 
-// ============================================================
-// DASHBOARD
-// ============================================================
 async function loadDashboard() {
   const data = await apiCall('stats');
-  
   document.getElementById('totalUsers').textContent = data.totalUsers || 0;
   document.getElementById('bannedCount').textContent = data.bannedUsers || 0;
-  
-  let ogCount = 0;
-  let totalBadges = 0;
-  let badgeHTML = '<div style="display:flex;flex-wrap:wrap;gap:15px;">';
-  
-  if (data.badgeStats) {
-    data.badgeStats.forEach(b => {
-      totalBadges += Number(b.count);
-      if (b.badge_id === 'og') ogCount = b.count;
-      badgeHTML += `
-        <div style="background:#3a3a3a;padding:10px 15px;border-radius:6px;">
-          <strong style="color:#E8A000">${b.badge_id.toUpperCase()}</strong>: ${b.count}
-        </div>
-      `;
-    });
-  }
+  let ogCount = 0, totalBadges = 0, badgeHTML = '<div style="display:flex;flex-wrap:wrap;gap:15px;">';
+  if (data.badgeStats) { data.badgeStats.forEach(b => { totalBadges += Number(b.count); if (b.badge_id === 'og') ogCount = b.count; badgeHTML += '<div style="background:#3a3a3a;padding:10px 15px;border-radius:6px;"><strong style="color:#E8A000">' + b.badge_id.toUpperCase() + '</strong>: ' + b.count + '</div>'; }); }
   badgeHTML += '</div>';
-  
   document.getElementById('ogBadges').textContent = ogCount;
   document.getElementById('totalBadges').textContent = totalBadges;
   document.getElementById('badgeStats').innerHTML = badgeHTML;
-  
   renderUserList('recentUsers', data.recentUsers || []);
-  
-  loadUsersByBadge();
-  loadBannedUsers();
+  loadUsersByBadge(); loadBannedUsers();
 }
 
-// ============================================================
-// RENDER USER LIST
-// ============================================================
 function renderUserList(containerId, users) {
-  const container = document.getElementById(containerId);
-  
-  if (!users || users.length === 0) {
-    container.innerHTML = '<p style="color:#666;padding:10px;">No users found</p>';
-    return;
-  }
-
-  let html = '';
-  users.forEach(u => {
-    const bannedClass = u.is_banned ? 'banned' : '';
-    html += `
-      <div class="user-item ${bannedClass}" onclick="openUserModal(${u.id})">
-        <img src="${u.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'}">
-        <div>
-          <div class="username">@${u.x_username}</div>
-          <div class="meta">ID: ${u.id} ${u.is_banned ? '• BANNED' : ''}</div>
-        </div>
-      </div>
-    `;
-  });
-  container.innerHTML = html;
+  const c = document.getElementById(containerId);
+  if (!users || !users.length) { c.innerHTML = '<p style="color:#666;padding:10px;">No users found</p>'; return; }
+  c.innerHTML = users.map(u => '<div class="user-item ' + (u.is_banned ? 'banned' : '') + '" onclick="openUserModal(' + u.id + ')"><img src="' + (u.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png') + '"><div><div class="username">@' + u.x_username + '</div><div class="meta">ID: ' + u.id + (u.is_banned ? ' • BANNED' : '') + '</div></div></div>').join('');
 }
 
-// ============================================================
-// SEARCH
-// ============================================================
-async function searchUser() {
-  const username = document.getElementById('searchInput').value.trim();
-  if (!username) return;
+async function searchUser() { const u = document.getElementById('searchInput').value.trim(); if (!u) return; const d = await apiCall('searchUser', { username: u }); renderUserList('searchResults', d.users || []); }
+async function loadUsersByBadge() { const d = await apiCall('usersByBadge', { badgeId: document.getElementById('badgeSelect').value }); renderUserList('usersByBadge', d.users || []); }
+async function loadBannedUsers() { const d = await apiCall('bannedUsers'); renderUserList('bannedUsers', d.users || []); }
 
-  const data = await apiCall('searchUser', { username });
-  renderUserList('searchResults', data.users || []);
-}
-
-// ============================================================
-// USERS BY BADGE
-// ============================================================
-async function loadUsersByBadge() {
-  const badgeId = document.getElementById('badgeSelect').value;
-  const data = await apiCall('usersByBadge', { badgeId });
-  renderUserList('usersByBadge', data.users || []);
-}
-
-// ============================================================
-// BANNED USERS
-// ============================================================
-async function loadBannedUsers() {
-  const data = await apiCall('bannedUsers');
-  renderUserList('bannedUsers', data.users || []);
-}
-
-// ============================================================
-// USER MODAL
-// ============================================================
 async function openUserModal(userId) {
   currentUserId = userId;
   const data = await apiCall('userDetails', { userId });
-  
-  if (!data.user) {
-    alert('User not found');
-    return;
-  }
-
+  if (!data.user) { alert('User not found'); return; }
   currentUserBanned = data.user.is_banned === 1;
-  
-  document.getElementById('modalUserDetail').innerHTML = `
-    <img src="${data.user.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'}">
-    <div class="username">@${data.user.x_username}</div>
-    <div class="user-id">ID: ${data.user.id} • Joined: ${new Date(data.user.created_at).toLocaleDateString()}</div>
-    ${currentUserBanned ? '<div style="color:#ff4444;margin-top:10px;">⛔ BANNED</div>' : ''}
-  `;
-
+  document.getElementById('modalUserDetail').innerHTML = '<img src="' + (data.user.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png') + '"><div class="username">@' + data.user.x_username + '</div><div class="user-id">ID: ' + data.user.id + ' • Joined: ' + new Date(data.user.created_at).toLocaleDateString() + '</div>' + (currentUserBanned ? '<div style="color:#ff4444;margin-top:10px;">⛔ BANNED</div>' : '');
   const userBadgeIds = (data.userBadges || []).map(b => b.badge_id);
-  let badgesHTML = '';
-  
-  (data.allBadges || []).forEach(b => {
-    const unlocked = userBadgeIds.includes(b.badge_id);
-    const cls = unlocked ? 'unlocked' : 'locked';
-    badgesHTML += `
-      <div class="badge-item ${cls}" onclick="toggleBadge('${b.badge_id}', ${unlocked})">
-        ${b.badge_name}
-      </div>
-    `;
-  });
-  document.getElementById('modalBadges').innerHTML = badgesHTML;
-
+  document.getElementById('modalBadges').innerHTML = (data.allBadges || []).map(b => '<div class="badge-item ' + (userBadgeIds.includes(b.badge_id) ? 'unlocked' : 'locked') + '" onclick="toggleBadge(\'' + b.badge_id + '\',' + userBadgeIds.includes(b.badge_id) + ')">' + b.badge_name + '</div>').join('');
   const banBtn = document.getElementById('banBtn');
-  if (currentUserBanned) {
-    banBtn.textContent = 'Unban User';
-    banBtn.className = 'btn btn-success';
-  } else {
-    banBtn.textContent = 'Ban User';
-    banBtn.className = 'btn btn-danger';
-  }
-
+  banBtn.textContent = currentUserBanned ? 'Unban User' : 'Ban User';
+  banBtn.className = 'btn ' + (currentUserBanned ? 'btn-success' : 'btn-danger');
   document.getElementById('modalMessage').textContent = '';
   document.getElementById('userModal').classList.add('open');
 }
 
-function closeModal() {
-  document.getElementById('userModal').classList.remove('open');
-  currentUserId = null;
-}
+function closeModal() { document.getElementById('userModal').classList.remove('open'); currentUserId = null; }
 
-// ============================================================
-// TOGGLE BADGE
-// ============================================================
-async function toggleBadge(badgeId, currentlyUnlocked) {
-  if (!currentUserId) return;
+async function toggleBadge(badgeId, unlocked) { if (!currentUserId) return; await apiCall(unlocked ? 'removeBadge' : 'addBadge', { userId: currentUserId, badgeId }); openUserModal(currentUserId); loadDashboard(); }
 
-  const action = currentlyUnlocked ? 'removeBadge' : 'addBadge';
-  const data = await apiCall(action, { userId: currentUserId, badgeId });
-
-  if (data.success) {
-    document.getElementById('modalMessage').innerHTML = `<span class="success">${data.message}</span>`;
-    openUserModal(currentUserId);
-    loadDashboard();
-  } else {
-    document.getElementById('modalMessage').innerHTML = `<span class="error">${data.error || 'Error'}</span>`;
-  }
-}
-
-// ============================================================
-// TOGGLE BAN
-// ============================================================
 async function toggleBan() {
   if (!currentUserId) return;
-  
-  const action = currentUserBanned ? 'unbanUser' : 'banUser';
-  const confirmMsg = currentUserBanned 
-    ? 'Unban this user?' 
-    : 'Ban this user? They will not be able to access the site.';
-  
-  if (!confirm(confirmMsg)) return;
-
-  const data = await apiCall(action, { userId: currentUserId });
-
-  if (data.success) {
-    document.getElementById('modalMessage').innerHTML = `<span class="success">${data.message}</span>`;
-    openUserModal(currentUserId);
-    loadDashboard();
-    loadBannedUsers();
-  } else {
-    document.getElementById('modalMessage').innerHTML = `<span class="error">${data.error || 'Error'}</span>`;
-  }
+  if (!confirm(currentUserBanned ? 'Unban this user?' : 'Ban this user?')) return;
+  await apiCall(currentUserBanned ? 'unbanUser' : 'banUser', { userId: currentUserId });
+  openUserModal(currentUserId); loadDashboard(); loadBannedUsers();
 }
 
-// ============================================================
-// USERS BY BADGE COUNT + CSV EXPORT
-// ============================================================
 let usersByBadgeCountCache = [];
-
-async function loadUsersByBadgeCount() {
-  const mode = document.getElementById('badgeCountMode').value;
-  const value = parseInt(document.getElementById('badgeCountValue').value, 10);
-
-  const data = await apiCall('usersWithAllBadges', { minBadges: value, mode });
-  usersByBadgeCountCache = data.users || [];
-  renderUserList('usersByBadgeCount', usersByBadgeCountCache);
-}
-
-function exportUsersByBadgeCountCSV() {
-  if (!usersByBadgeCountCache.length) {
-    alert('No users to export');
-    return;
-  }
-
-  let csv = 'id,username,total_badges,is_banned\n';
-  usersByBadgeCountCache.forEach(u => {
-    csv += [u.id, u.x_username, u.total_badges ?? '', u.is_banned ? 1 : 0].join(',') + '\n';
-  });
-
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `users_badge_count_${Date.now()}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
+async function loadUsersByBadgeCount() { const d = await apiCall('usersWithAllBadges', { minBadges: parseInt(document.getElementById('badgeCountValue').value) }); usersByBadgeCountCache = d.users || []; renderUserList('usersByBadgeCount', usersByBadgeCountCache); }
+function exportUsersByBadgeCountCSV() { if (!usersByBadgeCountCache.length) { alert('No users'); return; } let csv = 'id,username,total_badges,is_banned\n'; usersByBadgeCountCache.forEach(u => { csv += [u.id, u.x_username, u.total_badges ?? '', u.is_banned ? 1 : 0].join(',') + '\n'; }); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'users_badges_' + Date.now() + '.csv'; a.click(); }
 
 // ============================================================
-// YELLOWJACK FUNCTIONS
+// YELLOWJACK
 // ============================================================
 async function loadYellowJackStats() {
   const data = await apiCall('yellowjackStats');
-  
   document.getElementById('yjTotalPlayers').textContent = data.totalPlayers || 0;
   document.getElementById('yjTotalWon').textContent = data.totalWon || 0;
   document.getElementById('yjTotalLost').textContent = data.totalLost || 0;
   document.getElementById('yjTotalGames').textContent = data.totalGames || 0;
   document.getElementById('yjBlockedPlayers').textContent = data.blockedPlayers || 0;
-  
+  if (data.seasonInfo) { document.getElementById('seasonInfo').innerHTML = 'Season <strong>' + data.seasonInfo.seasonNum + '</strong>'; }
   renderYJPlayerList('yjTopPlayers', data.topPlayers || []);
   renderYJPlayerList('yjRecentPlayers', data.recentPlayers || []);
   renderYJPlayerList('yjBlockedPlayers', data.blockedList || []);
 }
 
 function renderYJPlayerList(containerId, players) {
-  const container = document.getElementById(containerId);
-  
-  if (!players || players.length === 0) {
-    container.innerHTML = '<p style="color:#666;padding:10px;">No players found</p>';
-    return;
-  }
-
-  let html = '';
-  players.forEach(p => {
-    const blockedClass = p.is_blocked ? 'blocked' : '';
-    html += `
-      <div class="player-card ${blockedClass}" onclick="openYJPlayerModal(${p.user_id})">
-        <img src="${p.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'}">
-        <div class="info">
-          <div class="username">@${p.x_username}</div>
-          <div class="stats">
-            <span>🎮 ${p.games_played} games</span>
-            <span>💰 Won: ${p.total_won}</span>
-            <span>📉 Lost: ${p.total_lost}</span>
-          </div>
-        </div>
-        <div class="points">🪙 ${p.points}</div>
-      </div>
-    `;
-  });
-  container.innerHTML = html;
+  const c = document.getElementById(containerId);
+  if (!players || !players.length) { c.innerHTML = '<p style="color:#666;padding:10px;">No players found</p>'; return; }
+  c.innerHTML = players.map(p => '<div class="player-card ' + (p.is_blocked ? 'blocked' : '') + '" onclick="openYJPlayerModal(' + p.user_id + ')"><img src="' + (p.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png') + '"><div class="info"><div class="username">@' + p.x_username + '</div><div class="stats"><span>🎮 ' + p.games_played + '</span><span>💰 ' + p.total_won + '</span><span>📉 ' + p.total_lost + '</span></div></div><div class="points">🪙 ' + p.points + '</div></div>').join('');
 }
 
-async function searchYJPlayer() {
-  const username = document.getElementById('yjSearchInput').value.trim();
-  if (!username) return;
-
-  const data = await apiCall('yellowjackSearchPlayer', { username });
-  renderYJPlayerList('yjSearchResults', data.players || []);
-}
+async function searchYJPlayer() { const u = document.getElementById('yjSearchInput').value.trim(); if (!u) return; const d = await apiCall('yellowjackSearchPlayer', { username: u }); renderYJPlayerList('yjSearchResults', d.players || []); }
 
 async function openYJPlayerModal(userId) {
   currentYJUserId = userId;
   const data = await apiCall('yellowjackPlayerDetails', { userId });
-  
-  if (!data.player) {
-    alert('Player not found');
-    return;
-  }
-
-  const p = data.player;
-  currentYJBlocked = p.is_blocked === 1;
-  currentYJPoints = p.points;
-  
-  document.getElementById('yjModalUserDetail').innerHTML = `
-    <img src="${p.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'}">
-    <div class="username">@${p.x_username}</div>
-    <div class="user-id">User ID: ${p.user_id} • Last played: ${p.last_played ? new Date(p.last_played).toLocaleString() : 'Never'}</div>
-    ${currentYJBlocked ? '<div style="color:#ff4444;margin-top:10px;">⛔ BLOCKED FROM YELLOWJACK</div>' : ''}
-  `;
-
+  if (!data.player) { alert('Player not found'); return; }
+  const p = data.player; currentYJBlocked = p.is_blocked === 1; currentYJPoints = p.points;
+  document.getElementById('yjModalUserDetail').innerHTML = '<img src="' + (p.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png') + '"><div class="username">@' + p.x_username + '</div><div class="user-id">User ID: ' + p.user_id + '</div>' + (currentYJBlocked ? '<div style="color:#ff4444;margin-top:10px;">⛔ BLOCKED</div>' : '');
   document.getElementById('yjModalPoints').textContent = p.points;
   document.getElementById('yjModalGames').textContent = p.games_played;
   document.getElementById('yjModalWon').textContent = p.total_won;
   document.getElementById('yjModalLost').textContent = p.total_lost;
   document.getElementById('yjNewPoints').value = p.points;
-
-  const blockBtn = document.getElementById('yjBlockBtn');
-  if (currentYJBlocked) {
-    blockBtn.textContent = 'Unblock Player';
-    blockBtn.className = 'btn btn-success';
-  } else {
-    blockBtn.textContent = 'Block Player';
-    blockBtn.className = 'btn btn-danger';
-  }
-
+  const b = document.getElementById('yjBlockBtn'); b.textContent = currentYJBlocked ? 'Unblock Player' : 'Block Player'; b.className = 'btn ' + (currentYJBlocked ? 'btn-success' : 'btn-danger');
   document.getElementById('yjModalMessage').textContent = '';
   document.getElementById('yjPlayerModal').classList.add('open');
 }
 
-function closeYJModal() {
-  document.getElementById('yjPlayerModal').classList.remove('open');
-  currentYJUserId = null;
-}
+function closeYJModal() { document.getElementById('yjPlayerModal').classList.remove('open'); currentYJUserId = null; }
 
-async function setYJPoints() {
-  if (!currentYJUserId) return;
-  const newPoints = parseInt(document.getElementById('yjNewPoints').value, 10);
-  if (isNaN(newPoints) || newPoints < 0) {
-    document.getElementById('yjModalMessage').innerHTML = '<span class="error">Invalid points value</span>';
-    return;
-  }
-
-  const data = await apiCall('yellowjackSetPoints', { userId: currentYJUserId, points: newPoints });
-  if (data.success) {
-    document.getElementById('yjModalMessage').innerHTML = '<span class="success">Points updated!</span>';
-    openYJPlayerModal(currentYJUserId);
-    loadYellowJackStats();
-  } else {
-    document.getElementById('yjModalMessage').innerHTML = `<span class="error">${data.error || 'Error'}</span>`;
-  }
-}
-
-async function addYJPoints(amount) {
-  if (!currentYJUserId) return;
-  const newPoints = currentYJPoints + amount;
-  document.getElementById('yjNewPoints').value = newPoints;
-  await setYJPoints();
-}
-
-async function resetYJPoints() {
-  if (!currentYJUserId) return;
-  document.getElementById('yjNewPoints').value = 10000;
-  await setYJPoints();
-}
+async function setYJPoints() { if (!currentYJUserId) return; const pts = parseInt(document.getElementById('yjNewPoints').value); if (isNaN(pts) || pts < 0) return; await apiCall('yellowjackSetPoints', { userId: currentYJUserId, points: pts }); document.getElementById('yjModalMessage').innerHTML = '<span class="success">Points updated!</span>'; openYJPlayerModal(currentYJUserId); loadYellowJackStats(); }
+async function addYJPoints(amount) { document.getElementById('yjNewPoints').value = currentYJPoints + amount; await setYJPoints(); }
+async function resetYJPoints() { document.getElementById('yjNewPoints').value = 20000; await setYJPoints(); }
 
 async function toggleYJBlock() {
   if (!currentYJUserId) return;
-  
-  const action = currentYJBlocked ? 'yellowjackUnblockPlayer' : 'yellowjackBlockPlayer';
-  const confirmMsg = currentYJBlocked 
-    ? 'Unblock this player from YellowJack?' 
-    : 'Block this player from YellowJack?';
-  
-  if (!confirm(confirmMsg)) return;
+  if (!confirm(currentYJBlocked ? 'Unblock?' : 'Block?')) return;
+  await apiCall(currentYJBlocked ? 'yellowjackUnblockPlayer' : 'yellowjackBlockPlayer', { userId: currentYJUserId });
+  openYJPlayerModal(currentYJUserId); loadYellowJackStats();
+}
 
-  const data = await apiCall(action, { userId: currentYJUserId });
+// ============================================================
+// SEASON WINNERS
+// ============================================================
+async function loadSeasonWinners() {
+  const data = await apiCall('yellowjackSeasonWinners');
+  const container = document.getElementById('seasonWinnersList');
+  
+  if (!data.seasons || data.seasons.length === 0) {
+    container.innerHTML = '<p style="color:#666;padding:10px;">No past seasons yet</p>';
+    return;
+  }
 
+  const medals = ['👑', '🥈', '🥉'];
+  container.innerHTML = data.seasons.map(s => {
+    const winnersHTML = s.winners.map(w => 
+      '<div class="winner-row">' +
+        '<div class="winner-rank">' + (medals[w.rank - 1] || w.rank) + '</div>' +
+        '<img src="' + (w.avatarUrl || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png') + '">' +
+        '<div class="winner-info"><div class="name">@' + w.username + '</div><div class="wstats">🪙 ' + w.points + ' pts • 🎮 ' + w.gamesPlayed + ' games</div></div>' +
+        '<div class="winner-vol">' + w.volume + '</div>' +
+      '</div>'
+    ).join('');
+    return '<div class="season-block"><h3>Season ' + s.seasonNum + '</h3><div class="ended">Ended: ' + new Date(s.endedAt).toLocaleString() + '</div>' + winnersHTML + '</div>';
+  }).join('');
+}
+
+async function forceSeasonReset() {
+  if (!confirm('⚠️ This will END the current season, save the top 3 winners, and reset ALL players to 20,000 points. Continue?')) return;
+  if (!confirm('Are you REALLY sure? This cannot be undone.')) return;
+  
+  const data = await apiCall('yellowjackForceReset');
   if (data.success) {
-    document.getElementById('yjModalMessage').innerHTML = '<span class="success">' + data.message + '</span>';
-    openYJPlayerModal(currentYJUserId);
+    alert(data.message);
     loadYellowJackStats();
+    loadSeasonWinners();
   } else {
-    document.getElementById('yjModalMessage').innerHTML = `<span class="error">${data.error || 'Error'}</span>`;
+    alert('Error: ' + (data.error || 'Unknown'));
   }
 }
 
 // Enter key handlers
-document.getElementById('passwordInput').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') login();
-});
-document.getElementById('searchInput').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') searchUser();
-});
-document.getElementById('yjSearchInput').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') searchYJPlayer();
-});
-
-// Close modals on outside click
-document.getElementById('userModal').addEventListener('click', (e) => {
-  if (e.target.id === 'userModal') closeModal();
-});
-document.getElementById('yjPlayerModal').addEventListener('click', (e) => {
-  if (e.target.id === 'yjPlayerModal') closeYJModal();
-});
+document.getElementById('passwordInput').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
+document.getElementById('searchInput').addEventListener('keypress', e => { if (e.key === 'Enter') searchUser(); });
+document.getElementById('yjSearchInput').addEventListener('keypress', e => { if (e.key === 'Enter') searchYJPlayer(); });
+document.getElementById('userModal').addEventListener('click', e => { if (e.target.id === 'userModal') closeModal(); });
+document.getElementById('yjPlayerModal').addEventListener('click', e => { if (e.target.id === 'yjPlayerModal') closeYJModal(); });
 </script>
 </body>
 </html>

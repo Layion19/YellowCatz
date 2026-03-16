@@ -25,6 +25,31 @@ const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 // ============================================================
 let dbReady = false;
 
+async function saveSeasonWinners(seasonNum) {
+    try {
+        const top3 = await db.execute(`
+            SELECT yj.user_id, yj.points, yj.games_played, yj.total_won, yj.total_lost,
+                   u.x_username, u.avatar_url
+            FROM yellowjack_players yj
+            JOIN users u ON yj.user_id = u.id
+            WHERE yj.user_id > 0 AND yj.user_id < 900000 AND yj.is_blocked = 0
+            ORDER BY (yj.total_won + yj.total_lost) DESC
+            LIMIT 3
+        `);
+        const now = new Date().toISOString();
+        for (let i = 0; i < top3.rows.length; i++) {
+            const p = top3.rows[i];
+            await db.execute({
+                sql: `INSERT INTO yj_season_winners (season_num, rank, user_id, username, avatar_url, points, volume, games_played, ended_at)
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                args: [seasonNum, i + 1, p.user_id, p.x_username || 'Unknown', p.avatar_url || '', p.points || 0, (p.total_won || 0) + (p.total_lost || 0), p.games_played || 0, now]
+            });
+        }
+    } catch (e) {
+        console.error('saveSeasonWinners error:', e);
+    }
+}
+
 async function ensureTables() {
     if (dbReady) return;
 
@@ -46,14 +71,41 @@ async function ensureTables() {
         CREATE TABLE IF NOT EXISTS yj_season (
             id INTEGER PRIMARY KEY DEFAULT 1,
             start_time TEXT NOT NULL,
-            duration_days INTEGER DEFAULT 7
+            duration_days INTEGER DEFAULT 7,
+            version INTEGER DEFAULT 0
         )
     `);
 
-    // Init season if not exists
+    await db.execute(`
+        CREATE TABLE IF NOT EXISTS yj_season_winners (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            season_num INTEGER NOT NULL,
+            rank INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            username TEXT NOT NULL,
+            avatar_url TEXT DEFAULT '',
+            points INTEGER DEFAULT 0,
+            volume INTEGER DEFAULT 0,
+            games_played INTEGER DEFAULT 0,
+            ended_at TEXT NOT NULL
+        )
+    `);
+
+    try { await db.execute("ALTER TABLE yj_season ADD COLUMN version INTEGER DEFAULT 0"); } catch(e) {}
+    try { await db.execute("ALTER TABLE yj_season ADD COLUMN season_num INTEGER DEFAULT 1"); } catch(e) {}
+
+    // Season version — increment this to force a reset on next deploy
+    const SEASON_VERSION = 1;
+    
     const seasonCheck = await db.execute("SELECT * FROM yj_season WHERE id = 1");
     if (seasonCheck.rows.length === 0) {
-        await db.execute({ sql: "INSERT INTO yj_season (id, start_time, duration_days) VALUES (1, ?, 7)", args: [new Date().toISOString()] });
+        await db.execute({ sql: "INSERT INTO yj_season (id, start_time, duration_days, version, season_num) VALUES (1, ?, 7, ?, 1)", args: [new Date().toISOString(), SEASON_VERSION] });
+        await db.execute("UPDATE yellowjack_players SET points = 20000, games_played = 0, total_won = 0, total_lost = 0");
+    } else if ((seasonCheck.rows[0].version || 0) < SEASON_VERSION) {
+        await saveSeasonWinners(seasonCheck.rows[0].season_num || 1);
+        const nextSeason = (seasonCheck.rows[0].season_num || 1) + 1;
+        await db.execute({ sql: "UPDATE yj_season SET start_time = ?, version = ?, season_num = ? WHERE id = 1", args: [new Date().toISOString(), SEASON_VERSION, nextSeason] });
+        await db.execute("UPDATE yellowjack_players SET points = 20000, games_played = 0, total_won = 0, total_lost = 0");
     }
 
     await db.execute(`
@@ -129,9 +181,10 @@ function parseCookies(str) {
 }
 
 const GUEST_PFPS = [
-    'https://i.imgur.com/7QjKsCL.png', 'https://i.imgur.com/YGl02jR.png',
-    'https://i.imgur.com/3bVzLXa.png', 'https://i.imgur.com/qHiNoCn.png',
-    'https://i.imgur.com/Jv1Tmhg.png', 'https://i.imgur.com/OG3BxVn.png'
+    'images/YellowCatz1.png', 'images/YellowCatz2.png', 'images/YellowCatz3.png',
+    'images/YellowCatz4.png', 'images/YellowCatz5.png', 'images/YellowCatz6.png',
+    'images/YellowCatz7.png', 'images/YellowCatz8.png', 'images/YellowCatz9.png',
+    'images/YellowCatz10.png', 'images/YellowCatz11.png', 'images/YellowCatz12.png'
 ];
 
 async function getUser(req, body) {
@@ -689,8 +742,11 @@ export default async function handler(req, res) {
                 const now = Date.now();
                 
                 if (now >= endMs) {
+                    const currentSeason = row.season_num || 1;
+                    await saveSeasonWinners(currentSeason);
+                    const nextSeason = currentSeason + 1;
                     await db.execute("UPDATE yellowjack_players SET points = 20000, games_played = 0, total_won = 0, total_lost = 0");
-                    await db.execute({ sql: "UPDATE yj_season SET start_time = ? WHERE id = 1", args: [new Date().toISOString()] });
+                    await db.execute({ sql: "UPDATE yj_season SET start_time = ?, season_num = ? WHERE id = 1", args: [new Date().toISOString(), nextSeason] });
                     return res.json({ seasonEnd: new Date(Date.now() + durationDays * 86400000).toISOString(), justReset: true });
                 }
                 
