@@ -336,11 +336,16 @@ document.getElementById('secretCat').addEventListener('click', () => window.loca
 // AUTH — X login + Guest
 // ============================================================
 const SK = 'yellowcatz_session';
-const GK = 'yellowjack_guest'; // guest localStorage key
 const SESSION_EXPIRY = 7 * 24 * 60 * 60 * 1000;
 let isAuth = false, isGuest = false, twName = '', twPfp = '', twId = '', myUserId = null;
-let guestId = localStorage.getItem(GK) || '';
+let guestToken = '', guestAvatar = '';
 let pts = 20000;
+
+const GUEST_PFPS = [
+    'https://i.imgur.com/7QjKsCL.png', 'https://i.imgur.com/YGl02jR.png',
+    'https://i.imgur.com/3bVzLXa.png', 'https://i.imgur.com/qHiNoCn.png',
+    'https://i.imgur.com/Jv1Tmhg.png', 'https://i.imgur.com/OG3BxVn.png'
+];
 
 function getSession() {
     try {
@@ -355,10 +360,14 @@ function saveSession(userData) {
     localStorage.setItem(SK, JSON.stringify({ data: userData, timestamp: Date.now() }));
 }
 
-// API helper — includes guestId automatically
+// API helper — includes guest info automatically
 function yjFetch(body) {
     const payload = { ...body };
-    if (guestId) payload.guestId = guestId;
+    if (isGuest && guestToken) {
+        payload.guestName = twName;
+        payload.guestToken = guestToken;
+        payload.guestAvatar = guestAvatar;
+    }
     return fetch('/api/yellowjack', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -373,27 +382,17 @@ document.getElementById('loginCat').addEventListener('click', () => {
 });
 
 // Guest login button
-document.getElementById('guestBtn').addEventListener('click', async () => {
+document.getElementById('guestBtn').addEventListener('click', () => {
     const name = document.getElementById('guestNameInput').value.trim();
     if (!name) { showErr('Enter a username'); return; }
     
-    // Generate unique guestId if not exists
-    if (!guestId) {
-        guestId = 'g_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
-        localStorage.setItem(GK, guestId);
-    }
-    
-    try {
-        const r = await yjFetch({ action: 'registerGuest', username: name, guestId });
-        const d = await r.json();
-        if (d.error) { showErr(d.error); return; }
-        
-        isGuest = true;
-        twName = d.user.username;
-        twPfp = d.user.avatar;
-        pts = d.points || 20000;
-        showAuthenticatedUI();
-    } catch (e) { showErr('Failed to connect'); }
+    isGuest = true;
+    twName = name.substring(0, 20);
+    guestAvatar = GUEST_PFPS[Math.floor(Math.random() * GUEST_PFPS.length)];
+    twPfp = guestAvatar;
+    guestToken = 'g_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+    pts = 20000;
+    showAuthenticatedUI();
 });
 
 // Enter to submit guest
@@ -408,7 +407,8 @@ async function showAuthenticatedUI() {
     if (!isGuest) document.getElementById('statusLink').classList.add('visible');
     document.getElementById('lobbyUserName').textContent = twName || 'Player';
     document.getElementById('lobbyUserPfp').src = twPfp || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
-    await loadPlayerPoints();
+    if (!isGuest) await loadPlayerPoints();
+    else updateUI();
     loadTables();
     loadSeasonTimer();
 }
@@ -420,25 +420,6 @@ if (cached && cached.authenticated) {
     twName = (u.username || '').replace(/^@/, '') || 'Player';
     twPfp = u.avatarUrl || '';
     showAuthenticatedUI();
-}
-
-// Check cached guest session
-if (!isAuth && guestId) {
-    (async () => {
-        try {
-            const r = await yjFetch({ action: 'getPlayer' });
-            const d = await r.json();
-            if (d.player) {
-                isGuest = true;
-                // Recover guest name from a quick register (idempotent)
-                const r2 = await yjFetch({ action: 'registerGuest', username: 'Guest', guestId });
-                const d2 = await r2.json();
-                if (d2.user) { twName = d2.user.username; twPfp = d2.user.avatar; }
-                pts = d.player.points || 20000;
-                showAuthenticatedUI();
-            }
-        } catch (e) {}
-    })();
 }
 
 // X auth check
@@ -681,7 +662,7 @@ async function leaveTable() {
 function beaconLeave() {
     if (curTable && mySeats.length > 0) {
         const payload = { action: 'leaveTable', tableId: curTable };
-        if (guestId) payload.guestId = guestId;
+        if (isGuest && guestToken) { payload.guestName = twName; payload.guestToken = guestToken; payload.guestAvatar = guestAvatar; }
         const data = new Blob([JSON.stringify(payload)], { type: 'application/json' });
         navigator.sendBeacon('/api/yellowjack', data);
     }

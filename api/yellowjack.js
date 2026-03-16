@@ -38,8 +38,7 @@ async function ensureTables() {
             total_lost INTEGER DEFAULT 0,
             is_blocked INTEGER DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            last_played DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
+            last_played DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
 
@@ -95,16 +94,6 @@ async function ensureTables() {
     try { await db.execute("ALTER TABLE yj_seats ADD COLUMN split_phase INTEGER DEFAULT 0"); } catch(e) {}
 
     await db.execute(`
-        CREATE TABLE IF NOT EXISTS yj_guests (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            guest_id TEXT NOT NULL UNIQUE,
-            username TEXT NOT NULL,
-            avatar TEXT DEFAULT '',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
-
-    await db.execute(`
         CREATE TABLE IF NOT EXISTS yj_chat (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             table_id INTEGER NOT NULL,
@@ -127,7 +116,7 @@ async function ensureTables() {
 }
 
 // ============================================================
-// AUTH — X login + Guest support
+// AUTH — X login + Guest (no DB for guests)
 // ============================================================
 function parseCookies(str) {
     const obj = {};
@@ -161,33 +150,16 @@ async function getUser(req, body) {
         } catch (e) {}
     }
 
-    // 2. Try guest auth
-    const guestId = body?.guestId || req.headers['x-guest-id'];
-    if (guestId) {
-        const g = await db.execute({ sql: 'SELECT * FROM yj_guests WHERE guest_id = ?', args: [guestId] });
-        if (g.rows.length > 0) {
-            const guest = g.rows[0];
-            return { id: -guest.id, username: guest.username, avatar: guest.avatar, isGuest: true };
-        }
+    // 2. Guest — no DB, just use the info from the body
+    if (body?.guestName && body?.guestToken) {
+        // Use a stable numeric ID from the token hash
+        let hash = 0;
+        for (let i = 0; i < body.guestToken.length; i++) { hash = ((hash << 5) - hash) + body.guestToken.charCodeAt(i); hash |= 0; }
+        const guestId = 900000 + Math.abs(hash % 100000);
+        return { id: guestId, username: body.guestName, avatar: body.guestAvatar || '', isGuest: true };
     }
 
     return null;
-}
-
-async function createGuest(username, guestId) {
-    const avatar = GUEST_PFPS[Math.floor(Math.random() * GUEST_PFPS.length)];
-    const clean = (username || 'Guest').trim().substring(0, 20) || 'Guest';
-    
-    // Check if guestId already exists
-    const existing = await db.execute({ sql: 'SELECT * FROM yj_guests WHERE guest_id = ?', args: [guestId] });
-    if (existing.rows.length > 0) {
-        return { id: -existing.rows[0].id, username: existing.rows[0].username, avatar: existing.rows[0].avatar, isGuest: true };
-    }
-    
-    await db.execute({ sql: 'INSERT INTO yj_guests (guest_id, username, avatar) VALUES (?, ?, ?)', args: [guestId, clean, avatar] });
-    const r = await db.execute({ sql: 'SELECT * FROM yj_guests WHERE guest_id = ?', args: [guestId] });
-    const guest = r.rows[0];
-    return { id: -guest.id, username: guest.username, avatar: guest.avatar, isGuest: true };
 }
 
 // ============================================================
@@ -301,17 +273,37 @@ async function removeUserFromAllTables(userId) {
 }
 
 async function getPlayer(userId) {
+    if (userId >= 900000) {
+        // Guest — always 20k, no DB
+        return { user_id: userId, points: 20000, games_played: 0, total_won: 0, total_lost: 0, is_blocked: 0 };
+    }
     const r = await db.execute({ sql: 'SELECT * FROM yellowjack_players WHERE user_id=?', args: [userId] });
     return r.rows[0] || null;
 }
 
 async function ensurePlayer(userId) {
+    if (userId >= 900000) return getPlayer(userId);
     let p = await getPlayer(userId);
     if (!p) {
         await db.execute({ sql: 'INSERT INTO yellowjack_players (user_id, points) VALUES (?, 20000)', args: [userId] });
         p = await getPlayer(userId);
     }
     return p;
+}
+
+// Update points — skip for guests
+async function updatePlayerPoints(userId, delta) {
+    if (userId >= 900000) return; // guest — no tracking
+    await db.execute({ sql: 'UPDATE yellowjack_players SET points = points + ?, last_played = datetime("now") WHERE user_id = ?', args: [delta, userId] });
+}
+
+// Update stats — skip for guests
+async function updatePlayerStats(userId, won, lost) {
+    if (userId >= 900000) return; // guest — no tracking
+    await db.execute({
+        sql: 'UPDATE yellowjack_players SET games_played = games_played + 1, total_won = total_won + ?, total_lost = total_lost + ?, last_played = datetime("now") WHERE user_id = ?',
+        args: [won, lost, userId]
+    });
 }
 
 // ============================================================
@@ -573,25 +565,13 @@ async function playDealer(table, seats) {
         await saveSeat(s);
 
         if (totalPayout > 0) {
-            await db.execute({
-                sql: 'UPDATE yellowjack_players SET points = points + ?, last_played = datetime("now") WHERE user_id = ?',
-                args: [totalPayout, s.userId]
-            });
+            await updatePlayerPoints(s.userId, totalPayout);
         }
 
-        // Stats — for split, bet was deducted twice so total invested = bet * 2
         const invested = s.splitPhase > 0 ? s.bet * 2 : s.bet;
         totalWon = totalPayout > invested ? totalPayout - invested : 0;
         totalLost = totalPayout < invested ? invested - totalPayout : 0;
-        await db.execute({
-            sql: `UPDATE yellowjack_players SET 
-                  games_played = games_played + 1,
-                  total_won = total_won + ?,
-                  total_lost = total_lost + ?,
-                  last_played = datetime("now")
-                  WHERE user_id = ?`,
-            args: [totalWon, totalLost, s.userId]
-        });
+        await updatePlayerStats(s.userId, totalWon, totalLost);
     }
 
     table.phase = 'done';
@@ -697,34 +677,30 @@ export default async function handler(req, res) {
     }
 
     // --- Guest registration (no auth needed) ---
-    if (action === 'registerGuest') {
-        const { username, guestId } = body;
-        if (!username || !guestId) return res.json({ error: 'Missing username or guestId' });
-        const guest = await createGuest(username, guestId);
-        const p = await ensurePlayer(guest.id);
-        return res.json({ success: true, user: guest, points: p.points });
-    }
-
     // --- Season info (no auth needed) ---
     if (action === 'getSeason') {
-        const s = await db.execute("SELECT * FROM yj_season WHERE id = 1");
-        if (s.rows.length > 0) {
-            const row = s.rows[0];
-            const startTime = row.start_time;
-            const durationDays = row.duration_days || 7;
-            const endMs = new Date(startTime.endsWith('Z') ? startTime : startTime + 'Z').getTime() + durationDays * 86400000;
-            const now = Date.now();
-            
-            // Auto-reset if season expired
-            if (now >= endMs) {
-                await db.execute("UPDATE yellowjack_players SET points = 20000, games_played = 0, total_won = 0, total_lost = 0");
-                await db.execute({ sql: "UPDATE yj_season SET start_time = ? WHERE id = 1", args: [new Date().toISOString()] });
-                return res.json({ seasonEnd: new Date(Date.now() + durationDays * 86400000).toISOString(), justReset: true });
+        try {
+            const s = await db.execute("SELECT * FROM yj_season WHERE id = 1");
+            if (s.rows.length > 0) {
+                const row = s.rows[0];
+                const startTime = row.start_time;
+                const durationDays = row.duration_days || 7;
+                const endMs = new Date(startTime.endsWith('Z') ? startTime : startTime + 'Z').getTime() + durationDays * 86400000;
+                const now = Date.now();
+                
+                if (now >= endMs) {
+                    await db.execute("UPDATE yellowjack_players SET points = 20000, games_played = 0, total_won = 0, total_lost = 0");
+                    await db.execute({ sql: "UPDATE yj_season SET start_time = ? WHERE id = 1", args: [new Date().toISOString()] });
+                    return res.json({ seasonEnd: new Date(Date.now() + durationDays * 86400000).toISOString(), justReset: true });
+                }
+                
+                return res.json({ seasonEnd: new Date(endMs).toISOString() });
             }
-            
-            return res.json({ seasonEnd: new Date(endMs).toISOString() });
+            return res.json({ seasonEnd: null });
+        } catch (err) {
+            console.error('getSeason error:', err);
+            return res.json({ seasonEnd: null });
         }
-        return res.json({ seasonEnd: null });
     }
 
     // Auth (X login or guest)
@@ -964,10 +940,7 @@ export default async function handler(req, res) {
             if (bet <= 0) return res.json({ error: 'Invalid bet' });
 
             // Deduct points immediately
-            await db.execute({
-                sql: 'UPDATE yellowjack_players SET points = points - ?, last_played = datetime("now") WHERE user_id = ?',
-                args: [bet, user.id]
-            });
+            await updatePlayerPoints(user.id, -bet);
 
             // Save bet
             mySeat.bet = bet;
@@ -1092,10 +1065,7 @@ export default async function handler(req, res) {
                 const p = await getPlayer(user.id);
                 if (!p || p.points < mySeat.bet) return res.json({ error: 'Not enough points' });
 
-                await db.execute({
-                    sql: 'UPDATE yellowjack_players SET points = points - ? WHERE user_id = ?',
-                    args: [mySeat.bet, user.id]
-                });
+                await updatePlayerPoints(user.id, -mySeat.bet);
 
                 mySeat.bet *= 2;
                 activeHand.push(draw(deck));
@@ -1124,10 +1094,7 @@ export default async function handler(req, res) {
                 if (!p || p.points < mySeat.bet) return res.json({ error: 'Not enough points' });
 
                 // Deduct second bet
-                await db.execute({
-                    sql: 'UPDATE yellowjack_players SET points = points - ? WHERE user_id = ?',
-                    args: [mySeat.bet, user.id]
-                });
+                await updatePlayerPoints(user.id, -mySeat.bet);
 
                 // Split: hand = left card + new, hand2 = right card + new
                 const cardLeft = mySeat.hand[0];
@@ -1159,7 +1126,7 @@ export default async function handler(req, res) {
                        u.x_username, u.avatar_url
                 FROM yellowjack_players yj
                 JOIN users u ON yj.user_id = u.id
-                WHERE yj.is_blocked = 0 AND yj.user_id > 0
+                WHERE yj.is_blocked = 0 AND yj.user_id > 0 AND yj.user_id < 900000
                 ORDER BY (yj.total_won + yj.total_lost) DESC
                 LIMIT 30
             `);
