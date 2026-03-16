@@ -32,7 +32,7 @@ async function ensureTables() {
         CREATE TABLE IF NOT EXISTS yellowjack_players (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL UNIQUE,
-            points INTEGER DEFAULT 10000,
+            points INTEGER DEFAULT 20000,
             games_played INTEGER DEFAULT 0,
             total_won INTEGER DEFAULT 0,
             total_lost INTEGER DEFAULT 0,
@@ -42,6 +42,20 @@ async function ensureTables() {
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
     `);
+
+    await db.execute(`
+        CREATE TABLE IF NOT EXISTS yj_season (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            start_time TEXT NOT NULL,
+            duration_days INTEGER DEFAULT 7
+        )
+    `);
+
+    // Init season if not exists
+    const seasonCheck = await db.execute("SELECT * FROM yj_season WHERE id = 1");
+    if (seasonCheck.rows.length === 0) {
+        await db.execute({ sql: "INSERT INTO yj_season (id, start_time, duration_days) VALUES (1, ?, 7)", args: [new Date().toISOString()] });
+    }
 
     await db.execute(`
         CREATE TABLE IF NOT EXISTS yj_tables (
@@ -81,6 +95,16 @@ async function ensureTables() {
     try { await db.execute("ALTER TABLE yj_seats ADD COLUMN split_phase INTEGER DEFAULT 0"); } catch(e) {}
 
     await db.execute(`
+        CREATE TABLE IF NOT EXISTS yj_guests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guest_id TEXT NOT NULL UNIQUE,
+            username TEXT NOT NULL,
+            avatar TEXT DEFAULT '',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    await db.execute(`
         CREATE TABLE IF NOT EXISTS yj_chat (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             table_id INTEGER NOT NULL,
@@ -103,7 +127,7 @@ async function ensureTables() {
 }
 
 // ============================================================
-// AUTH — same as your existing system
+// AUTH — X login + Guest support
 // ============================================================
 function parseCookies(str) {
     const obj = {};
@@ -115,26 +139,55 @@ function parseCookies(str) {
     return obj;
 }
 
-async function getUser(req) {
+const GUEST_PFPS = [
+    'https://i.imgur.com/7QjKsCL.png', 'https://i.imgur.com/YGl02jR.png',
+    'https://i.imgur.com/3bVzLXa.png', 'https://i.imgur.com/qHiNoCn.png',
+    'https://i.imgur.com/Jv1Tmhg.png', 'https://i.imgur.com/OG3BxVn.png'
+];
+
+async function getUser(req, body) {
+    // 1. Try JWT auth (X login)
     const cookies = parseCookies(req.headers.cookie || '');
     const token = cookies['yellow_session'];
-    if (!token) return null;
-
-    try {
-        const JWT_SECRET = process.env.JWT_SECRET;
-        if (!JWT_SECRET) return null;
-
-        const decoded = jwt.verify(token, JWT_SECRET);
-        if (!decoded || !decoded.userId) return null;
-
-        return {
-            id: decoded.userId,
-            username: decoded.xUsername || 'Player',
-            avatar: decoded.avatarUrl || ''
-        };
-    } catch (e) {
-        return null;
+    if (token) {
+        try {
+            const JWT_SECRET = process.env.JWT_SECRET;
+            if (JWT_SECRET) {
+                const decoded = jwt.verify(token, JWT_SECRET);
+                if (decoded && decoded.userId) {
+                    return { id: decoded.userId, username: decoded.xUsername || 'Player', avatar: decoded.avatarUrl || '', isGuest: false };
+                }
+            }
+        } catch (e) {}
     }
+
+    // 2. Try guest auth
+    const guestId = body?.guestId || req.headers['x-guest-id'];
+    if (guestId) {
+        const g = await db.execute({ sql: 'SELECT * FROM yj_guests WHERE guest_id = ?', args: [guestId] });
+        if (g.rows.length > 0) {
+            const guest = g.rows[0];
+            return { id: -guest.id, username: guest.username, avatar: guest.avatar, isGuest: true };
+        }
+    }
+
+    return null;
+}
+
+async function createGuest(username, guestId) {
+    const avatar = GUEST_PFPS[Math.floor(Math.random() * GUEST_PFPS.length)];
+    const clean = (username || 'Guest').trim().substring(0, 20) || 'Guest';
+    
+    // Check if guestId already exists
+    const existing = await db.execute({ sql: 'SELECT * FROM yj_guests WHERE guest_id = ?', args: [guestId] });
+    if (existing.rows.length > 0) {
+        return { id: -existing.rows[0].id, username: existing.rows[0].username, avatar: existing.rows[0].avatar, isGuest: true };
+    }
+    
+    await db.execute({ sql: 'INSERT INTO yj_guests (guest_id, username, avatar) VALUES (?, ?, ?)', args: [guestId, clean, avatar] });
+    const r = await db.execute({ sql: 'SELECT * FROM yj_guests WHERE guest_id = ?', args: [guestId] });
+    const guest = r.rows[0];
+    return { id: -guest.id, username: guest.username, avatar: guest.avatar, isGuest: true };
 }
 
 // ============================================================
@@ -255,7 +308,7 @@ async function getPlayer(userId) {
 async function ensurePlayer(userId) {
     let p = await getPlayer(userId);
     if (!p) {
-        await db.execute({ sql: 'INSERT INTO yellowjack_players (user_id, points) VALUES (?, 10000)', args: [userId] });
+        await db.execute({ sql: 'INSERT INTO yellowjack_players (user_id, points) VALUES (?, 20000)', args: [userId] });
         p = await getPlayer(userId);
     }
     return p;
@@ -473,9 +526,9 @@ async function playDealer(table, seats) {
     const dealerBust = dealerVal > 21;
     const dealerBJ = isBJ(table.dealerHand);
 
-    // Resolve each player (skip already resolved)
+    // Resolve each player (skip only final result statuses)
     for (const s of bettors) {
-        if (['win','lose','push','blackjack'].includes(s.status)) continue; // already resolved
+        if (['win','lose','push'].includes(s.status)) continue; // already resolved
         let totalPayout = 0;
         let totalWon = 0, totalLost = 0;
 
@@ -643,8 +696,39 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Missing action', debug: { hasBody: !!req.body, bodyKeys: Object.keys(body) } });
     }
 
-    // Auth
-    const user = await getUser(req);
+    // --- Guest registration (no auth needed) ---
+    if (action === 'registerGuest') {
+        const { username, guestId } = body;
+        if (!username || !guestId) return res.json({ error: 'Missing username or guestId' });
+        const guest = await createGuest(username, guestId);
+        const p = await ensurePlayer(guest.id);
+        return res.json({ success: true, user: guest, points: p.points });
+    }
+
+    // --- Season info (no auth needed) ---
+    if (action === 'getSeason') {
+        const s = await db.execute("SELECT * FROM yj_season WHERE id = 1");
+        if (s.rows.length > 0) {
+            const row = s.rows[0];
+            const startTime = row.start_time;
+            const durationDays = row.duration_days || 7;
+            const endMs = new Date(startTime.endsWith('Z') ? startTime : startTime + 'Z').getTime() + durationDays * 86400000;
+            const now = Date.now();
+            
+            // Auto-reset if season expired
+            if (now >= endMs) {
+                await db.execute("UPDATE yellowjack_players SET points = 20000, games_played = 0, total_won = 0, total_lost = 0");
+                await db.execute({ sql: "UPDATE yj_season SET start_time = ? WHERE id = 1", args: [new Date().toISOString()] });
+                return res.json({ seasonEnd: new Date(Date.now() + durationDays * 86400000).toISOString(), justReset: true });
+            }
+            
+            return res.json({ seasonEnd: new Date(endMs).toISOString() });
+        }
+        return res.json({ seasonEnd: null });
+    }
+
+    // Auth (X login or guest)
+    const user = await getUser(req, body);
     if (!user) {
         return res.status(200).json({ success: false, error: 'Not authenticated' });
     }
@@ -1075,7 +1159,7 @@ export default async function handler(req, res) {
                        u.x_username, u.avatar_url
                 FROM yellowjack_players yj
                 JOIN users u ON yj.user_id = u.id
-                WHERE yj.is_blocked = 0 AND yj.games_played > 0
+                WHERE yj.is_blocked = 0 AND yj.user_id > 0
                 ORDER BY (yj.total_won + yj.total_lost) DESC
                 LIMIT 30
             `);

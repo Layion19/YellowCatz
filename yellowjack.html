@@ -51,6 +51,19 @@
         .login-message{color:var(--gold);font-size:18px;margin-bottom:20px}
         .login-info{color:#666;font-size:12px;margin-top:20px}
         
+        .login-divider{display:flex;align-items:center;gap:15px;margin:20px 0;width:220px}
+        .login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:#333}
+        .login-divider span{color:#555;font-size:12px}
+        .guest-login{display:flex;flex-direction:column;gap:10px;align-items:center}
+        .guest-input{background:#1a1a1a;border:1px solid #333;color:#fff;padding:10px 16px;border-radius:20px;font-family:'Poppins',sans-serif;font-size:13px;width:220px;text-align:center;outline:none}
+        .guest-input:focus{border-color:var(--gold)}
+        .guest-input::placeholder{color:#555}
+        .guest-btn{background:transparent;border:1px solid var(--gold);color:var(--gold);padding:8px 24px;border-radius:20px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+        .guest-btn:hover{background:var(--gold);color:#000}
+        
+        .lb-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}
+        .lb-timer{font-size:11px;color:#888;font-weight:600;background:rgba(232,160,0,.1);padding:4px 12px;border-radius:12px;border:1px solid rgba(232,160,0,.2)}
+        
         .lobby{padding:20px;max-width:1000px;margin:0 auto;height:100vh;overflow-y:auto}
         .lobby.hidden{display:none}
         .lobby-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:25px;padding:10px 15px;background:rgba(0,0,0,.5);border-radius:10px;border:1px solid #333}
@@ -87,7 +100,7 @@
         .table-card-btn:hover{transform:scale(1.02)}
         
         .leaderboard-section{margin-top:30px;padding-bottom:40px}
-        .lb-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--gold);text-align:center;margin-bottom:15px}
+        .lb-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--gold)}
         .lb-header{display:flex;align-items:center;padding:8px 12px;background:rgba(232,160,0,.1);border-radius:8px;margin-bottom:6px;font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px}
         .lb-h-rank{width:30px;text-align:center}
         .lb-h-player{flex:1}
@@ -208,8 +221,13 @@
             <div class="login-logo">YELLOW<span>JACK</span></div>
             <p class="login-subtitle">Multiplayer Blackjack</p>
             <div class="login-cat" id="loginCat">😼</div>
-            <p class="login-message">Click the cat to connect</p>
-            <p class="login-info">Play with other YellowCatz members!</p>
+            <p class="login-message">Connect with X</p>
+            <div class="login-divider"><span>or</span></div>
+            <div class="guest-login">
+                <input class="guest-input" id="guestNameInput" type="text" placeholder="Enter a username" maxlength="20">
+                <button class="guest-btn" id="guestBtn">Play as Guest</button>
+            </div>
+            <p class="login-info">Guests can play but won't appear in the leaderboard</p>
         </div>
 
         <div class="lobby hidden" id="lobbyView">
@@ -220,7 +238,7 @@
                     <div class="lobby-user-name" id="lobbyUserName">Player</div>
                     <div class="lobby-user-points">
                         <span class="coin">🪙</span>
-                        <span class="amount" id="lobbyUserPoints">10000</span>
+                        <span class="amount" id="lobbyUserPoints">20000</span>
                     </div>
                 </div>
             </div>
@@ -231,7 +249,10 @@
             <div class="tables-grid" id="tablesGrid"></div>
             
             <div class="leaderboard-section" id="leaderboardSection">
-                <div class="lb-title">LEADERBOARD</div>
+                <div class="lb-title-row">
+                    <div class="lb-title">LEADERBOARD</div>
+                    <div class="lb-timer" id="lbTimer">Season ends in --:--:--</div>
+                </div>
                 <div class="lb-header">
                     <span class="lb-h-rank">#</span>
                     <span class="lb-h-player">Player</span>
@@ -312,55 +333,115 @@ document.getElementById('menuOverlay').addEventListener('click', () => {
 document.getElementById('secretCat').addEventListener('click', () => window.location.href = 'yellow.html');
 
 // ============================================================
-// AUTH
+// AUTH — X login + Guest
 // ============================================================
 const SK = 'yellowcatz_session';
+const GK = 'yellowjack_guest'; // guest localStorage key
 const SESSION_EXPIRY = 7 * 24 * 60 * 60 * 1000;
-let isAuth = false, twName = '', twPfp = '', twId = '', myUserId = null;
-let pts = 10000;
+let isAuth = false, isGuest = false, twName = '', twPfp = '', twId = '', myUserId = null;
+let guestId = localStorage.getItem(GK) || '';
+let pts = 20000;
 
 function getSession() {
     try {
         const stored = localStorage.getItem(SK);
         if (!stored) return null;
         const session = JSON.parse(stored);
-        if (Date.now() - session.timestamp > SESSION_EXPIRY) {
-            localStorage.removeItem(SK);
-            return null;
-        }
+        if (Date.now() - session.timestamp > SESSION_EXPIRY) { localStorage.removeItem(SK); return null; }
         return session.data;
     } catch (e) { return null; }
 }
-
 function saveSession(userData) {
     localStorage.setItem(SK, JSON.stringify({ data: userData, timestamp: Date.now() }));
 }
 
-// ★ FIX: loginCat (not xBtn — xBtn doesn't exist in the HTML)
+// API helper — includes guestId automatically
+function yjFetch(body) {
+    const payload = { ...body };
+    if (guestId) payload.guestId = guestId;
+    return fetch('/api/yellowjack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+    });
+}
+
+// X login button
 document.getElementById('loginCat').addEventListener('click', () => {
     window.location.href = '/api/auth?action=login';
+});
+
+// Guest login button
+document.getElementById('guestBtn').addEventListener('click', async () => {
+    const name = document.getElementById('guestNameInput').value.trim();
+    if (!name) { showErr('Enter a username'); return; }
+    
+    // Generate unique guestId if not exists
+    if (!guestId) {
+        guestId = 'g_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+        localStorage.setItem(GK, guestId);
+    }
+    
+    try {
+        const r = await yjFetch({ action: 'registerGuest', username: name, guestId });
+        const d = await r.json();
+        if (d.error) { showErr(d.error); return; }
+        
+        isGuest = true;
+        twName = d.user.username;
+        twPfp = d.user.avatar;
+        pts = d.points || 20000;
+        showAuthenticatedUI();
+    } catch (e) { showErr('Failed to connect'); }
+});
+
+// Enter to submit guest
+document.getElementById('guestNameInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') document.getElementById('guestBtn').click();
 });
 
 async function showAuthenticatedUI() {
     isAuth = true;
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('lobbyView').classList.remove('hidden');
-    document.getElementById('statusLink').classList.add('visible');
+    if (!isGuest) document.getElementById('statusLink').classList.add('visible');
     document.getElementById('lobbyUserName').textContent = twName || 'Player';
     document.getElementById('lobbyUserPfp').src = twPfp || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
     await loadPlayerPoints();
     loadTables();
+    loadSeasonTimer();
 }
 
+// Check cached X session
 const cached = getSession();
 if (cached && cached.authenticated) {
-    // /api/user returns { user: { username, avatarUrl } }
     const u = cached.user || {};
     twName = (u.username || '').replace(/^@/, '') || 'Player';
     twPfp = u.avatarUrl || '';
     showAuthenticatedUI();
 }
 
+// Check cached guest session
+if (!isAuth && guestId) {
+    (async () => {
+        try {
+            const r = await yjFetch({ action: 'getPlayer' });
+            const d = await r.json();
+            if (d.player) {
+                isGuest = true;
+                // Recover guest name from a quick register (idempotent)
+                const r2 = await yjFetch({ action: 'registerGuest', username: 'Guest', guestId });
+                const d2 = await r2.json();
+                if (d2.user) { twName = d2.user.username; twPfp = d2.user.avatar; }
+                pts = d.player.points || 20000;
+                showAuthenticatedUI();
+            }
+        } catch (e) {}
+    })();
+}
+
+// X auth check
 async function checkAuth() {
     try {
         const r = await fetch('/api/user', { credentials: 'include' });
@@ -369,25 +450,47 @@ async function checkAuth() {
             const u = d.user || {};
             twName = (u.username || '').replace(/^@/, '') || 'Player';
             twPfp = u.avatarUrl || '';
+            isGuest = false;
             saveSession(d);
             showAuthenticatedUI();
         }
-    } catch (e) { console.log('Auth check failed'); }
+    } catch (e) {}
 }
 checkAuth();
 
+// Season timer
+let seasonEndMs = 0;
+async function loadSeasonTimer() {
+    try {
+        const r = await yjFetch({ action: 'getSeason' });
+        const d = await r.json();
+        if (d.seasonEnd) {
+            seasonEndMs = new Date(d.seasonEnd).getTime();
+            updateSeasonDisplay();
+            setInterval(updateSeasonDisplay, 1000);
+        }
+    } catch (e) {}
+}
+
+function updateSeasonDisplay() {
+    const el = document.getElementById('lbTimer');
+    if (!el || !seasonEndMs) return;
+    const diff = seasonEndMs - Date.now();
+    if (diff <= 0) { el.textContent = 'Season ended — resetting...'; return; }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    el.textContent = d + 'd ' + h + 'h ' + m + 'm ' + s + 's';
+}
+
 async function loadPlayerPoints() {
     try {
-        const r = await fetch('/api/yellowjack', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ action: 'getPlayer' })
-        });
+        const r = await yjFetch({ action: 'getPlayer' });
         const d = await r.json();
         if (d.blocked) { showErr('You are blocked'); return; }
-        if (d.player) pts = d.player.points || 10000;
-    } catch (e) { pts = 10000; }
+        if (d.player) pts = d.player.points || 20000;
+    } catch (e) { pts = 20000; }
     updateUI();
 }
 
@@ -449,12 +552,7 @@ bgMusic.addEventListener('ended', nextTrack);
 // ============================================================
 async function loadTables() {
     try {
-        const r = await fetch('/api/yellowjack', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ action: 'getTables' })
-        });
+        const r = await yjFetch({ action: 'getTables' });
         const d = await r.json();
         renderLobby(d.tables || []);
     } catch (e) {
@@ -466,12 +564,7 @@ async function loadTables() {
 
 async function loadLeaderboard() {
     try {
-        const r = await fetch('/api/yellowjack', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ action: 'getLeaderboard' })
-        });
+        const r = await yjFetch({ action: 'getLeaderboard' });
         const d = await r.json();
         renderLeaderboard(d.players || []);
     } catch (e) {}
@@ -563,12 +656,7 @@ function confirmLeaveTable() {
 async function leaveTable() {
     if (curTable && mySeats.length > 0) {
         try {
-            await fetch('/api/yellowjack', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ action: 'leaveTable', tableId: curTable })
-            });
+            await yjFetch({ action: 'leaveTable', tableId: curTable });
         } catch (e) {}
     }
     
@@ -592,7 +680,9 @@ async function leaveTable() {
 // --- Auto-disconnect on page close / refresh / navigate away ---
 function beaconLeave() {
     if (curTable && mySeats.length > 0) {
-        const data = new Blob([JSON.stringify({ action: 'leaveTable', tableId: curTable })], { type: 'application/json' });
+        const payload = { action: 'leaveTable', tableId: curTable };
+        if (guestId) payload.guestId = guestId;
+        const data = new Blob([JSON.stringify(payload)], { type: 'application/json' });
         navigator.sendBeacon('/api/yellowjack', data);
     }
 }
@@ -640,12 +730,7 @@ async function pollTable() {
     if (!curTable) return;
     
     try {
-        const r = await fetch('/api/yellowjack', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ action: 'getTable', tableId: curTable })
-        });
+        const r = await yjFetch({ action: 'getTable', tableId: curTable });
         const d = await r.json();
         
         // Debug: log errors from API
@@ -790,12 +875,7 @@ function startHeartbeat() {
     heartbeatInterval = setInterval(async () => {
         if (!curTable) return;
         try {
-            await fetch('/api/yellowjack', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ action: 'heartbeat', tableId: curTable })
-            });
+            await yjFetch({ action: 'heartbeat', tableId: curTable });
         } catch (e) {}
     }, 10000);
 }
@@ -832,12 +912,7 @@ async function confirmBet() {
     if (b.bet > pts) { showErr('Not enough points'); return; }
     
     try {
-        const r = await fetch('/api/yellowjack', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ action: 'placeBet', tableId: curTable, bet: b.bet, chips: b.chips, seatIndex: activeBetSeat })
-        });
+        const r = await yjFetch({ action: 'placeBet', tableId: curTable, bet: b.bet, chips: b.chips, seatIndex: activeBetSeat });
         const d = await r.json();
         if (d.error) { showErr(d.error); return; }
         
@@ -882,12 +957,7 @@ async function playerAction(actionType) {
     playSound('sndCard');
     
     try {
-        const r = await fetch('/api/yellowjack', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ action: 'playerAction', tableId: curTable, actionType })
-        });
+        const r = await yjFetch({ action: 'playerAction', tableId: curTable, actionType });
         const d = await r.json();
         if (d.error) { showErr(d.error); pollTable(); return; }
         
@@ -1560,12 +1630,7 @@ function onClick(ex, ey) {
 
 async function joinSeat(seatIndex) {
     try {
-        const r = await fetch('/api/yellowjack', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ action: 'joinTable', tableId: curTable, seatIndex: seatIndex })
-        });
+        const r = await yjFetch({ action: 'joinTable', tableId: curTable, seatIndex: seatIndex });
         const d = await r.json();
         if (d.error) { showErr(d.error); return; }
         
@@ -1582,12 +1647,7 @@ async function joinSeat(seatIndex) {
 
 async function leaveSeat(seatIndex) {
     try {
-        await fetch('/api/yellowjack', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ action: 'leaveSeat', tableId: curTable, seatIndex: seatIndex })
-        });
+        await yjFetch({ action: 'leaveSeat', tableId: curTable, seatIndex: seatIndex });
         mySeats = mySeats.filter(s => s !== seatIndex);
         delete myBets[seatIndex];
         addSystemChat('Left seat ' + (seatIndex + 1));
@@ -1666,12 +1726,7 @@ async function sendChat() {
     addPlayerChat(twName || 'You', msg);
     
     try {
-        await fetch('/api/yellowjack', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ action: 'sendChat', tableId: curTable, message: msg })
-        });
+        await yjFetch({ action: 'sendChat', tableId: curTable, message: msg });
     } catch (e) {}
 }
 

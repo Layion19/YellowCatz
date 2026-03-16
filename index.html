@@ -126,6 +126,8 @@
             display: flex;
             flex-direction: column;
             padding: 80px 30px 30px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .sidebar.active {
@@ -139,6 +141,7 @@
             padding: 15px 0;
             border-bottom: 1px solid #333;
             transition: color 0.3s ease;
+            flex-shrink: 0;
         }
 
         .sidebar a:hover {
@@ -182,6 +185,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             animation: catPulse 2s ease-in-out infinite;
+            flex-shrink: 0;
         }
 
         @keyframes catPulse {
@@ -409,6 +413,13 @@
                 width: 24px;
                 height: 24px;
             }
+            .sidebar {
+                padding-top: 60px;
+            }
+            .sidebar a {
+                font-size: 20px;
+                padding: 12px 0;
+            }
         }
     </style>
 </head>
@@ -528,20 +539,16 @@
 
         function showAuthenticatedUI() {
             isAuthenticated = true;
-            // Show secret elements
             document.getElementById('secretM').style.display = 'block';
             document.getElementById('secretO').style.cursor = 'pointer';
-            // Show auth-only sidebar links
             document.getElementById('statusLink').classList.add('visible');
         }
 
-        // Check cached session first (instant)
         const cached = getSession();
         if (cached && cached.authenticated) {
             showAuthenticatedUI();
         }
 
-        // Then verify with API
         async function checkAuth() {
             try {
                 const response = await fetch('/api/user', {
