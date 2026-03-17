@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yellow Cards</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#E8A000;font-family:'Poppins',sans-serif;color:#fff;display:flex;justify-content:center;align-items:center;padding:20px}
+        
+        .container{width:100%;max-width:420px}
+        
+        /* STEP 1 - Username only */
+        .step{display:none}
+        .step.active{display:block;animation:fadeIn .4s ease}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        
+        .card{background:#000;border-radius:24px;padding:40px 30px;text-align:center}
+        
+        .card-title{font-size:22px;font-weight:700;color:#fff;margin-bottom:25px;letter-spacing:1px}
+        
+        .input-field{width:100%;background:#e8e8e8;border:none;border-radius:30px;padding:16px 24px;font-size:16px;font-family:'Poppins',sans-serif;color:#666;text-align:center;outline:none;margin-bottom:20px}
+        .input-field::placeholder{color:#999}
+        
+        .btn-enter{background:#E8A000;border:none;border-radius:30px;padding:14px 50px;font-size:16px;font-family:'Poppins',sans-serif;font-weight:600;color:#000;cursor:pointer;transition:all .3s}
+        .btn-enter:hover{transform:scale(1.05);background:#d4940a}
+        .btn-enter:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+        
+        /* STEP 2 - Badge reveal */
+        .badge-reveal{text-align:center;padding:30px 0}
+        .badge-container{width:200px;height:200px;margin:0 auto 20px;perspective:1000px}
+        .badge{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .8s ease}
+        .badge.flipped{transform:rotateY(180deg)}
+        .badge-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:50%;display:flex;justify-content:center;align-items:center;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+        .badge-back{background:#000;border:4px solid #E8A000;font-size:60px}
+        .badge-front{transform:rotateY(180deg);background:#000;overflow:hidden}
+        .badge-front img{width:100%;height:100%;object-fit:cover}
+        
+        .badge-type{margin-top:15px;padding:8px 20px;border-radius:20px;display:inline-block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px}
+        .badge-type.common{background:#000;color:#fff}
+        .badge-type.gold{background:#000;color:#ffd700;animation:glow 2s ease-in-out infinite;border:2px solid #ffd700}
+        .badge-type.emperor{background:#000;color:#9b59b6;animation:glow 2s ease-in-out infinite;border:2px solid #9b59b6}
+        @keyframes glow{0%,100%{box-shadow:0 0 10px rgba(255,215,0,.3)}50%{box-shadow:0 0 25px rgba(255,215,0,.6)}}
+        
+        .badge-name{font-size:18px;font-weight:700;margin-top:10px;color:#000}
+        
+        .special-msg{background:#000;padding:15px;border-radius:12px;margin-top:20px;color:#E8A000;border:2px solid #E8A000}
+        .special-msg h3{font-size:16px;margin-bottom:5px}
+        .special-msg p{font-size:12px;opacity:0.9;color:#fff}
+        
+        /* STEP 3 - Missions */
+        .missions-container{display:flex;flex-direction:column;gap:15px}
+        
+        .mission-card{background:#000;border-radius:20px;padding:20px 25px}
+        
+        .mission-row{display:flex;justify-content:space-between;align-items:center}
+        
+        .mission-title{font-size:16px;font-weight:700;color:#fff}
+        
+        .btn-follow{background:#E8A000;border:none;border-radius:20px;padding:10px 25px;font-size:14px;font-family:'Poppins',sans-serif;font-weight:600;color:#000;cursor:pointer;text-decoration:none;transition:all .3s}
+        .btn-follow:hover{transform:scale(1.05);background:#d4940a}
+        
+        .mission-desc{font-size:14px;font-weight:600;color:#fff;margin-bottom:12px;line-height:1.4}
+        
+        .mission-input{width:100%;background:#333;border:none;border-radius:12px;padding:14px 18px;font-size:14px;font-family:'Poppins',sans-serif;color:#888;outline:none}
+        .mission-input::placeholder{color:#666}
+        .mission-input:focus{background:#444;color:#fff}
+        
+        .wallet-input{width:100%;background:#E8A000;border:none;border-radius:12px;padding:14px 18px;font-size:14px;font-family:'Poppins',sans-serif;color:#000;outline:none;margin-bottom:15px}
+        .wallet-input::placeholder{color:#5a4a00}
+        
+        .btn-done{width:100%;background:#8B5A00;border:none;border-radius:12px;padding:14px;font-size:16px;font-family:'Poppins',sans-serif;font-weight:600;color:#fff;cursor:pointer;transition:all .3s}
+        .btn-done:hover{background:#a06a00}
+        .btn-done:disabled{opacity:0.5;cursor:not-allowed}
+        
+        /* SUCCESS */
+        .success-screen{text-align:center}
+        .success-icon{font-size:80px;margin-bottom:20px}
+        .success-title{font-size:28px;font-weight:700;color:#000;margin-bottom:10px}
+        .success-msg{color:#5a4a00;font-size:14px;margin-bottom:25px}
+        .entry-num{background:#000;color:#E8A000;font-size:36px;font-weight:900;padding:15px 40px;border-radius:16px;display:inline-block}
+        
+        /* ALREADY / FULL */
+        .message-screen{text-align:center;padding:40px 20px}
+        .message-screen .icon{font-size:60px;margin-bottom:20px}
+        .message-screen h2{font-size:24px;color:#000;margin-bottom:10px}
+        .message-screen p{color:#5a4a00;font-size:14px}
+        
+        /* TOAST */
+        .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:#e74c3c;color:#fff;padding:12px 24px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:all .3s;z-index:1000}
+        .toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
+        
+        /* LOADING */
+        .loading{text-align:center;padding:60px 0}
+        .spinner{width:40px;height:40px;border:3px solid rgba(0,0,0,.1);border-top-color:#000;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 15px}
+        @keyframes spin{to{transform:rotate(360deg)}}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- LOADING -->
+        <div class="loading" id="loadingScreen">
+            <div class="spinner"></div>
+        </div>
+        
+        <!-- FULL -->
+        <div class="message-screen" id="fullScreen" style="display:none">
+            <div class="icon">😿</div>
+            <h2>All Slots Taken</h2>
+            <p>Sorry, all 500 slots have been claimed.</p>
+        </div>
+        
+        <!-- ALREADY -->
+        <div class="message-screen" id="alreadyScreen" style="display:none">
+            <div class="icon">✅</div>
+            <h2>Already Registered</h2>
+            <p>You've already submitted your entry!</p>
+        </div>
+        
+        <!-- STEP 1: Username Only -->
+        <div class="step" id="step1">
+            <div class="card">
+                <h2 class="card-title">X USERNAME</h2>
+                <input type="text" class="input-field" id="usernameInput" placeholder="@username" autocomplete="off">
+                <button class="btn-enter" id="btnEnter" onclick="getCard()">enter</button>
+            </div>
+        </div>
+        
+        <!-- STEP 2: Badge Reveal -->
+        <div class="step" id="step2">
+            <div class="badge-reveal">
+                <div class="badge-container">
+                    <div class="badge" id="badgeElement">
+                        <div class="badge-face badge-back">😼</div>
+                        <div class="badge-face badge-front">
+                            <img id="badgeImage" src="" alt="Your Badge">
+                        </div>
+                    </div>
+                </div>
+                <div class="badge-type" id="badgeType">Common</div>
+                <div class="badge-name" id="badgeName">Badge #1</div>
+                
+                <div class="special-msg" id="specialMsg" style="display:none">
+                    <h3 id="specialTitle">🎉 CONGRATULATIONS!</h3>
+                    <p id="specialText">You got a special card!</p>
+                </div>
+            </div>
+            
+            <button class="btn-enter" onclick="goToMissions()" style="margin-top:20px;width:100%">continue</button>
+        </div>
+        
+        <!-- STEP 3: Missions -->
+        <div class="step" id="step3">
+            <div class="missions-container">
+                <!-- Follow YellowCatz -->
+                <div class="mission-card">
+                    <div class="mission-row">
+                        <span class="mission-title">Follow @Yellowcatz_</span>
+                        <a href="https://x.com/Yellowcatz_" target="_blank" class="btn-follow">follow</a>
+                    </div>
+                </div>
+                
+                <!-- Follow Founder -->
+                <div class="mission-card">
+                    <div class="mission-row">
+                        <span class="mission-title">Follow Founder</span>
+                        <a href="https://x.com/Gems_Finder22" target="_blank" class="btn-follow">follow</a>
+                    </div>
+                </div>
+                
+                <!-- Like & Quote Tweet -->
+                <div class="mission-card">
+                    <p class="mission-desc">LIKE and Quote tweet pinned post with your badge and #YELLOWCATZ</p>
+                    <input type="text" class="mission-input" id="quoteTweetLink" placeholder="paste your quote tweet link">
+                </div>
+                
+                <!-- Tag Friends -->
+                <div class="mission-card">
+                    <p class="mission-desc">Tag 2 friends in the comment</p>
+                    <input type="text" class="mission-input" id="commentLink" placeholder="paste your comment link">
+                </div>
+                
+                <!-- Submit Wallet -->
+                <div class="mission-card">
+                    <p class="mission-desc">Submit wallet</p>
+                    <input type="text" class="wallet-input" id="walletInput" placeholder="Your SOL wallet address...">
+                    <button class="btn-done" id="btnDone" onclick="submitEntry()">done</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- STEP 4: Success -->
+        <div class="step" id="step4">
+            <div class="success-screen">
+                <div class="success-icon">🎉</div>
+                <h2 class="success-title">You're In!</h2>
+                <p class="success-msg">Your entry has been recorded</p>
+                <div class="entry-num" id="entryNumber">#001</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+
+<script>
+const MAX_SLOTS = 500;
+
+let username = '';
+let cardNumber = 0;
+let cardType = 'common';
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('visible');
+    setTimeout(() => t.classList.remove('visible'), 3000);
+}
+
+function showStep(n) {
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    const step = document.getElementById('step' + n);
+    if (step) step.classList.add('active');
+}
+
+async function loadStatus() {
+    try {
+        const r = await fetch('/api/yellowcard', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'getStatus' })
+        });
+        const d = await r.json();
+        
+        document.getElementById('loadingScreen').style.display = 'none';
+        
+        if ((MAX_SLOTS - (d.count || 0)) <= 0) {
+            document.getElementById('fullScreen').style.display = 'block';
+            return;
+        }
+        
+        if (localStorage.getItem('yellowcard_entry')) {
+            document.getElementById('alreadyScreen').style.display = 'block';
+            return;
+        }
+        
+        showStep(1);
+    } catch (e) {
+        document.getElementById('loadingScreen').style.display = 'none';
+        showStep(1);
+    }
+}
+
+async function getCard() {
+    const input = document.getElementById('usernameInput');
+    username = input.value.trim().replace('@', '');
+    
+    if (!username || username.length < 2) {
+        showToast('Please enter a valid username');
+        return;
+    }
+    
+    const btn = document.getElementById('btnEnter');
+    btn.disabled = true;
+    btn.textContent = '...';
+    
+    try {
+        const r = await fetch('/api/yellowcard', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'assignCard', username })
+        });
+        const d = await r.json();
+        
+        if (d.error) {
+            showToast(d.error);
+            btn.disabled = false;
+            btn.textContent = 'enter';
+            return;
+        }
+        
+        cardType = d.cardType;
+        cardNumber = d.cardNumber;
+        
+        let imgSrc = '';
+        if (cardType === 'emperor') imgSrc = '/images/badgeEmperor.png';
+        else if (cardType === 'gold') imgSrc = '/images/badgeGold.png';
+        else imgSrc = `/images/badge${cardNumber}.png`;
+        
+        document.getElementById('badgeImage').src = imgSrc;
+        
+        const typeEl = document.getElementById('badgeType');
+        typeEl.className = 'badge-type ' + cardType;
+        if (cardType === 'emperor') typeEl.textContent = '👑 EMPEROR';
+        else if (cardType === 'gold') typeEl.textContent = '⭐ GOLD';
+        else typeEl.textContent = 'Common';
+        
+        document.getElementById('badgeName').textContent = 
+            cardType === 'emperor' ? 'Emperor Card' :
+            cardType === 'gold' ? 'Gold Card' :
+            `Badge #${cardNumber}`;
+        
+        const specialMsg = document.getElementById('specialMsg');
+        if (cardType === 'gold' || cardType === 'emperor') {
+            specialMsg.style.display = 'block';
+            if (cardType === 'emperor') {
+                document.getElementById('specialTitle').textContent = '👑 EMPEROR!';
+                document.getElementById('specialText').textContent = 'You are THE ONE!';
+            } else {
+                document.getElementById('specialTitle').textContent = '⭐ GOLD!';
+                document.getElementById('specialText').textContent = 'Amazing luck!';
+            }
+        }
+        
+        showStep(2);
+        
+        setTimeout(() => {
+            document.getElementById('badgeElement').classList.add('flipped');
+        }, 400);
+        
+    } catch (e) {
+        showToast('Connection error');
+        btn.disabled = false;
+        btn.textContent = 'enter';
+    }
+}
+
+function goToMissions() {
+    showStep(3);
+}
+
+function isValidSolanaWallet(addr) {
+    return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);
+}
+
+async function submitEntry() {
+    const wallet = document.getElementById('walletInput').value.trim();
+    const quoteLink = document.getElementById('quoteTweetLink').value.trim();
+    const commentLink = document.getElementById('commentLink').value.trim();
+    
+    if (!quoteLink) {
+        showToast('Please paste your quote tweet link');
+        return;
+    }
+    
+    if (!commentLink) {
+        showToast('Please paste your comment link');
+        return;
+    }
+    
+    if (!wallet) {
+        showToast('Please enter your wallet address');
+        return;
+    }
+    
+    if (!isValidSolanaWallet(wallet)) {
+        showToast('Invalid Solana wallet address');
+        return;
+    }
+    
+    const btn = document.getElementById('btnDone');
+    btn.disabled = true;
+    btn.textContent = '...';
+    
+    try {
+        const r = await fetch('/api/yellowcard', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'submit',
+                username,
+                wallet,
+                cardType,
+                cardNumber,
+                quoteLink,
+                commentLink
+            })
+        });
+        
+        const d = await r.json();
+        
+        if (d.error) {
+            showToast(d.error);
+            btn.disabled = false;
+            btn.textContent = 'done';
+            return;
+        }
+        
+        localStorage.setItem('yellowcard_entry', JSON.stringify({
+            username, wallet, cardType, cardNumber,
+            entryNumber: d.entryNumber,
+            timestamp: Date.now()
+        }));
+        
+        document.getElementById('entryNumber').textContent = '#' + String(d.entryNumber).padStart(3, '0');
+        showStep(4);
+        
+    } catch (e) {
+        showToast('Failed to submit');
+        btn.disabled = false;
+        btn.textContent = 'done';
+    }
+}
+
+// Enter key on username
+document.getElementById('usernameInput').addEventListener('keypress', e => {
+    if (e.key === 'Enter') getCard();
+});
+
+loadStatus();
+</script>
+</body>
+</html>
