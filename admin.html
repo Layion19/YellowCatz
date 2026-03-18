@@ -707,23 +707,27 @@
     <div class="stats-grid">
       <div class="stat-card">
         <div class="number" id="ycTotalEntries">-</div>
-        <div class="label">Total Entries</div>
+        <div class="label">Completed</div>
+      </div>
+      <div class="stat-card" style="border-color:#f39c12;">
+        <div class="number" id="ycPendingEntries" style="color:#f39c12;">-</div>
+        <div class="label">Pending</div>
       </div>
       <div class="stat-card green">
         <div class="number" id="ycRemaining">-</div>
-        <div class="label">Slots Remaining</div>
+        <div class="label">Slots Left</div>
       </div>
       <div class="stat-card">
         <div class="number" id="ycCommonCount">-</div>
-        <div class="label">Common Cards</div>
+        <div class="label">Common</div>
       </div>
       <div class="stat-card" style="border-color:#E8A000;">
         <div class="number" id="ycGoldCount" style="color:#E8A000;">-</div>
-        <div class="label">Gold Card</div>
+        <div class="label">Gold</div>
       </div>
       <div class="stat-card" style="border-color:#9b59b6;">
         <div class="number" id="ycEmperorCount" style="color:#9b59b6;">-</div>
-        <div class="label">Emperor Card</div>
+        <div class="label">Emperor</div>
       </div>
     </div>
 
@@ -1334,6 +1338,7 @@ async function loadYellowCardsStats() {
   }
   
   document.getElementById('ycTotalEntries').textContent = data.totalEntries || 0;
+  document.getElementById('ycPendingEntries').textContent = data.pendingEntries || 0;
   document.getElementById('ycRemaining').textContent = data.remaining || 500;
   
   // Count by type
@@ -1354,7 +1359,7 @@ async function loadYellowCardsStats() {
   } else {
     document.getElementById('ycGoldWinner').textContent = 'Not assigned yet';
   }
-  document.getElementById('ycGoldSlot').textContent = data.config ? 'Assigned to Slot #' + data.config.goldEntry : '';
+  document.getElementById('ycGoldSlot').textContent = data.config ? 'Will appear at Entry #' + data.config.goldEntry + ' (min 51)' : '';
   
   // Emperor winner
   if (data.emperorHolder) {
@@ -1362,7 +1367,7 @@ async function loadYellowCardsStats() {
   } else {
     document.getElementById('ycEmperorWinner').textContent = 'Not assigned yet';
   }
-  document.getElementById('ycEmperorSlot').textContent = data.config ? 'Assigned to Slot #' + data.config.emperorEntry : '';
+  document.getElementById('ycEmperorSlot').textContent = data.config ? 'Will appear at Entry #' + data.config.emperorEntry : '';
   
   // Recent entries
   renderYCEntryList('ycRecentEntries', data.recentEntries || []);

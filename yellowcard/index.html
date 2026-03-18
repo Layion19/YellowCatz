@@ -305,9 +305,9 @@
         <!-- STEP 4: Success -->
         <div class="step" id="step4">
             <div class="success-screen">
-                <div class="success-icon">🎉</div>
-                <h2 class="success-title">You're In!</h2>
-                <p class="success-msg">Your entry has been recorded</p>
+                <div class="success-icon" id="successIcon">🎉</div>
+                <h2 class="success-title" id="successTitle">You're In!</h2>
+                <p class="success-msg" id="successMsg">Your entry has been recorded</p>
                 <div class="entry-num" id="entryNumber">#001</div>
             </div>
         </div>
@@ -330,6 +330,7 @@ let cardNumber = 0;
 let cardType = 'common';
 let currentBadgeUrl = '';
 let badgeClaimed = false;
+let isEligible = true; // Track if user is in first 500
 
 function showToast(msg) {
     const t = document.getElementById('toast');
@@ -355,16 +356,13 @@ async function loadStatus() {
         
         document.getElementById('loadingScreen').style.display = 'none';
         
-        if ((MAX_SLOTS - (d.count || 0)) <= 0) {
-            document.getElementById('fullScreen').style.display = 'block';
-            return;
-        }
-        
+        // Check if user already participated (don't let them try again)
         if (localStorage.getItem('yellowcard_entry')) {
             document.getElementById('alreadyScreen').style.display = 'block';
             return;
         }
         
+        // Always show step 1 - even if 500 slots are taken (marketing mode)
         showStep(1);
     } catch (e) {
         document.getElementById('loadingScreen').style.display = 'none';
@@ -402,6 +400,7 @@ async function getCard() {
         
         cardType = d.cardType;
         cardNumber = d.cardNumber;
+        isEligible = d.eligible !== false; // Track eligibility
         
         // Set badge image URL
         if (cardType === 'emperor') currentBadgeUrl = '/images/badgeEmperor.png';
@@ -575,13 +574,37 @@ async function submitEntry() {
             return;
         }
         
-        localStorage.setItem('yellowcard_entry', JSON.stringify({
-            username, wallet, cardType, cardNumber,
-            entryNumber: d.entryNumber,
-            timestamp: Date.now()
-        }));
+        // Check eligibility
+        const wasEligible = d.eligible !== false && d.entryNumber > 0;
         
-        document.getElementById('entryNumber').textContent = '#' + String(d.entryNumber).padStart(3, '0');
+        if (wasEligible) {
+            // FIRST 500 - Actually registered
+            localStorage.setItem('yellowcard_entry', JSON.stringify({
+                username, wallet, cardType, cardNumber,
+                entryNumber: d.entryNumber,
+                timestamp: Date.now()
+            }));
+            
+            document.getElementById('successIcon').textContent = '🎉';
+            document.getElementById('successTitle').textContent = "You're In!";
+            document.getElementById('successMsg').textContent = 'Your entry has been recorded';
+            document.getElementById('entryNumber').textContent = '#' + String(d.entryNumber).padStart(3, '0');
+            document.getElementById('entryNumber').style.display = 'inline-block';
+        } else {
+            // POST-500 - Marketing mode, not registered
+            localStorage.setItem('yellowcard_entry', JSON.stringify({
+                username, wallet, cardType, cardNumber,
+                entryNumber: 0,
+                marketing: true,
+                timestamp: Date.now()
+            }));
+            
+            document.getElementById('successIcon').textContent = '😺';
+            document.getElementById('successTitle').textContent = 'Thanks for joining!';
+            document.getElementById('successMsg').textContent = 'All 500 slots are taken, but thanks for spreading the word!';
+            document.getElementById('entryNumber').style.display = 'none';
+        }
+        
         showStep(4);
         
     } catch (e) {

@@ -64,6 +64,18 @@ export default async function handler(req, res) {
         )
     `);
 
+    // Pending assignments - prevents refresh exploit
+    await db.execute(`
+        CREATE TABLE IF NOT EXISTS yellowcard_pending (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            card_type TEXT NOT NULL,
+            card_number TEXT NOT NULL,
+            entry_number INTEGER NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
     // ============================================================
     // Helper: Get or create config (gold/emperor entry numbers + initial shuffle)
     // ============================================================
@@ -78,8 +90,12 @@ export default async function handler(req, res) {
             };
         }
 
-        // Generate random entry numbers for Gold and Emperor (1-500, different from each other)
-        let goldEntry = Math.floor(Math.random() * MAX_SLOTS) + 1;
+        // Gold: minimum entry 51 (after 50 completed), max 500
+        // This ensures at least 50 people complete before Gold can appear
+        const MIN_GOLD_ENTRY = 51;
+        let goldEntry = Math.floor(Math.random() * (MAX_SLOTS - MIN_GOLD_ENTRY + 1)) + MIN_GOLD_ENTRY;
+        
+        // Emperor: can be anywhere 1-500, but different from Gold
         let emperorEntry;
         do {
             emperorEntry = Math.floor(Math.random() * MAX_SLOTS) + 1;
@@ -168,19 +184,26 @@ export default async function handler(req, res) {
     // ACTION: getStatus
     // ============================================================
     if (action === 'getStatus') {
-        const result = await db.execute('SELECT COUNT(*) as count FROM yellowcard_entries');
-        const count = result.rows[0]?.count || 0;
+        const completed = await db.execute('SELECT COUNT(*) as count FROM yellowcard_entries');
+        const pending = await db.execute('SELECT COUNT(*) as count FROM yellowcard_pending');
+        
+        const completedCount = completed.rows[0]?.count || 0;
+        const pendingCount = pending.rows[0]?.count || 0;
+        const totalReserved = completedCount + pendingCount;
         
         return res.status(200).json({
             success: true,
-            count,
+            count: completedCount,
+            pending: pendingCount,
             maxSlots: MAX_SLOTS,
-            remaining: MAX_SLOTS - count
+            remaining: MAX_SLOTS - totalReserved
         });
     }
 
     // ============================================================
     // ACTION: assignCard - Assigns a card to a username (before wallet submission)
+    // - First 500: stored in pending, eligible for registration
+    // - After 500: badge generated but NOT stored (marketing only)
     // ============================================================
     if (action === 'assignCard') {
         const { username } = body;
@@ -189,44 +212,90 @@ export default async function handler(req, res) {
             return res.status(200).json({ error: 'Invalid username' });
         }
 
-        // Check if username already has an entry
-        const usernameCheck = await db.execute({
+        const cleanUsername = username.toLowerCase().replace(/^@/, '');
+
+        // Check if username already has a COMPLETED entry
+        const completedCheck = await db.execute({
             sql: 'SELECT id FROM yellowcard_entries WHERE LOWER(username) = LOWER(?)',
-            args: [username]
+            args: [cleanUsername]
         });
 
-        if (usernameCheck.rows.length > 0) {
+        if (completedCheck.rows.length > 0) {
             return res.status(200).json({ error: 'This username has already entered' });
         }
 
-        // Check max slots
-        const countResult = await db.execute('SELECT COUNT(*) as count FROM yellowcard_entries');
-        const currentCount = countResult.rows[0]?.count || 0;
+        // Check if username already has a PENDING assignment (refresh protection)
+        const pendingCheck = await db.execute({
+            sql: 'SELECT card_type, card_number, entry_number FROM yellowcard_pending WHERE LOWER(username) = LOWER(?)',
+            args: [cleanUsername]
+        });
 
-        if (currentCount >= MAX_SLOTS) {
-            return res.status(200).json({ error: 'All slots have been taken' });
+        if (pendingCheck.rows.length > 0) {
+            // Return the SAME card they were assigned before
+            const pending = pendingCheck.rows[0];
+            return res.status(200).json({
+                success: true,
+                cardType: pending.card_type,
+                cardNumber: pending.card_number,
+                entryNumber: pending.entry_number,
+                eligible: true
+            });
         }
 
-        // Get next entry number
-        const maxEntry = await db.execute('SELECT MAX(entry_number) as max FROM yellowcard_entries');
-        const nextEntryNumber = (maxEntry.rows[0]?.max || 0) + 1;
+        // Check current slot count
+        const countResult = await db.execute('SELECT COUNT(*) as count FROM yellowcard_entries');
+        const pendingCountResult = await db.execute('SELECT COUNT(*) as count FROM yellowcard_pending');
+        const completedCount = countResult.rows[0]?.count || 0;
+        const pendingCount = pendingCountResult.rows[0]?.count || 0;
+        const totalReserved = completedCount + pendingCount;
+
+        // AFTER 500: Generate badge but don't store (marketing mode)
+        if (totalReserved >= MAX_SLOTS) {
+            // Random common card only (no Gold/Emperor after 500)
+            const randomCardNumber = Math.floor(Math.random() * TOTAL_COMMON_CARDS) + 1;
+            
+            return res.status(200).json({
+                success: true,
+                cardType: 'common',
+                cardNumber: randomCardNumber,
+                entryNumber: 0, // Indicates not eligible
+                eligible: false
+            });
+        }
+
+        // FIRST 500: Normal flow with pending storage
+        const maxCompleted = await db.execute('SELECT MAX(entry_number) as max FROM yellowcard_entries');
+        const maxPending = await db.execute('SELECT MAX(entry_number) as max FROM yellowcard_pending');
+        const nextEntryNumber = Math.max(
+            maxCompleted.rows[0]?.max || 0,
+            maxPending.rows[0]?.max || 0
+        ) + 1;
 
         // Assign card based on entry number
         const { cardType, cardNumber } = await assignCard(nextEntryNumber);
+
+        // Store in pending table
+        await db.execute({
+            sql: 'INSERT INTO yellowcard_pending (username, card_type, card_number, entry_number) VALUES (?, ?, ?, ?)',
+            args: [cleanUsername, cardType, String(cardNumber), nextEntryNumber]
+        });
 
         return res.status(200).json({
             success: true,
             cardType,
             cardNumber,
-            entryNumber: nextEntryNumber
+            entryNumber: nextEntryNumber,
+            eligible: true
         });
     }
 
     // ============================================================
     // ACTION: submit - Submit wallet and finalize entry
+    // - If pending exists: register normally (first 500)
+    // - If no pending: marketing mode - return success but don't store
     // ============================================================
     if (action === 'submit') {
-        const { username, wallet, cardType, cardNumber, quoteLink, quoteTweet, comment, qrtLink, commentLink } = body;
+        const { username, wallet, cardType: clientCardType, cardNumber: clientCardNumber, quoteLink, quoteTweet, comment, qrtLink, commentLink } = body;
         const qrt = quoteLink || quoteTweet || qrtLink || '';
         const cmt = commentLink || comment || '';
 
@@ -234,27 +303,45 @@ export default async function handler(req, res) {
             return res.status(200).json({ error: 'Invalid username' });
         }
 
+        const cleanUsername = username.toLowerCase().replace(/^@/, '');
+
         if (!wallet || wallet.length < 32 || wallet.length > 44) {
             return res.status(200).json({ error: 'Invalid wallet address' });
         }
 
-        // Check max slots
-        const countResult = await db.execute('SELECT COUNT(*) as count FROM yellowcard_entries');
-        const currentCount = countResult.rows[0]?.count || 0;
-
-        if (currentCount >= MAX_SLOTS) {
-            return res.status(200).json({ error: 'All slots have been taken' });
-        }
-
-        // Check if username already entered
-        const usernameCheck = await db.execute({
+        // Check if username already completed
+        const completedCheck = await db.execute({
             sql: 'SELECT id FROM yellowcard_entries WHERE LOWER(username) = LOWER(?)',
-            args: [username]
+            args: [cleanUsername]
         });
 
-        if (usernameCheck.rows.length > 0) {
+        if (completedCheck.rows.length > 0) {
             return res.status(200).json({ error: 'This username has already entered' });
         }
+
+        // Get pending assignment
+        const pendingCheck = await db.execute({
+            sql: 'SELECT card_type, card_number, entry_number FROM yellowcard_pending WHERE LOWER(username) = LOWER(?)',
+            args: [cleanUsername]
+        });
+
+        // NO PENDING = Post-500 marketing mode
+        // Return success but don't actually store anything
+        if (pendingCheck.rows.length === 0) {
+            // Fake success for marketing participants
+            return res.status(200).json({
+                success: true,
+                entryNumber: 0, // 0 indicates not actually registered
+                eligible: false,
+                message: 'Thanks for participating!'
+            });
+        }
+
+        // HAS PENDING = First 500, register normally
+        const pending = pendingCheck.rows[0];
+        const cardType = pending.card_type;
+        const cardNumber = pending.card_number;
+        const entryNumber = pending.entry_number;
 
         // Check if wallet already used
         const walletCheck = await db.execute({
@@ -266,21 +353,48 @@ export default async function handler(req, res) {
             return res.status(200).json({ error: 'This wallet has already been submitted' });
         }
 
-        // Get next entry number
-        const maxEntry = await db.execute('SELECT MAX(entry_number) as max FROM yellowcard_entries');
-        const entryNumber = (maxEntry.rows[0]?.max || 0) + 1;
-
-        // Insert entry with qrt_link and comment_link
+        // Insert entry with card from pending
         await db.execute({
             sql: `INSERT INTO yellowcard_entries (username, wallet, card_type, card_number, entry_number, qrt_link, comment_link)
                   VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            args: [username.toLowerCase(), wallet, cardType || 'common', String(cardNumber) || '1', entryNumber, qrt, cmt]
+            args: [cleanUsername, wallet, cardType, cardNumber, entryNumber, qrt, cmt]
         });
+
+        // Delete from pending
+        await db.execute({
+            sql: 'DELETE FROM yellowcard_pending WHERE LOWER(username) = LOWER(?)',
+            args: [cleanUsername]
+        });
+
+        // Try to award badge_9 if username matches a YellowCatz user
+        try {
+            const userResult = await db.execute({
+                sql: 'SELECT id FROM users WHERE LOWER(x_username) = LOWER(?)',
+                args: [cleanUsername]
+            });
+            
+            if (userResult.rows.length > 0) {
+                const userId = userResult.rows[0].id;
+                // Award badge_9 (ignore if already has it)
+                await db.execute({
+                    sql: 'INSERT OR IGNORE INTO user_badges (user_id, badge_id) VALUES (?, ?)',
+                    args: [userId, 'badge_9']
+                });
+            }
+        } catch (e) {
+            // Badge award is optional — don't fail the submission
+            console.log('Badge_9 award skipped:', e.message);
+        }
+
+        // Get current count for response
+        const countResult = await db.execute('SELECT COUNT(*) as count FROM yellowcard_entries');
+        const currentCount = countResult.rows[0]?.count || 0;
 
         return res.status(200).json({
             success: true,
             entryNumber,
-            count: currentCount + 1
+            count: currentCount,
+            eligible: true
         });
     }
 
