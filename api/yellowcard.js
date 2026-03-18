@@ -50,9 +50,17 @@ export default async function handler(req, res) {
             entry_number INTEGER NOT NULL,
             qrt_link TEXT,
             comment_link TEXT,
+            discord_username TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
+
+    // Add discord_username column if it doesn't exist (for existing tables)
+    try {
+        await db.execute(`ALTER TABLE yellowcard_entries ADD COLUMN discord_username TEXT`);
+    } catch (e) {
+        // Column already exists, ignore
+    }
 
     await db.execute(`
         CREATE TABLE IF NOT EXISTS yellowcard_config (
@@ -295,9 +303,10 @@ export default async function handler(req, res) {
     // - If no pending: marketing mode - return success but don't store
     // ============================================================
     if (action === 'submit') {
-        const { username, wallet, cardType: clientCardType, cardNumber: clientCardNumber, quoteLink, quoteTweet, comment, qrtLink, commentLink } = body;
+        const { username, wallet, cardType: clientCardType, cardNumber: clientCardNumber, quoteLink, quoteTweet, comment, qrtLink, commentLink, discordUsername } = body;
         const qrt = quoteLink || quoteTweet || qrtLink || '';
         const cmt = commentLink || comment || '';
+        const discord = discordUsername || '';
 
         if (!username || username.length < 2) {
             return res.status(200).json({ error: 'Invalid username' });
@@ -355,9 +364,9 @@ export default async function handler(req, res) {
 
         // Insert entry with card from pending
         await db.execute({
-            sql: `INSERT INTO yellowcard_entries (username, wallet, card_type, card_number, entry_number, qrt_link, comment_link)
-                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            args: [cleanUsername, wallet, cardType, cardNumber, entryNumber, qrt, cmt]
+            sql: `INSERT INTO yellowcard_entries (username, wallet, card_type, card_number, entry_number, qrt_link, comment_link, discord_username)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            args: [cleanUsername, wallet, cardType, cardNumber, entryNumber, qrt, cmt, discord]
         });
 
         // Delete from pending

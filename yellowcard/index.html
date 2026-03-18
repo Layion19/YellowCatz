@@ -295,10 +295,11 @@
                 
                 <!-- Join Discord -->
                 <div class="mission-card">
-                    <div class="mission-row">
+                    <div class="mission-row" style="margin-bottom:12px;">
                         <span class="mission-title">Join Discord</span>
                         <a href="https://discord.gg/yellowcatz" target="_blank" class="btn-follow">join</a>
                     </div>
+                    <input type="text" class="mission-input" id="discordUsername" placeholder="paste your discord @username">
                 </div>
                 
                 <!-- Submit Wallet -->
@@ -533,6 +534,7 @@ async function submitEntry() {
     const wallet = document.getElementById('walletInput').value.trim();
     const quoteLink = document.getElementById('quoteTweetLink').value.trim();
     const commentLink = document.getElementById('commentLink').value.trim();
+    const discordUsername = document.getElementById('discordUsername').value.trim();
     
     if (!quoteLink) {
         showToast('Please paste your quote tweet link');
@@ -541,6 +543,11 @@ async function submitEntry() {
     
     if (!commentLink) {
         showToast('Please paste your comment link');
+        return;
+    }
+    
+    if (!discordUsername) {
+        showToast('Please enter your Discord username');
         return;
     }
     
@@ -569,7 +576,8 @@ async function submitEntry() {
                 cardType,
                 cardNumber,
                 quoteLink,
-                commentLink
+                commentLink,
+                discordUsername
             })
         });
         
