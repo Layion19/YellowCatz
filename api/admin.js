@@ -527,6 +527,25 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, message: 'Entry deleted' });
     }
 
+    // ============================================================
+    // YELLOW CARDS: FULL RESET
+    // ============================================================
+    if (action === 'yellowcardReset') {
+      // Delete all entries
+      await db.execute('DELETE FROM yellowcard_entries');
+      
+      // Delete all pending
+      await db.execute('DELETE FROM yellowcard_pending');
+      
+      // Delete config (gold/emperor will be re-randomized)
+      await db.execute('DELETE FROM yellowcard_config');
+
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Yellow Cards reset complete. Gold & Emperor slots will be re-randomized on next entry.' 
+      });
+    }
+
     return res.status(400).json({ error: 'Invalid action' });
 
   } catch (err) {

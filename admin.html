@@ -803,6 +803,13 @@
       <h2>🕐 Recent Entries</h2>
       <div class="user-list" id="ycRecentEntries"></div>
     </div>
+
+    <!-- DANGER ZONE - RESET -->
+    <div class="section" style="border:2px solid #e74c3c;background:#1a0a0a;">
+      <h2 style="color:#e74c3c;">⚠️ Danger Zone</h2>
+      <p style="color:#888;margin-bottom:15px;font-size:12px;">This will delete ALL Yellow Cards entries, pending assignments, and re-randomize Gold/Emperor slots.</p>
+      <button class="btn btn-danger" onclick="resetYellowCards()" style="background:#e74c3c;">🗑️ Reset All Yellow Cards</button>
+    </div>
   </div>
 </div>
 
@@ -1428,6 +1435,26 @@ async function deleteYCEntry(entryNumber) {
     loadYellowCardsStats();
   } else {
     alert('Failed to delete: ' + (data.error || 'Unknown error'));
+  }
+}
+
+async function resetYellowCards() {
+  const confirmed = confirm('⚠️ WARNING!\n\nThis will DELETE ALL Yellow Cards data:\n- All entries\n- All pending assignments\n- Gold & Emperor slots will be re-randomized\n\nAre you sure?');
+  
+  if (!confirmed) return;
+  
+  const doubleCheck = confirm('🚨 FINAL CONFIRMATION\n\nThis action cannot be undone!\n\nType OK to proceed.');
+  
+  if (!doubleCheck) return;
+  
+  const data = await apiCall('yellowcardReset');
+  
+  if (data.success) {
+    alert('✅ ' + data.message);
+    loadYellowCardsStats();
+    loadAllYCEntries();
+  } else {
+    alert('❌ Reset failed: ' + (data.error || 'Unknown error'));
   }
 }
 
