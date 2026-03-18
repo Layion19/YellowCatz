@@ -11,7 +11,7 @@
         
         .container{width:100%;max-width:420px}
         
-        /* STEP 1 - Username only */
+        /* STEP TRANSITIONS */
         .step{display:none}
         .step.active{display:block;animation:fadeIn .4s ease}
         @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
@@ -27,15 +27,43 @@
         .btn-enter:hover{transform:scale(1.05);background:#d4940a}
         .btn-enter:disabled{opacity:0.5;cursor:not-allowed;transform:none}
         
-        /* STEP 2 - Badge reveal */
+        /* STEP 2 - Badge reveal with blur animation */
         .badge-reveal{text-align:center;padding:30px 0}
-        .badge-container{width:200px;height:200px;margin:0 auto 20px;perspective:1000px}
-        .badge{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .8s ease}
-        .badge.flipped{transform:rotateY(180deg)}
-        .badge-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:50%;display:flex;justify-content:center;align-items:center;box-shadow:0 10px 40px rgba(0,0,0,.3)}
-        .badge-back{background:#000;border:4px solid #E8A000;font-size:60px}
-        .badge-front{transform:rotateY(180deg);background:#000;overflow:hidden}
-        .badge-front img{width:100%;height:100%;object-fit:cover}
+        
+        .badge-wrapper{
+            width:260px;
+            height:260px;
+            margin:0 auto 20px;
+            background:#000;
+            border-radius:20px;
+            padding:15px;
+            position:relative;
+            cursor:pointer;
+            transition:transform .3s;
+        }
+        .badge-wrapper:hover{transform:scale(1.02)}
+        
+        .badge-image{
+            width:100%;
+            height:100%;
+            object-fit:contain;
+            border-radius:12px;
+            filter:blur(30px);
+            opacity:0;
+            transform:translateY(-30px);
+            transition:all 1s ease;
+        }
+        
+        .badge-image.revealing{
+            animation:revealBadge 2.5s ease forwards;
+        }
+        
+        @keyframes revealBadge{
+            0%{filter:blur(30px);opacity:0;transform:translateY(-30px)}
+            30%{filter:blur(20px);opacity:0.3;transform:translateY(-20px)}
+            60%{filter:blur(10px);opacity:0.6;transform:translateY(-10px)}
+            100%{filter:blur(0);opacity:1;transform:translateY(0)}
+        }
         
         .badge-type{margin-top:15px;padding:8px 20px;border-radius:20px;display:inline-block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px}
         .badge-type.common{background:#000;color:#fff}
@@ -45,9 +73,48 @@
         
         .badge-name{font-size:18px;font-weight:700;margin-top:10px;color:#000}
         
+        .click-hint{font-size:11px;color:#5a4a00;margin-top:8px;opacity:0;transition:opacity .5s}
+        .click-hint.visible{opacity:1}
+        
         .special-msg{background:#000;padding:15px;border-radius:12px;margin-top:20px;color:#E8A000;border:2px solid #E8A000}
         .special-msg h3{font-size:16px;margin-bottom:5px}
         .special-msg p{font-size:12px;opacity:0.9;color:#fff}
+        
+        /* Buttons container */
+        .buttons-container{margin-top:25px;display:flex;flex-direction:column;gap:12px}
+        
+        .btn-claim{
+            background:#000;
+            border:none;
+            border-radius:30px;
+            padding:14px;
+            font-size:16px;
+            font-family:'Poppins',sans-serif;
+            font-weight:700;
+            color:#E8A000;
+            cursor:pointer;
+            transition:all .3s;
+            text-transform:uppercase;
+            letter-spacing:2px;
+        }
+        .btn-claim:hover{transform:scale(1.03);background:#1a1a1a}
+        .btn-claim:disabled{opacity:0.3;cursor:not-allowed;transform:none}
+        
+        .btn-continue{
+            background:#E8A000;
+            border:none;
+            border-radius:30px;
+            padding:14px;
+            font-size:16px;
+            font-family:'Poppins',sans-serif;
+            font-weight:600;
+            color:#000;
+            cursor:pointer;
+            transition:all .3s;
+            display:none;
+        }
+        .btn-continue:hover{transform:scale(1.03);background:#d4940a}
+        .btn-continue.visible{display:block;animation:fadeIn .4s ease}
         
         /* STEP 3 - Missions */
         .missions-container{display:flex;flex-direction:column;gap:15px}
@@ -95,6 +162,52 @@
         .loading{text-align:center;padding:60px 0}
         .spinner{width:40px;height:40px;border:3px solid rgba(0,0,0,.1);border-top-color:#000;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 15px}
         @keyframes spin{to{transform:rotate(360deg)}}
+        
+        /* LIGHTBOX - Full screen badge view */
+        .lightbox{
+            position:fixed;
+            top:0;left:0;right:0;bottom:0;
+            background:rgba(0,0,0,0.95);
+            z-index:2000;
+            display:none;
+            justify-content:center;
+            align-items:center;
+            flex-direction:column;
+            padding:20px;
+        }
+        .lightbox.open{display:flex}
+        
+        .lightbox-close{
+            position:absolute;
+            top:20px;right:20px;
+            background:none;border:none;
+            color:#666;font-size:40px;
+            cursor:pointer;
+            transition:color .3s;
+        }
+        .lightbox-close:hover{color:#fff}
+        
+        .lightbox-image{
+            max-width:90%;
+            max-height:70vh;
+            border-radius:16px;
+            box-shadow:0 20px 60px rgba(0,0,0,.5);
+        }
+        
+        .lightbox-download{
+            margin-top:25px;
+            background:#E8A000;
+            border:none;
+            border-radius:30px;
+            padding:14px 40px;
+            font-size:16px;
+            font-family:'Poppins',sans-serif;
+            font-weight:600;
+            color:#000;
+            cursor:pointer;
+            transition:all .3s;
+        }
+        .lightbox-download:hover{transform:scale(1.05);background:#d4940a}
     </style>
 </head>
 <body>
@@ -130,16 +243,12 @@
         <!-- STEP 2: Badge Reveal -->
         <div class="step" id="step2">
             <div class="badge-reveal">
-                <div class="badge-container">
-                    <div class="badge" id="badgeElement">
-                        <div class="badge-face badge-back">😼</div>
-                        <div class="badge-face badge-front">
-                            <img id="badgeImage" src="" alt="Your Badge">
-                        </div>
-                    </div>
+                <div class="badge-wrapper" onclick="openLightbox()">
+                    <img id="badgeImage" class="badge-image" src="" alt="Your Badge">
                 </div>
                 <div class="badge-type" id="badgeType">Common</div>
                 <div class="badge-name" id="badgeName">Badge #1</div>
+                <p class="click-hint" id="clickHint">tap to enlarge & save</p>
                 
                 <div class="special-msg" id="specialMsg" style="display:none">
                     <h3 id="specialTitle">🎉 CONGRATULATIONS!</h3>
@@ -147,7 +256,10 @@
                 </div>
             </div>
             
-            <button class="btn-enter" onclick="goToMissions()" style="margin-top:20px;width:100%">continue</button>
+            <div class="buttons-container">
+                <button class="btn-claim" id="btnClaim" onclick="claimBadge()" disabled>claim</button>
+                <button class="btn-continue" id="btnContinue" onclick="goToMissions()">continue</button>
+            </div>
         </div>
         
         <!-- STEP 3: Missions -->
@@ -201,6 +313,13 @@
         </div>
     </div>
     
+    <!-- LIGHTBOX -->
+    <div class="lightbox" id="lightbox">
+        <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+        <img id="lightboxImage" class="lightbox-image" src="" alt="Badge">
+        <button class="lightbox-download" onclick="downloadBadge()">📥 Save Badge</button>
+    </div>
+    
     <div class="toast" id="toast"></div>
 
 <script>
@@ -209,6 +328,8 @@ const MAX_SLOTS = 500;
 let username = '';
 let cardNumber = 0;
 let cardType = 'common';
+let currentBadgeUrl = '';
+let badgeClaimed = false;
 
 function showToast(msg) {
     const t = document.getElementById('toast');
@@ -282,24 +403,28 @@ async function getCard() {
         cardType = d.cardType;
         cardNumber = d.cardNumber;
         
-        let imgSrc = '';
-        if (cardType === 'emperor') imgSrc = '/images/badgeEmperor.png';
-        else if (cardType === 'gold') imgSrc = '/images/badgeGold.png';
-        else imgSrc = `/images/badge${cardNumber}.png`;
+        // Set badge image URL
+        if (cardType === 'emperor') currentBadgeUrl = '/images/badgeEmperor.png';
+        else if (cardType === 'gold') currentBadgeUrl = '/images/badgeGold.png';
+        else currentBadgeUrl = `/images/badge${cardNumber}.png`;
         
-        document.getElementById('badgeImage').src = imgSrc;
+        document.getElementById('badgeImage').src = currentBadgeUrl;
+        document.getElementById('lightboxImage').src = currentBadgeUrl;
         
+        // Set badge type label
         const typeEl = document.getElementById('badgeType');
         typeEl.className = 'badge-type ' + cardType;
         if (cardType === 'emperor') typeEl.textContent = '👑 EMPEROR';
         else if (cardType === 'gold') typeEl.textContent = '⭐ GOLD';
         else typeEl.textContent = 'Common';
         
+        // Set badge name
         document.getElementById('badgeName').textContent = 
             cardType === 'emperor' ? 'Emperor Card' :
             cardType === 'gold' ? 'Gold Card' :
             `Badge #${cardNumber}`;
         
+        // Show special message for Gold/Emperor
         const specialMsg = document.getElementById('specialMsg');
         if (cardType === 'gold' || cardType === 'emperor') {
             specialMsg.style.display = 'block';
@@ -314,9 +439,17 @@ async function getCard() {
         
         showStep(2);
         
+        // Start reveal animation after a short delay
         setTimeout(() => {
-            document.getElementById('badgeElement').classList.add('flipped');
-        }, 400);
+            const badgeImg = document.getElementById('badgeImage');
+            badgeImg.classList.add('revealing');
+        }, 300);
+        
+        // Enable claim button and show hint after animation
+        setTimeout(() => {
+            document.getElementById('btnClaim').disabled = false;
+            document.getElementById('clickHint').classList.add('visible');
+        }, 2800);
         
     } catch (e) {
         showToast('Connection error');
@@ -324,6 +457,62 @@ async function getCard() {
         btn.textContent = 'enter';
     }
 }
+
+function claimBadge() {
+    if (badgeClaimed) return;
+    
+    // Download the badge
+    downloadBadge();
+    
+    // Mark as claimed
+    badgeClaimed = true;
+    
+    // Update UI
+    const claimBtn = document.getElementById('btnClaim');
+    claimBtn.textContent = '✓ claimed';
+    claimBtn.disabled = true;
+    claimBtn.style.background = '#2ecc71';
+    claimBtn.style.color = '#fff';
+    
+    // Show continue button
+    setTimeout(() => {
+        document.getElementById('btnContinue').classList.add('visible');
+    }, 500);
+}
+
+function downloadBadge() {
+    if (!currentBadgeUrl) return;
+    
+    const a = document.createElement('a');
+    a.href = currentBadgeUrl;
+    
+    // Generate filename
+    let filename = 'yellowcard_';
+    if (cardType === 'emperor') filename += 'emperor';
+    else if (cardType === 'gold') filename += 'gold';
+    else filename += 'badge' + cardNumber;
+    filename += '.png';
+    
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    showToast('Badge saved! 🎴');
+}
+
+function openLightbox() {
+    document.getElementById('lightbox').classList.add('open');
+}
+
+function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+}
+
+// Close lightbox on background click
+document.getElementById('lightbox').addEventListener('click', (e) => {
+    if (e.target.id === 'lightbox') closeLightbox();
+});
 
 function goToMissions() {
     showStep(3);
@@ -405,6 +594,11 @@ async function submitEntry() {
 // Enter key on username
 document.getElementById('usernameInput').addEventListener('keypress', e => {
     if (e.key === 'Enter') getCard();
+});
+
+// ESC to close lightbox
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeLightbox();
 });
 
 loadStatus();

@@ -830,12 +830,13 @@
             },
             { 
                 id: 'badge_9', 
-                name: '???', 
-                emoji: '❓',
-                description: 'Mystery badge.',
-                mission: '🚧 Not live yet... Stay tuned!',
+                name: 'Yellow Cards', 
+                emoji: '🎴',
+                description: 'Yellow Cards participant — You secured your spot.',
+                mission: 'Complete the Yellow Cards registration to earn this badge automatically.',
                 claimable: false,
-                link: null
+                link: '/yellowcard',
+                linkText: '🎴 Go to Yellow Cards'
             },
             { 
                 id: 'badge_10', 
@@ -908,16 +909,26 @@
             document.getElementById('modalMissionText').textContent = badge.mission;
 
             const linkBtn = document.getElementById('missionLink');
+            
+            // Show link for badge_9 even though not claimable (redirects to /yellowcard)
             if (badge.link && !isUnlocked) {
                 linkBtn.style.display = 'inline-block';
                 linkBtn.href = badge.link;
                 linkBtn.textContent = badge.linkText || 'Go';
-                linkBtn.onclick = () => {
-                    linkClicked = true;
-                    linkClickTime = Date.now();
-                    saveClickTime(badgeId); // Sauvegarder dans localStorage
-                    updateClaimButton();
-                };
+                
+                // For badge_9, no need to track click time (auto-awarded)
+                if (badge.id === 'badge_9') {
+                    linkBtn.onclick = null;
+                    linkBtn.removeAttribute('target'); // Same tab for internal link
+                } else {
+                    linkBtn.setAttribute('target', '_blank');
+                    linkBtn.onclick = () => {
+                        linkClicked = true;
+                        linkClickTime = Date.now();
+                        saveClickTime(badgeId);
+                        updateClaimButton();
+                    };
+                }
             } else {
                 linkBtn.style.display = 'none';
             }
@@ -940,6 +951,11 @@
                     claimBtn.classList.add('ready');
                     linkClicked = true;
                     linkClickTime = Date.now() - (badge.delay || DEFAULT_DELAY);
+                } else if (badge.id === 'badge_9') {
+                    // Badge 9 is auto-awarded via Yellow Cards
+                    claimBtn.textContent = 'Awarded automatically';
+                    claimBtn.classList.remove('ready');
+                    claimBtn.style.cursor = 'default';
                 } else if (badge.claimable && badge.link) {
                     // Vérifier si le délai est déjà passé (grâce au localStorage)
                     if (savedTime) {
