@@ -835,8 +835,8 @@
                 description: 'Yellow Cards participant — You secured your spot.',
                 mission: 'Complete the Yellow Cards registration to earn this badge automatically.',
                 claimable: false,
-                link: '/yellowcard',
-                linkText: '🎴 Go to Yellow Cards'
+                link: 'https://x.com/i/status/2034624285772558399',
+                linkText: '🐦 View Yellow Cards Tweet'
             },
             { 
                 id: 'badge_10', 
@@ -910,18 +910,17 @@
 
             const linkBtn = document.getElementById('missionLink');
             
-            // Show link for badge_9 even though not claimable (redirects to /yellowcard)
+            // Show link for badges with links (including badge_9 Twitter link)
             if (badge.link && !isUnlocked) {
                 linkBtn.style.display = 'inline-block';
                 linkBtn.href = badge.link;
                 linkBtn.textContent = badge.linkText || 'Go';
+                linkBtn.setAttribute('target', '_blank');
                 
-                // For badge_9, no need to track click time (auto-awarded)
+                // For badge_9, no need to track click time (auto-awarded via yellowcard.js)
                 if (badge.id === 'badge_9') {
                     linkBtn.onclick = null;
-                    linkBtn.removeAttribute('target'); // Same tab for internal link
                 } else {
-                    linkBtn.setAttribute('target', '_blank');
                     linkBtn.onclick = () => {
                         linkClicked = true;
                         linkClickTime = Date.now();
