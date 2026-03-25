@@ -281,6 +281,49 @@ export default async function handler(req, res) {
     }
 
     // ============================================================
+    // YELLOWJACK SEASON WINNERS
+    // ============================================================
+    if (action === 'yellowjackSeasonWinners') {
+      try {
+        // Get all season winners grouped by season
+        const winners = await db.execute(`
+          SELECT season_num, rank, user_id, username, avatar_url, points, volume, games_played, ended_at
+          FROM yj_season_winners
+          ORDER BY season_num DESC, rank ASC
+        `);
+        
+        // Group by season
+        const seasonsMap = {};
+        for (const w of winners.rows) {
+          if (!seasonsMap[w.season_num]) {
+            seasonsMap[w.season_num] = {
+              season_num: w.season_num,
+              ended_at: w.ended_at,
+              winners: []
+            };
+          }
+          seasonsMap[w.season_num].winners.push({
+            rank: w.rank,
+            user_id: w.user_id,
+            username: w.username,
+            avatar_url: w.avatar_url || '',
+            points: w.points || 0,
+            volume: w.volume || 0,
+            games_played: w.games_played || 0
+          });
+        }
+        
+        // Convert to array sorted by season (newest first)
+        const seasons = Object.values(seasonsMap).sort((a, b) => b.season_num - a.season_num);
+        
+        return res.status(200).json({ seasons });
+      } catch (err) {
+        console.error('yellowjackSeasonWinners error:', err);
+        return res.status(200).json({ seasons: [] });
+      }
+    }
+
+    // ============================================================
     // YELLOWJACK SEARCH PLAYER
     // ============================================================
     if (action === 'yellowjackSearchPlayer') {

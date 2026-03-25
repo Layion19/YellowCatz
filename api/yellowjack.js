@@ -1,8 +1,6 @@
 import { createClient } from '@libsql/client';
 import jwt from 'jsonwebtoken';
 
-export const config = { api: { bodyParser: false } };
-
 const db = createClient({
     url: process.env.TURSO_DATABASE_URL,
     authToken: process.env.TURSO_AUTH_TOKEN,
@@ -27,144 +25,209 @@ let dbReady = false;
 
 async function saveSeasonWinners(seasonNum) {
     try {
+        // Circular system: keep only 3 seasons (1, 2, 3)
+        // Season 4 overwrites season 1, season 5 overwrites season 2, etc.
+        const slot = ((seasonNum - 1) % 3) + 1; // Maps to 1, 2, or 3
+        
+        // Delete old entries for this slot
+        await db.execute({
+            sql: `DELETE FROM yj_season_winners WHERE season_num = ?`,
+            args: [slot]
+        });
+        
         const top3 = await db.execute(`
             SELECT yj.user_id, yj.points, yj.games_played, yj.total_won, yj.total_lost,
-                   u.x_username, u.avatar_url
+                   COALESCE(u.x_username, 'Player') as x_username, 
+                   COALESCE(u.avatar_url, '') as avatar_url
             FROM yellowjack_players yj
-            JOIN users u ON yj.user_id = u.id
+            LEFT JOIN users u ON yj.user_id = u.id
             WHERE yj.user_id > 0 AND yj.user_id < 900000 AND yj.is_blocked = 0
+              AND (yj.total_won > 0 OR yj.total_lost > 0 OR yj.games_played > 0)
             ORDER BY (yj.total_won + yj.total_lost) DESC
             LIMIT 3
         `);
+        
+        if (top3.rows.length === 0) {
+            console.log('No players to save for season', seasonNum);
+            return;
+        }
+        
         const now = new Date().toISOString();
         for (let i = 0; i < top3.rows.length; i++) {
             const p = top3.rows[i];
             await db.execute({
                 sql: `INSERT INTO yj_season_winners (season_num, rank, user_id, username, avatar_url, points, volume, games_played, ended_at)
                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                args: [seasonNum, i + 1, p.user_id, p.x_username || 'Unknown', p.avatar_url || '', p.points || 0, (p.total_won || 0) + (p.total_lost || 0), p.games_played || 0, now]
+                args: [slot, i + 1, p.user_id, p.x_username || 'Unknown', p.avatar_url || '', p.points || 0, (p.total_won || 0) + (p.total_lost || 0), p.games_played || 0, now]
             });
         }
+        console.log('Saved season', seasonNum, 'winners to slot', slot);
     } catch (e) {
         console.error('saveSeasonWinners error:', e);
+    }
+}
+
+async function getPastWinners() {
+    try {
+        const result = await db.execute(`
+            SELECT season_num, rank, username, avatar_url, points, volume, games_played, ended_at
+            FROM yj_season_winners
+            ORDER BY season_num DESC, rank ASC
+        `);
+        
+        // Group by season
+        const seasons = {};
+        for (const row of result.rows) {
+            const sn = row.season_num;
+            if (!seasons[sn]) {
+                seasons[sn] = {
+                    seasonNum: sn,
+                    endedAt: row.ended_at,
+                    winners: []
+                };
+            }
+            seasons[sn].winners.push({
+                rank: row.rank,
+                username: row.username,
+                avatarUrl: row.avatar_url || '',
+                points: row.points || 0,
+                volume: row.volume || 0,
+                gamesPlayed: row.games_played || 0
+            });
+        }
+        
+        // Return as array sorted by season (most recent first based on ended_at)
+        return Object.values(seasons).sort((a, b) => {
+            const dateA = new Date(a.endedAt).getTime();
+            const dateB = new Date(b.endedAt).getTime();
+            return dateB - dateA;
+        });
+    } catch (e) {
+        console.error('getPastWinners error:', e);
+        return [];
     }
 }
 
 async function ensureTables() {
     if (dbReady) return;
 
-    await db.execute(`
-        CREATE TABLE IF NOT EXISTS yellowjack_players (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL UNIQUE,
-            points INTEGER DEFAULT 20000,
-            games_played INTEGER DEFAULT 0,
-            total_won INTEGER DEFAULT 0,
-            total_lost INTEGER DEFAULT 0,
-            is_blocked INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            last_played DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    `);
+    try {
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS yellowjack_players (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL UNIQUE,
+                points INTEGER DEFAULT 20000,
+                games_played INTEGER DEFAULT 0,
+                total_won INTEGER DEFAULT 0,
+                total_lost INTEGER DEFAULT 0,
+                is_blocked INTEGER DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                last_played DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
 
-    await db.execute(`
-        CREATE TABLE IF NOT EXISTS yj_season (
-            id INTEGER PRIMARY KEY DEFAULT 1,
-            start_time TEXT NOT NULL,
-            duration_days INTEGER DEFAULT 7,
-            version INTEGER DEFAULT 0
-        )
-    `);
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS yj_season (
+                id INTEGER PRIMARY KEY DEFAULT 1,
+                start_time TEXT NOT NULL,
+                duration_days INTEGER DEFAULT 7,
+                version INTEGER DEFAULT 0
+            )
+        `);
 
-    await db.execute(`
-        CREATE TABLE IF NOT EXISTS yj_season_winners (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            season_num INTEGER NOT NULL,
-            rank INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            username TEXT NOT NULL,
-            avatar_url TEXT DEFAULT '',
-            points INTEGER DEFAULT 0,
-            volume INTEGER DEFAULT 0,
-            games_played INTEGER DEFAULT 0,
-            ended_at TEXT NOT NULL
-        )
-    `);
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS yj_season_winners (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                season_num INTEGER NOT NULL,
+                rank INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                username TEXT NOT NULL,
+                avatar_url TEXT DEFAULT '',
+                points INTEGER DEFAULT 0,
+                volume INTEGER DEFAULT 0,
+                games_played INTEGER DEFAULT 0,
+                ended_at TEXT NOT NULL
+            )
+        `);
 
-    try { await db.execute("ALTER TABLE yj_season ADD COLUMN version INTEGER DEFAULT 0"); } catch(e) {}
-    try { await db.execute("ALTER TABLE yj_season ADD COLUMN season_num INTEGER DEFAULT 1"); } catch(e) {}
+        try { await db.execute("ALTER TABLE yj_season ADD COLUMN version INTEGER DEFAULT 0"); } catch(e) {}
+        try { await db.execute("ALTER TABLE yj_season ADD COLUMN season_num INTEGER DEFAULT 1"); } catch(e) {}
 
-    // Season version — increment this to force a reset on next deploy
-    const SEASON_VERSION = 1;
-    
-    const seasonCheck = await db.execute("SELECT * FROM yj_season WHERE id = 1");
-    if (seasonCheck.rows.length === 0) {
-        await db.execute({ sql: "INSERT INTO yj_season (id, start_time, duration_days, version, season_num) VALUES (1, ?, 7, ?, 1)", args: [new Date().toISOString(), SEASON_VERSION] });
-        await db.execute("UPDATE yellowjack_players SET points = 20000, games_played = 0, total_won = 0, total_lost = 0");
-    } else if ((seasonCheck.rows[0].version || 0) < SEASON_VERSION) {
-        await saveSeasonWinners(seasonCheck.rows[0].season_num || 1);
-        const nextSeason = (seasonCheck.rows[0].season_num || 1) + 1;
-        await db.execute({ sql: "UPDATE yj_season SET start_time = ?, version = ?, season_num = ? WHERE id = 1", args: [new Date().toISOString(), SEASON_VERSION, nextSeason] });
-        await db.execute("UPDATE yellowjack_players SET points = 20000, games_played = 0, total_won = 0, total_lost = 0");
+        // Season version — increment this to force a reset on next deploy
+        const SEASON_VERSION = 1;
+        
+        const seasonCheck = await db.execute("SELECT * FROM yj_season WHERE id = 1");
+        if (seasonCheck.rows.length === 0) {
+            await db.execute({ sql: "INSERT INTO yj_season (id, start_time, duration_days, version, season_num) VALUES (1, ?, 7, ?, 1)", args: [new Date().toISOString(), SEASON_VERSION] });
+            await db.execute("UPDATE yellowjack_players SET points = 20000, games_played = 0, total_won = 0, total_lost = 0");
+        } else if ((seasonCheck.rows[0].version || 0) < SEASON_VERSION) {
+            await saveSeasonWinners(seasonCheck.rows[0].season_num || 1);
+            const nextSeason = (seasonCheck.rows[0].season_num || 1) + 1;
+            await db.execute({ sql: "UPDATE yj_season SET start_time = ?, version = ?, season_num = ? WHERE id = 1", args: [new Date().toISOString(), SEASON_VERSION, nextSeason] });
+            await db.execute("UPDATE yellowjack_players SET points = 20000, games_played = 0, total_won = 0, total_lost = 0");
+        }
+
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS yj_tables (
+                id INTEGER PRIMARY KEY,
+                phase TEXT DEFAULT 'waiting',
+                deck TEXT DEFAULT '[]',
+                dealer_hand TEXT DEFAULT '[]',
+                active_seat INTEGER DEFAULT -1,
+                bet_start_time TEXT,
+                turn_start_time TEXT,
+                done_time TEXT
+            )
+        `);
+
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS yj_seats (
+                table_id INTEGER NOT NULL,
+                seat_index INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                username TEXT NOT NULL,
+                avatar TEXT DEFAULT '',
+                bet INTEGER DEFAULT 0,
+                chips TEXT DEFAULT '[]',
+                hand TEXT DEFAULT '[]',
+                hand2 TEXT DEFAULT '[]',
+                status TEXT DEFAULT 'waiting',
+                status2 TEXT DEFAULT '',
+                split_phase INTEGER DEFAULT 0,
+                last_seen TEXT DEFAULT (datetime('now')),
+                PRIMARY KEY (table_id, seat_index)
+            )
+        `);
+
+        // Migration: add split columns if missing
+        try { await db.execute("ALTER TABLE yj_seats ADD COLUMN hand2 TEXT DEFAULT '[]'"); } catch(e) {}
+        try { await db.execute("ALTER TABLE yj_seats ADD COLUMN status2 TEXT DEFAULT ''"); } catch(e) {}
+        try { await db.execute("ALTER TABLE yj_seats ADD COLUMN split_phase INTEGER DEFAULT 0"); } catch(e) {}
+
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS yj_chat (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                table_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                username TEXT NOT NULL,
+                message TEXT NOT NULL,
+                created_at TEXT DEFAULT (datetime('now'))
+            )
+        `);
+
+        // Init 6 tables
+        for (let i = 1; i <= NUM_TABLES; i++) {
+            await db.execute({
+                sql: `INSERT OR IGNORE INTO yj_tables (id, phase) VALUES (?, 'waiting')`,
+                args: [i]
+            });
+        }
+
+        dbReady = true;
+    } catch (err) {
+        console.error('ensureTables error:', err);
+        throw err;
     }
-
-    await db.execute(`
-        CREATE TABLE IF NOT EXISTS yj_tables (
-            id INTEGER PRIMARY KEY,
-            phase TEXT DEFAULT 'waiting',
-            deck TEXT DEFAULT '[]',
-            dealer_hand TEXT DEFAULT '[]',
-            active_seat INTEGER DEFAULT -1,
-            bet_start_time TEXT,
-            turn_start_time TEXT,
-            done_time TEXT
-        )
-    `);
-
-    await db.execute(`
-        CREATE TABLE IF NOT EXISTS yj_seats (
-            table_id INTEGER NOT NULL,
-            seat_index INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            username TEXT NOT NULL,
-            avatar TEXT DEFAULT '',
-            bet INTEGER DEFAULT 0,
-            chips TEXT DEFAULT '[]',
-            hand TEXT DEFAULT '[]',
-            hand2 TEXT DEFAULT '[]',
-            status TEXT DEFAULT 'waiting',
-            status2 TEXT DEFAULT '',
-            split_phase INTEGER DEFAULT 0,
-            last_seen TEXT DEFAULT (datetime('now')),
-            PRIMARY KEY (table_id, seat_index)
-        )
-    `);
-
-    // Migration: add split columns if missing
-    try { await db.execute("ALTER TABLE yj_seats ADD COLUMN hand2 TEXT DEFAULT '[]'"); } catch(e) {}
-    try { await db.execute("ALTER TABLE yj_seats ADD COLUMN status2 TEXT DEFAULT ''"); } catch(e) {}
-    try { await db.execute("ALTER TABLE yj_seats ADD COLUMN split_phase INTEGER DEFAULT 0"); } catch(e) {}
-
-    await db.execute(`
-        CREATE TABLE IF NOT EXISTS yj_chat (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            table_id INTEGER NOT NULL,
-            user_id INTEGER NOT NULL,
-            username TEXT NOT NULL,
-            message TEXT NOT NULL,
-            created_at TEXT DEFAULT (datetime('now'))
-        )
-    `);
-
-    // Init 6 tables
-    for (let i = 1; i <= NUM_TABLES; i++) {
-        await db.execute({
-            sql: `INSERT OR IGNORE INTO yj_tables (id, phase) VALUES (?, 'waiting')`,
-            args: [i]
-        });
-    }
-
-    dbReady = true;
 }
 
 // ============================================================
@@ -200,7 +263,9 @@ async function getUser(req, body) {
                     return { id: decoded.userId, username: decoded.xUsername || 'Player', avatar: decoded.avatarUrl || '', isGuest: false };
                 }
             }
-        } catch (e) {}
+        } catch (e) {
+            console.log('JWT verify failed:', e.message);
+        }
     }
 
     // 2. Guest — no DB, just use the info from the body
@@ -254,19 +319,25 @@ function isBJ(cards) { return cards.length === 2 && handValue(cards) === 21; }
 // DB HELPERS
 // ============================================================
 async function getTable(id) {
-    const r = await db.execute({ sql: 'SELECT * FROM yj_tables WHERE id = ?', args: [id] });
-    if (!r.rows.length) return null;
-    const t = r.rows[0];
-    return {
-        id: t.id,
-        phase: t.phase,
-        deck: JSON.parse(t.deck || '[]'),
-        dealerHand: JSON.parse(t.dealer_hand || '[]'),
-        activeSeat: t.active_seat ?? -1,
-        betStartTime: t.bet_start_time,
-        turnStartTime: t.turn_start_time,
-        doneTime: t.done_time
-    };
+    if (!id) return null;
+    try {
+        const r = await db.execute({ sql: 'SELECT * FROM yj_tables WHERE id = ?', args: [id] });
+        if (!r.rows.length) return null;
+        const t = r.rows[0];
+        return {
+            id: t.id,
+            phase: t.phase,
+            deck: JSON.parse(t.deck || '[]'),
+            dealerHand: JSON.parse(t.dealer_hand || '[]'),
+            activeSeat: t.active_seat ?? -1,
+            betStartTime: t.bet_start_time,
+            turnStartTime: t.turn_start_time,
+            doneTime: t.done_time
+        };
+    } catch (err) {
+        console.error('getTable error:', err);
+        return null;
+    }
 }
 
 async function saveTable(t) {
@@ -282,25 +353,31 @@ async function saveTable(t) {
 }
 
 async function getSeats(tableId) {
-    const r = await db.execute({
-        sql: 'SELECT * FROM yj_seats WHERE table_id = ? ORDER BY seat_index',
-        args: [tableId]
-    });
-    return r.rows.map(s => ({
-        tableId: s.table_id,
-        seatIndex: s.seat_index,
-        userId: s.user_id,
-        username: s.username,
-        avatar: s.avatar || '',
-        bet: s.bet || 0,
-        chips: JSON.parse(s.chips || '[]'),
-        hand: JSON.parse(s.hand || '[]'),
-        hand2: JSON.parse(s.hand2 || '[]'),
-        status: s.status || 'waiting',
-        status2: s.status2 || '',
-        splitPhase: s.split_phase || 0,
-        lastSeen: s.last_seen
-    }));
+    if (!tableId) return [];
+    try {
+        const r = await db.execute({
+            sql: 'SELECT * FROM yj_seats WHERE table_id = ? ORDER BY seat_index',
+            args: [tableId]
+        });
+        return r.rows.map(s => ({
+            tableId: s.table_id,
+            seatIndex: s.seat_index,
+            userId: s.user_id,
+            username: s.username,
+            avatar: s.avatar || '',
+            bet: s.bet || 0,
+            chips: JSON.parse(s.chips || '[]'),
+            hand: JSON.parse(s.hand || '[]'),
+            hand2: JSON.parse(s.hand2 || '[]'),
+            status: s.status || 'waiting',
+            status2: s.status2 || '',
+            splitPhase: s.split_phase || 0,
+            lastSeen: s.last_seen
+        }));
+    } catch (err) {
+        console.error('getSeats error:', err);
+        return [];
+    }
 }
 
 async function saveSeat(s) {
@@ -330,8 +407,13 @@ async function getPlayer(userId) {
         // Guest — always 20k, no DB
         return { user_id: userId, points: 20000, games_played: 0, total_won: 0, total_lost: 0, is_blocked: 0 };
     }
-    const r = await db.execute({ sql: 'SELECT * FROM yellowjack_players WHERE user_id=?', args: [userId] });
-    return r.rows[0] || null;
+    try {
+        const r = await db.execute({ sql: 'SELECT * FROM yellowjack_players WHERE user_id=?', args: [userId] });
+        return r.rows[0] || null;
+    } catch (err) {
+        console.error('getPlayer error:', err);
+        return null;
+    }
 }
 
 async function ensurePlayer(userId) {
@@ -704,32 +786,39 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    await ensureTables();
-
-    // Parse body — robust: handles both Vercel auto-parsed and raw stream
+    // Parse body — robust handling for both Vercel parsed and raw stream
     let body = {};
     try {
         if (req.body && typeof req.body === 'object' && Object.keys(req.body).length > 0) {
-            // Vercel already parsed it (bodyParser was on or default)
             body = req.body;
+        } else if (typeof req.body === 'string' && req.body.length > 0) {
+            body = JSON.parse(req.body);
         } else {
-            // Manual parsing (bodyParser: false)
+            // Manual parsing for streaming body
             const chunks = [];
             for await (const chunk of req) chunks.push(chunk);
             const raw = Buffer.concat(chunks).toString('utf8');
             if (raw) body = JSON.parse(raw);
         }
     } catch (e) {
-        console.error('Body parse error:', e);
+        console.error('Body parse error:', e.message);
+        return res.status(400).json({ error: 'Invalid JSON body' });
     }
 
     const { action } = body;
 
     if (!action) {
-        return res.status(400).json({ error: 'Missing action', debug: { hasBody: !!req.body, bodyKeys: Object.keys(body) } });
+        return res.status(400).json({ error: 'Missing action' });
     }
 
-    // --- Guest registration (no auth needed) ---
+    // Init DB tables
+    try {
+        await ensureTables();
+    } catch (err) {
+        console.error('DB init failed:', err);
+        return res.status(500).json({ error: 'Database initialization failed' });
+    }
+
     // --- Season info (no auth needed) ---
     if (action === 'getSeason') {
         try {
@@ -771,14 +860,14 @@ export default async function handler(req, res) {
         // ==================================================
         if (action === 'getPlayer') {
             const p = await ensurePlayer(user.id);
-            if (p.is_blocked) return res.json({ blocked: true });
+            if (p && p.is_blocked) return res.json({ blocked: true });
             return res.json({
                 success: true,
                 player: {
-                    points: p.points,
-                    games_played: p.games_played,
-                    total_won: p.total_won,
-                    total_lost: p.total_lost
+                    points: p?.points || 20000,
+                    games_played: p?.games_played || 0,
+                    total_won: p?.total_won || 0,
+                    total_lost: p?.total_lost || 0
                 }
             });
         }
@@ -809,8 +898,23 @@ export default async function handler(req, res) {
         // ==================================================
         if (action === 'getTable') {
             const { tableId } = body;
+            
+            if (!tableId) {
+                return res.json({ error: 'Missing tableId' });
+            }
+            
             let table = await getTable(tableId);
-            if (!table) return res.json({ error: 'Table not found' });
+            if (!table) {
+                // Try to create the table if it doesn't exist
+                await db.execute({
+                    sql: `INSERT OR IGNORE INTO yj_tables (id, phase) VALUES (?, 'waiting')`,
+                    args: [tableId]
+                });
+                table = await getTable(tableId);
+                if (!table) {
+                    return res.json({ error: 'Table not found' });
+                }
+            }
 
             let seats = await getSeats(tableId);
 
@@ -822,17 +926,22 @@ export default async function handler(req, res) {
             seats = await getSeats(tableId);
 
             // Get recent chat for this table (last 20 messages)
-            const chatResult = await db.execute({
-                sql: `SELECT user_id, username, message, created_at FROM yj_chat 
-                      WHERE table_id = ? ORDER BY id DESC LIMIT 20`,
-                args: [tableId]
-            });
-            const chat = chatResult.rows.reverse().map(r => ({
-                userId: r.user_id,
-                username: r.username,
-                message: r.message,
-                createdAt: r.created_at
-            }));
+            let chat = [];
+            try {
+                const chatResult = await db.execute({
+                    sql: `SELECT user_id, username, message, created_at FROM yj_chat 
+                          WHERE table_id = ? ORDER BY id DESC LIMIT 20`,
+                    args: [tableId]
+                });
+                chat = chatResult.rows.reverse().map(r => ({
+                    userId: r.user_id,
+                    username: r.username,
+                    message: r.message,
+                    createdAt: r.created_at
+                }));
+            } catch (err) {
+                console.error('Chat fetch error:', err);
+            }
 
             const resp = buildTableResponse(table, seats, user.id);
             resp.chat = chat;
@@ -862,10 +971,10 @@ export default async function handler(req, res) {
 
             // Check not blocked
             const p = await ensurePlayer(user.id);
-            if (p.is_blocked) return res.json({ error: 'You are blocked' });
+            if (p && p.is_blocked) return res.json({ error: 'You are blocked' });
 
             // Check has points
-            if (p.points <= 0) return res.json({ error: 'No points. Ask admin for refill!' });
+            if (!p || p.points <= 0) return res.json({ error: 'No points. Ask admin for refill!' });
 
             // Max 2 seats per player on the same table
             const mySeatsHere = seats.filter(s => s.userId === user.id);
@@ -1177,16 +1286,36 @@ export default async function handler(req, res) {
         // getLeaderboard — sorted by volume (total_won + total_lost)
         // ==================================================
         if (action === 'getLeaderboard') {
-            const result = await db.execute(`
-                SELECT yj.user_id, yj.points, yj.games_played, yj.total_won, yj.total_lost,
-                       u.x_username, u.avatar_url
-                FROM yellowjack_players yj
-                JOIN users u ON yj.user_id = u.id
-                WHERE yj.is_blocked = 0 AND yj.user_id > 0 AND yj.user_id < 900000
-                ORDER BY (yj.total_won + yj.total_lost) DESC
-                LIMIT 30
-            `);
-            return res.json({ players: result.rows });
+            try {
+                const result = await db.execute(`
+                    SELECT yj.user_id, yj.points, yj.games_played, yj.total_won, yj.total_lost,
+                           COALESCE(u.x_username, 'Player') as x_username, 
+                           COALESCE(u.avatar_url, '') as avatar_url
+                    FROM yellowjack_players yj
+                    LEFT JOIN users u ON yj.user_id = u.id
+                    WHERE yj.is_blocked = 0 AND yj.user_id > 0 AND yj.user_id < 900000
+                      AND (yj.total_won > 0 OR yj.total_lost > 0 OR yj.games_played > 0)
+                    ORDER BY (yj.total_won + yj.total_lost) DESC
+                    LIMIT 30
+                `);
+                return res.json({ players: result.rows });
+            } catch (err) {
+                console.error('getLeaderboard error:', err);
+                return res.json({ players: [] });
+            }
+        }
+
+        // ==================================================
+        // getPastWinners — get winners from past seasons
+        // ==================================================
+        if (action === 'getPastWinners') {
+            try {
+                const seasons = await getPastWinners();
+                return res.json({ success: true, seasons });
+            } catch (err) {
+                console.error('getPastWinners error:', err);
+                return res.json({ success: false, seasons: [] });
+            }
         }
 
         // ==================================================
@@ -1220,10 +1349,12 @@ export default async function handler(req, res) {
         // ==================================================
         if (action === 'heartbeat') {
             const { tableId } = body;
-            await db.execute({
-                sql: `UPDATE yj_seats SET last_seen = datetime('now') WHERE table_id = ? AND user_id = ?`,
-                args: [tableId, user.id]
-            });
+            if (tableId) {
+                await db.execute({
+                    sql: `UPDATE yj_seats SET last_seen = datetime('now') WHERE table_id = ? AND user_id = ?`,
+                    args: [tableId, user.id]
+                });
+            }
             return res.json({ ok: true });
         }
 
@@ -1231,6 +1362,6 @@ export default async function handler(req, res) {
 
     } catch (err) {
         console.error('YellowJack API error:', err);
-        return res.status(500).json({ error: 'Server error' });
+        return res.status(500).json({ error: 'Server error', details: err.message });
     }
 }

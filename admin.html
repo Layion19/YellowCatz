@@ -667,7 +667,7 @@
         <div class="label">Games Played</div>
       </div>
       <div class="stat-card banned">
-        <div class="number" id="yjBlockedPlayers">-</div>
+        <div class="number" id="yjBlockedCount">-</div>
         <div class="label">Blocked</div>
       </div>
     </div>
@@ -697,7 +697,19 @@
     <!-- BLOCKED PLAYERS -->
     <div class="section">
       <h2>🚫 Blocked Players</h2>
-      <div class="user-list" id="yjBlockedPlayers"></div>
+      <div class="user-list" id="yjBlockedPlayersList"></div>
+    </div>
+
+    <!-- SEASON WINNERS HISTORY -->
+    <div class="section" style="border:2px solid #f1c40f;background:linear-gradient(135deg,#1a1a0a 0%,#2a2a1a 100%);">
+      <h2 style="color:#f1c40f;">🏆 Season Winners History</h2>
+      <p style="color:#888;margin-bottom:15px;font-size:12px;">Top 3 players from previous seasons (ranked by total volume)</p>
+      <div id="yjSeasonWinners" style="display:flex;flex-direction:column;gap:20px;"></div>
+      <div id="yjNoSeasons" style="display:none;text-align:center;padding:30px;color:#666;">
+        <div style="font-size:40px;margin-bottom:10px;">🎰</div>
+        <div>No completed seasons yet</div>
+        <div style="font-size:12px;margin-top:5px;">Winners will appear here after the first season ends</div>
+      </div>
     </div>
   </div>
 
@@ -1193,11 +1205,78 @@ async function loadYellowJackStats() {
   document.getElementById('yjTotalWon').textContent = data.totalWon || 0;
   document.getElementById('yjTotalLost').textContent = data.totalLost || 0;
   document.getElementById('yjTotalGames').textContent = data.totalGames || 0;
-  document.getElementById('yjBlockedPlayers').textContent = data.blockedPlayers || 0;
+  document.getElementById('yjBlockedCount').textContent = data.blockedPlayers || 0;
   
   renderYJPlayerList('yjTopPlayers', data.topPlayers || []);
   renderYJPlayerList('yjRecentPlayers', data.recentPlayers || []);
-  renderYJPlayerList('yjBlockedPlayers', data.blockedList || []);
+  renderYJPlayerList('yjBlockedPlayersList', data.blockedList || []);
+  
+  // Load season winners
+  loadSeasonWinners();
+}
+
+async function loadSeasonWinners() {
+  const data = await apiCall('yellowjackSeasonWinners');
+  
+  const container = document.getElementById('yjSeasonWinners');
+  const noSeasons = document.getElementById('yjNoSeasons');
+  
+  if (!data.seasons || data.seasons.length === 0) {
+    container.innerHTML = '';
+    noSeasons.style.display = 'block';
+    return;
+  }
+  
+  noSeasons.style.display = 'none';
+  
+  let html = '';
+  data.seasons.forEach(season => {
+    const winners = season.winners || [];
+    
+    html += `
+      <div style="background:#1a1a1a;border-radius:10px;padding:15px;border:1px solid #333;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#f1c40f;letter-spacing:2px;">
+            🏆 SEASON ${season.season_num}
+          </div>
+          <div style="font-size:11px;color:#666;">
+            Ended: ${new Date(season.ended_at).toLocaleDateString()}
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+    `;
+    
+    winners.forEach((w, i) => {
+      const rankColors = ['#f1c40f', '#bdc3c7', '#cd7f32'];
+      const rankEmojis = ['👑', '🥈', '🥉'];
+      const color = rankColors[i] || '#888';
+      const emoji = rankEmojis[i] || (i + 1);
+      
+      html += `
+        <div style="flex:1;min-width:150px;background:#2a2a2a;border-radius:8px;padding:12px;text-align:center;border:2px solid ${color};">
+          <div style="font-size:24px;margin-bottom:5px;">${emoji}</div>
+          <div style="display:flex;justify-content:center;margin-bottom:8px;">
+            <img src="${w.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'}" 
+                 style="width:40px;height:40px;border-radius:50%;border:2px solid ${color};">
+          </div>
+          <div style="font-weight:bold;color:${color};font-size:13px;">@${w.username}</div>
+          <div style="font-size:11px;color:#888;margin-top:4px;">
+            Volume: <span style="color:#2ecc71;font-weight:bold;">${w.volume.toLocaleString()}</span>
+          </div>
+          <div style="font-size:10px;color:#666;margin-top:2px;">
+            ${w.games_played} games • ${w.points.toLocaleString()} pts
+          </div>
+        </div>
+      `;
+    });
+    
+    html += `
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html;
 }
 
 function renderYJPlayerList(containerId, players) {
