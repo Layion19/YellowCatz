@@ -15,6 +15,7 @@ const DONE_DISPLAY = 4;         // seconds to show results
 const HEARTBEAT_TIMEOUT = 45;   // seconds before removing inactive player
 const NUM_TABLES = 6;
 const MAX_SEATS = 7;
+const MAX_BET_PER_ROUND = 10000; // Max total bet per player per round
 const SUITS = ['♠', '♥', '♦', '♣'];
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
@@ -43,7 +44,7 @@ async function saveSeasonWinners(seasonNum) {
             LEFT JOIN users u ON yj.user_id = u.id
             WHERE yj.user_id > 0 AND yj.user_id < 900000 AND yj.is_blocked = 0
               AND (yj.total_won > 0 OR yj.total_lost > 0 OR yj.games_played > 0)
-            ORDER BY (yj.total_won + yj.total_lost) DESC
+            ORDER BY yj.points DESC
             LIMIT 3
         `);
         
@@ -1077,7 +1078,7 @@ export default async function handler(req, res) {
         }
 
         // ==================================================
-        // placeBet
+        // placeBet — with server-side 10k limit validation
         // ==================================================
         if (action === 'placeBet') {
             const { tableId, bet, chips, seatIndex } = body;
@@ -1103,6 +1104,13 @@ export default async function handler(req, res) {
             const p = await getPlayer(user.id);
             if (!p || p.points < bet) return res.json({ error: 'Not enough points' });
             if (bet <= 0) return res.json({ error: 'Invalid bet' });
+
+            // Server-side validation: check total bet on table doesn't exceed 10k
+            const mySeatsOnTable = seats.filter(s => s.userId === user.id);
+            const currentTotalBet = mySeatsOnTable.reduce((sum, s) => sum + (s.bet || 0), 0);
+            if (currentTotalBet + bet > MAX_BET_PER_ROUND) {
+                return res.json({ error: 'Max 10,000 per round' });
+            }
 
             // Deduct points immediately
             await updatePlayerPoints(user.id, -bet);
@@ -1283,7 +1291,7 @@ export default async function handler(req, res) {
         }
 
         // ==================================================
-        // getLeaderboard — sorted by volume (total_won + total_lost)
+        // getLeaderboard — sorted by POINTS (not volume)
         // ==================================================
         if (action === 'getLeaderboard') {
             try {
@@ -1295,7 +1303,7 @@ export default async function handler(req, res) {
                     LEFT JOIN users u ON yj.user_id = u.id
                     WHERE yj.is_blocked = 0 AND yj.user_id > 0 AND yj.user_id < 900000
                       AND (yj.total_won > 0 OR yj.total_lost > 0 OR yj.games_played > 0)
-                    ORDER BY (yj.total_won + yj.total_lost) DESC
+                    ORDER BY yj.points DESC
                     LIMIT 30
                 `);
                 return res.json({ players: result.rows });

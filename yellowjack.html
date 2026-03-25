@@ -61,12 +61,12 @@
         .guest-btn{background:transparent;border:1px solid var(--gold);color:var(--gold);padding:8px 24px;border-radius:20px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
         .guest-btn:hover{background:var(--gold);color:#000}
         
-        .lb-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px}
+        .lb-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;flex-wrap:wrap;gap:10px}
         .lb-timer{font-size:11px;color:#888;font-weight:600;background:rgba(232,160,0,.1);padding:4px 12px;border-radius:12px;border:1px solid rgba(232,160,0,.2)}
         
-        .lobby{padding:20px;max-width:1000px;margin:0 auto;height:100vh;overflow-y:auto}
+        .lobby{padding:20px;max-width:1000px;margin:0 auto;min-height:100vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:120px}
         .lobby.hidden{display:none}
-        .lobby-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:25px;padding:10px 15px;background:rgba(0,0,0,.5);border-radius:10px;border:1px solid #333}
+        .lobby-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:25px;padding:10px 15px;background:rgba(0,0,0,.5);border-radius:10px;border:1px solid #333;flex-wrap:wrap;gap:10px}
         .lobby-logo{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;color:var(--gold)}
         .lobby-logo span{color:var(--white)}
         .lobby-user{display:flex;align-items:center;gap:12px}
@@ -117,7 +117,6 @@
         .lb-name{font-size:13px;font-weight:600;color:var(--gold)}
         .lb-stat{width:70px;text-align:right;font-size:12px;color:#888}
         .lb-stat.points{color:var(--green);font-weight:700}
-        .lb-stat.volume{color:var(--gold);font-weight:900;font-size:13px}
         
         .game-view{display:none;position:fixed;inset:0;background:#000}
         .game-view.active{display:flex;justify-content:center;align-items:center}
@@ -168,6 +167,7 @@
         .bet-overlay.active{display:flex}
         .chip{width:36px;height:36px;border-radius:50%;cursor:pointer;transition:all .2s;display:flex;justify-content:center;align-items:center;font-family:'Poppins',sans-serif;font-size:9px;font-weight:900;color:#fff;border:2px dashed rgba(255,255,255,.4);text-shadow:0 1px 2px rgba(0,0,0,.5);box-shadow:0 3px 6px rgba(0,0,0,.4)}
         .chip:hover{transform:scale(1.12) translateY(-2px)}
+        .chip.disabled{opacity:.3;cursor:not-allowed;transform:none}
         .chip-50{background:radial-gradient(circle at 35% 35%,#ff6b6b,#c0392b)}
         .chip-100{background:radial-gradient(circle at 35% 35%,#5dade2,#2471a3)}
         .chip-500{background:radial-gradient(circle at 35% 35%,#58d68d,#1e8449)}
@@ -182,8 +182,8 @@
         .turn-indicator.your-turn{border-color:var(--green);color:var(--green)}
         .turn-indicator.waiting{border-color:#888;color:#888}
         
-        @media(max-width:900px){.tables-grid{grid-template-columns:repeat(2,1fr)}.chat-zone{width:140px;max-height:80px;font-size:10px}.chat-input-wrap.expanded{width:150px}.table-name{display:none!important}.turn-indicator{display:none!important}.music-player{left:70px;top:10px}.back-btn{top:10px;left:10px;font-size:10px;padding:4px 8px}.lb-h-stat,.lb-stat{width:55px;font-size:10px}.lb-name{font-size:11px}.lb-pfp{width:22px;height:22px}}
-        @media(max-width:600px){.tables-grid{grid-template-columns:1fr}.chip{width:30px;height:30px;font-size:8px}.chat-zone{width:120px}.chat-input-wrap.expanded{width:130px}.stat-box{min-width:65px;padding:5px 8px}.stat-value{font-size:11px}.stat-label{font-size:8px}.login-logo{font-size:42px}.lb-h-stat,.lb-stat{width:45px;font-size:9px}.bottom-left-ui{bottom:8px;left:8px}}
+        @media(max-width:900px){.tables-grid{grid-template-columns:repeat(2,1fr)}.chat-zone{width:140px;max-height:80px;font-size:10px}.chat-input-wrap.expanded{width:150px}.table-name{display:none!important}.turn-indicator{display:none!important}.music-player{left:70px;top:10px}.back-btn{top:10px;left:10px;font-size:10px;padding:4px 8px}.lb-h-stat,.lb-stat{width:55px;font-size:10px}.lb-name{font-size:11px}.lb-pfp{width:22px;height:22px}.lobby{padding-bottom:150px}}
+        @media(max-width:600px){.tables-grid{grid-template-columns:1fr}.chip{width:30px;height:30px;font-size:8px}.chat-zone{width:120px}.chat-input-wrap.expanded{width:130px}.stat-box{min-width:65px;padding:5px 8px}.stat-value{font-size:11px}.stat-label{font-size:8px}.login-logo{font-size:42px}.lb-h-stat,.lb-stat{width:45px;font-size:9px}.bottom-left-ui{bottom:8px;left:8px}.lobby{padding-bottom:180px}}
     </style>
 </head>
 <body>
@@ -258,7 +258,6 @@
                     <span class="lb-h-player">Player</span>
                     <span class="lb-h-stat">Games</span>
                     <span class="lb-h-stat">Points</span>
-                    <span class="lb-h-stat">Volume</span>
                 </div>
                 <div class="lb-list" id="lbList"></div>
             </div>
@@ -302,12 +301,12 @@
                 </div>
                 
                 <div class="bet-overlay" id="betOverlay">
-                    <div class="chip chip-50" onclick="addBet(50)">50</div>
-                    <div class="chip chip-100" onclick="addBet(100)">100</div>
-                    <div class="chip chip-500" onclick="addBet(500)">500</div>
-                    <div class="chip chip-1000" onclick="addBet(1000)">1k</div>
-                    <div class="chip chip-2000" onclick="addBet(2000)">2k</div>
-                    <div class="chip chip-5000" onclick="addBet(5000)">5k</div>
+                    <div class="chip chip-50" data-value="50" onclick="addBet(50)">50</div>
+                    <div class="chip chip-100" data-value="100" onclick="addBet(100)">100</div>
+                    <div class="chip chip-500" data-value="500" onclick="addBet(500)">500</div>
+                    <div class="chip chip-1000" data-value="1000" onclick="addBet(1000)">1k</div>
+                    <div class="chip chip-2000" data-value="2000" onclick="addBet(2000)">2k</div>
+                    <div class="chip chip-5000" data-value="5000" onclick="addBet(5000)">5k</div>
                     <button class="bet-clear" onclick="clearBet()">✕</button>
                     <button class="bet-confirm" onclick="confirmBet()">READY</button>
                 </div>
@@ -497,11 +496,13 @@ const DPO = { x: 0.50, y: 0.28 };
 
 const TABLE_IMAGES = { 1: 'images/yellowjack-table.png', 2: 'images/yellowjack-table2.png', 3: 'images/yellowjack-table3.png', 4: 'images/yellowjack-table4.png', 5: 'images/yellowjack-table5.png', 6: 'images/yellowjack-table6.png' };
 
+const MAX_BET_PER_ROUND = 10000;
+
 // ============================================================
 // STATE
 // ============================================================
-let curTable = null, mySeats = [], myBets = {}; // myBets = { seatIndex: { bet, chips } }
-let activeBetSeat = null; // which seat is currently being bet on
+let curTable = null, mySeats = [], myBets = {};
+let activeBetSeat = null;
 let tableState = null, pollInterval = null, heartbeatInterval = null;
 let chatMessages = [], aBtns = [];
 let tImg = null, tLoaded = false;
@@ -509,8 +510,8 @@ let pfpCache = {};
 let dealAnimStart = 0;
 let dealSoundsPlayed = 0;
 let seenChatKeys = new Set();
-let tableBgCache = null; // Offscreen canvas for table background
-let tableBgDirty = true; // Needs redraw?
+let tableBgCache = null;
+let tableBgDirty = true;
 
 function showErr(m) {
     const t = document.getElementById('errorToast');
@@ -570,14 +571,12 @@ function renderLeaderboard(players) {
     
     players.forEach(function(p, i) {
         const rank = i + 1;
-        const volume = (p.total_won || 0) + (p.total_lost || 0);
         const div = document.createElement('div');
         div.className = 'lb-row' + (rank <= 3 ? ' top3' : '');
         div.innerHTML = '<div class="lb-rank ' + (rank === 1 ? 'r1' : rank === 2 ? 'r2' : rank === 3 ? 'r3' : '') + '">' + (rank <= 3 ? ['', '👑', '🥈', '🥉'][rank] : rank) + '</div>' +
             '<div class="lb-player"><img class="lb-pfp" src="' + (p.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png') + '"><span class="lb-name">' + (p.x_username || 'Player') + '</span></div>' +
             '<div class="lb-stat">' + (p.games_played || 0) + '</div>' +
-            '<div class="lb-stat points">' + (p.points || 0) + '</div>' +
-            '<div class="lb-stat volume">' + volume + '</div>';
+            '<div class="lb-stat points">' + (p.points || 0).toLocaleString() + '</div>';
         list.appendChild(div);
     });
 }
@@ -597,7 +596,7 @@ function renderLobby(tables) {
         g.appendChild(e);
     }
     
-    document.getElementById('lobbyUserPoints').textContent = pts;
+    document.getElementById('lobbyUserPoints').textContent = pts.toLocaleString();
 }
 
 setInterval(() => {
@@ -623,7 +622,6 @@ async function joinTable(id) {
     startPolling();
     startHeartbeat();
     
-    // Connection timeout — if no table data after 8s, show error
     setTimeout(() => {
         if (curTable === id && !tableState) {
             showErr('Connection failed — check your network');
@@ -665,7 +663,6 @@ async function leaveTable() {
     loadPlayerPoints();
 }
 
-// --- Auto-disconnect on page close / refresh / navigate away ---
 function beaconLeave() {
     if (curTable && mySeats.length > 0) {
         const payload = { action: 'leaveTable', tableId: curTable };
@@ -686,7 +683,7 @@ window.addEventListener('beforeunload', function(e) {
 window.addEventListener('pagehide', beaconLeave);
 
 // ============================================================
-// POLLING — adaptive speed
+// POLLING
 // ============================================================
 let fastPollTimer = null;
 
@@ -700,14 +697,13 @@ function stopPolling() {
     if (fastPollTimer) { clearInterval(fastPollTimer); fastPollTimer = null; }
 }
 
-// Fast poll for 5 seconds after an action (300ms intervals)
 function startFastPoll() {
     if (fastPollTimer) clearInterval(fastPollTimer);
     let count = 0;
     fastPollTimer = setInterval(() => {
         pollTable();
         count++;
-        if (count >= 22) { // 22 × 300ms = ~6.6s — covers done phase
+        if (count >= 22) {
             clearInterval(fastPollTimer);
             fastPollTimer = null;
         }
@@ -721,7 +717,6 @@ async function pollTable() {
         const r = await yjFetch({ action: 'getTable', tableId: curTable });
         const d = await r.json();
         
-        // Debug: log errors from API
         if (d.error) {
             console.warn('YellowJack API error:', d.error, d.debug || '');
             return;
@@ -732,11 +727,8 @@ async function pollTable() {
             tableState = d;
             myUserId = d.myUserId;
             
-            const mySeatData = d.seats.find(s => s.userId === myUserId);
-            // Track all my seats
             mySeats = d.seats.filter(s => s.userId === myUserId).map(s => s.seatIndex);
             
-            // Update status text
             let statusText = '';
             if (d.phase === 'waiting') statusText = 'Waiting for bets...';
             else if (d.phase === 'playing') {
@@ -751,7 +743,6 @@ async function pollTable() {
             
             document.getElementById('tableStatus').textContent = statusText;
             
-            // Turn indicator
             const turnInd = document.getElementById('turnIndicator');
             if (d.phase === 'playing' && mySeats.length > 0) {
                 const isMyTurn = mySeats.includes(d.activeSeat);
@@ -763,7 +754,6 @@ async function pollTable() {
                 turnInd.classList.remove('active');
             }
             
-            // Bet overlay — show if any of my seats needs betting
             if (d.phase === 'waiting' && mySeats.length > 0) {
                 const needsBet = [...d.seats].sort((a,b) => b.seatIndex - a.seatIndex)
                     .find(s => mySeats.includes(s.seatIndex) && s.status === 'waiting' && s.bet === 0);
@@ -778,7 +768,6 @@ async function pollTable() {
                 hideBet();
             }
             
-            // Phase change handling
             if (oldPhase !== d.phase) {
                 if (d.phase === 'playing') {
                     addSystemChat('Cards dealt!');
@@ -824,7 +813,6 @@ async function pollTable() {
                 }
             }
             
-            // Load PFP images
             for (const seat of d.seats) {
                 if (seat.avatar && !pfpCache[seat.avatar]) {
                     const img = new Image();
@@ -835,12 +823,9 @@ async function pollTable() {
                 }
             }
             
-            // Process chat from other players
             if (d.chat && d.chat.length > 0) {
                 d.chat.forEach(function(msg) {
-                    // Skip our own messages (already shown locally)
                     if (msg.userId === myUserId) return;
-                    // Check if already displayed (by timestamp)
                     const key = msg.userId + ':' + msg.createdAt;
                     if (!seenChatKeys.has(key)) {
                         seenChatKeys.add(key);
@@ -873,23 +858,62 @@ function stopHeartbeat() {
 }
 
 // ============================================================
-// BETTING
+// BETTING — with 10k limit
 // ============================================================
+function getMyTotalBetOnTable() {
+    let total = 0;
+    Object.values(myBets).forEach(b => { total += b.bet || 0; });
+    if (tableState && mySeats.length > 0) {
+        tableState.seats.forEach(s => {
+            if (mySeats.includes(s.seatIndex) && s.bet > 0) {
+                if (!myBets[s.seatIndex] || myBets[s.seatIndex].bet === 0) {
+                    total += s.bet;
+                }
+            }
+        });
+    }
+    return total;
+}
+
+function updateChipStates() {
+    const currentTotal = getMyTotalBetOnTable();
+    const remaining = MAX_BET_PER_ROUND - currentTotal;
+    
+    document.querySelectorAll('.bet-overlay .chip').forEach(chip => {
+        const value = parseInt(chip.getAttribute('data-value'));
+        if (value > remaining || value > pts) {
+            chip.classList.add('disabled');
+        } else {
+            chip.classList.remove('disabled');
+        }
+    });
+}
+
 function addBet(a) {
     if (!activeBetSeat && activeBetSeat !== 0) return;
+    
+    const currentTotal = getMyTotalBetOnTable();
+    if (currentTotal + a > MAX_BET_PER_ROUND) {
+        showErr('Max 10,000 per round');
+        return;
+    }
+    
     const b = myBets[activeBetSeat] || { bet: 0, chips: [] };
     if (b.bet + a > pts) { showErr('Not enough points'); return; }
+    
     playSound('sndChip');
     b.bet += a;
     b.chips.push(a);
     myBets[activeBetSeat] = b;
     updateUI();
+    updateChipStates();
     render();
 }
 
 function clearBet() {
     if (activeBetSeat !== null) myBets[activeBetSeat] = { bet: 0, chips: [] };
     updateUI();
+    updateChipStates();
     render();
 }
 
@@ -899,6 +923,12 @@ async function confirmBet() {
     if (b.bet <= 0) { showErr('Place a bet first'); return; }
     if (b.bet > pts) { showErr('Not enough points'); return; }
     
+    const totalOnTable = getMyTotalBetOnTable();
+    if (totalOnTable > MAX_BET_PER_ROUND) {
+        showErr('Max 10,000 per round');
+        return;
+    }
+    
     try {
         const r = await yjFetch({ action: 'placeBet', tableId: curTable, bet: b.bet, chips: b.chips, seatIndex: activeBetSeat });
         const d = await r.json();
@@ -907,7 +937,6 @@ async function confirmBet() {
         pts -= b.bet;
         addSystemChat('Seat ' + (activeBetSeat + 1) + ': bet ' + b.bet);
         
-        // Check if another of my seats needs betting
         activeBetSeat = null;
         hideBet();
         updateUI();
@@ -919,7 +948,10 @@ async function confirmBet() {
     }
 }
 
-function showBet() { document.getElementById('betOverlay').classList.add('active'); }
+function showBet() { 
+    document.getElementById('betOverlay').classList.add('active'); 
+    updateChipStates();
+}
 function hideBet() { document.getElementById('betOverlay').classList.remove('active'); }
 
 // ============================================================
@@ -930,7 +962,6 @@ async function playerAction(actionType) {
     if (!tableState || tableState.phase !== 'playing') return;
     if (!mySeats.includes(tableState.activeSeat)) { showErr('Not your turn'); return; }
     
-    // Optimistic HIT — immediately show a card back on the active hand
     if (actionType === 'hit' && tableState) {
         const seat = tableState.seats.find(s => s.seatIndex === tableState.activeSeat);
         if (seat) {
@@ -1008,7 +1039,6 @@ window.addEventListener('orientationchange', () => setTimeout(() => { if (curTab
 function render() {
     if (tableBgDirty) cacheTableBg();
     
-    // Blit cached background (fast — no drawImage of full table)
     if (tableBgCache) {
         cx.drawImage(tableBgCache, 0, 0, W, H);
     } else {
@@ -1028,7 +1058,6 @@ function render() {
     drawHandPanel();
     drawActions();
     
-    // Card deal sounds
     if (dealAnimStart > 0 && tableState.phase === 'playing') {
         const elapsed = Date.now() - dealAnimStart;
         const totalCards = tableState.seats.reduce((a, s) => a + (s.hand?.length || 0), 0) + (tableState.dealerHand?.length || 0);
@@ -1036,7 +1065,6 @@ function render() {
         if (cardsVisible > dealSoundsPlayed) { playSound('sndCard'); dealSoundsPlayed = cardsVisible; }
     }
     
-    // Only animate during deal stagger (not 60fps for golden border — it updates on poll)
     if (dealAnimStart > 0 && Date.now() - dealAnimStart < 4000) {
         requestAnimationFrame(render);
     }
@@ -1057,7 +1085,6 @@ function drawEmptySpots() {
 
 function drawSeats() {
     const sr = Math.max(dw * 0.020, 14);
-    // Pre-compute sorted hand seats once (used for stagger animation)
     const _handSeats = tableState.seats.filter(s => s.hand && s.hand.length > 0)
         .sort((a, b) => b.seatIndex - a.seatIndex);
     
@@ -1077,7 +1104,6 @@ function drawSeats() {
             const isMe = mySeats.includes(i);
             const isActive = tableState.activeSeat === i && tableState.phase === 'playing';
             
-            // Chips — show local chips if server doesn't have them yet (during betting)
             const localBetChips = (isMe && myBets[i]) ? myBets[i].chips : [];
             const displayChips = (isMe && localBetChips.length > 0 && (!seatData.chips || seatData.chips.length === 0))
                 ? localBetChips : (seatData.chips || []);
@@ -1093,7 +1119,6 @@ function drawSeats() {
                     if (ci === displayChips.length - 1) { cx.fillStyle = v === 1000 ? '#000' : '#fff'; cx.font = '900 ' + Math.max(cr * 0.45, 6) + 'px Poppins'; cx.textAlign = 'center'; cx.textBaseline = 'middle'; cx.fillText(v >= 1000 ? (v/1000) + 'k' : v, sx, cy); }
                     cx.restore();
                 });
-                // Show bet total below chips
                 const totalBet = displayChips.reduce((a, b) => a + b, 0);
                 cx.save();
                 cx.fillStyle = 'rgba(232,160,0,0.9)';
@@ -1103,7 +1128,6 @@ function drawSeats() {
                 cx.restore();
             }
             
-            // Cards rendering
             if (seatData.hand && seatData.hand.length > 0) {
                 const mobileScale = isMobile ? 0.7 : 1;
                 const isMyTurn = isActive && isMe;
@@ -1113,7 +1137,6 @@ function drawSeats() {
                 const offY = ch * 0.22, offX = cw * 0.12;
                 const isSplit = seatData.splitPhase > 0 && seatData.hand2 && seatData.hand2.length > 0;
                 
-                // Helper: draw one pile of cards
                 function drawPile(cards, pileBaseX, pileBaseY, highlight) {
                     cards.forEach((c, ci) => {
                         const cardX = pileBaseX + ci * offX;
@@ -1121,7 +1144,6 @@ function drawSeats() {
                         if (c.rank === '?') cardBack(cx, cardX, cardY, cw, ch);
                         else cardFace(cx, c, cardX, cardY, cw, ch);
                     });
-                    // Value badge
                     if (cards.length > 0) {
                         const v = handValue(cards);
                         const hasBJ = cards.length === 2 && v === 21;
@@ -1146,8 +1168,7 @@ function drawSeats() {
                 }
                 
                 if (isSplit) {
-                    // Two piles side by side (like dealer)
-                    const hGap = cw + (isMobile ? 6 : 10); // gap between two piles
+                    const hGap = cw + (isMobile ? 6 : 10);
                     const pile1W = cw + (seatData.hand.length - 1) * offX;
                     const pile2W = cw + (seatData.hand2.length - 1) * offX;
                     const totalW = pile1W + hGap + pile2W - cw;
@@ -1162,7 +1183,6 @@ function drawSeats() {
                     drawPile(seatData.hand, startX, baseY, isLeftActive);
                     drawPile(seatData.hand2, startX + pile1W + hGap - cw, baseY, isRightActive);
                 } else {
-                    // Normal single pile with stagger animation
                     const pileH = ch + (seatData.hand.length - 1) * offY;
                     const pileW = cw + (seatData.hand.length - 1) * offX;
                     const baseX = sx - pileW / 2;
@@ -1201,7 +1221,6 @@ function drawSeats() {
                         cx.globalAlpha = 1;
                     });
                     
-                    // Value badge
                     if (visibleCount >= seatData.hand.length) {
                         const v = handValue(seatData.hand);
                         const hasBJ = seatData.hand.length === 2 && v === 21;
@@ -1223,7 +1242,6 @@ function drawSeats() {
                 }
             }
             
-            // Name tag
             cx.save();
             const fontSize = isMobile ? Math.max(dw * 0.009, 7) : Math.max(dw * 0.012, 9);
             cx.font = '700 ' + fontSize + 'px Poppins';
@@ -1241,7 +1259,6 @@ function drawSeats() {
             cx.textAlign = 'center';
             cx.fillText(nmTrunc, sx, tY + tH - (isMobile ? 2 : 4));
             
-            // PFP — smaller on mobile
             {
                 const pfpR = isMobile ? Math.max(sr * 0.4, 7) : Math.max(sr * 0.6, 10);
                 const pfpY = tY + tH + pfpR + (isMobile ? 2 : 4);
@@ -1261,7 +1278,6 @@ function drawSeats() {
                 }
             }
             
-            // Leave X button for own seats (only during waiting/done)
             if (isMe && (tableState.phase === 'waiting' || tableState.phase === 'done')) {
                 const xSize = isMobile ? 12 : 14;
                 const xX = sx + (isMobile ? 26 : 34), xY = sy + sr - 2;
@@ -1270,7 +1286,6 @@ function drawSeats() {
                 cx.fillStyle = '#fff'; cx.font = '900 ' + (xSize + 4) + 'px Poppins';
                 cx.textAlign = 'center'; cx.textBaseline = 'middle';
                 cx.fillText('×', xX, xY + 1);
-                // Big click area
                 aBtns.push({ x: xX - xSize - 4, y: xY - xSize - 4, w: (xSize + 4) * 2, h: (xSize + 4) * 2, action: function() { leaveSeat(i); } });
             }
             
@@ -1286,7 +1301,7 @@ function drawDealerCards() {
     const mobileScale = isMobile ? 0.75 : 1;
     const cw = Math.max(Math.min(dw * 0.045 * mobileScale, 50), isMobile ? 26 : 35);
     const ch = cw * 1.42;
-    const hGap = cw * 0.38; // horizontal overlap
+    const hGap = cw * 0.38;
     const hand = tableState.dealerHand;
     
     let visibleCount = hand.length;
@@ -1322,7 +1337,6 @@ function drawDealerCards() {
         cx.globalAlpha = 1;
     });
     
-    // Dealer value badge
     if (visibleCount >= hand.length) {
         const visibleCards = hand.filter(c => c.rank !== '?');
         if (visibleCards.length > 0) {
@@ -1338,9 +1352,6 @@ function drawDealerCards() {
     }
 }
 
-// ============================================================
-// HAND PANEL — top-right, shows my cards + dealer cards
-// ============================================================
 function drawHandPanel() {
     if (!tableState || !tableState.dealerHand || tableState.dealerHand.length === 0) return;
     
@@ -1356,7 +1367,6 @@ function drawHandPanel() {
     const valueFs = isMobile ? 12 : 15;
     const rowH = ch + 25;
     
-    // Panel background — dynamic height
     const splitCount = myHandSeats.filter(s => s.splitPhase > 0 && s.hand2 && s.hand2.length > 0).length;
     const totalH = rowH + (myHandSeats.length + splitCount) * rowH + 10;
     cx.save();
@@ -1364,7 +1374,6 @@ function drawHandPanel() {
     roundRect(cx, panelX - 10, panelY - 5, panelW, totalH, 10);
     cx.fill();
     
-    // --- DEALER ---
     let curY = panelY;
     cx.font = '700 ' + labelFs + 'px Poppins';
     cx.fillStyle = '#888'; cx.textAlign = 'left';
@@ -1385,7 +1394,6 @@ function drawHandPanel() {
     });
     curY += ch + 10;
     
-    // --- MY SEATS ---
     myHandSeats.forEach((seat, si) => {
         const isSplit = seat.splitPhase > 0 && seat.hand2 && seat.hand2.length > 0;
         const label = myHandSeats.length > 1 ? ('SEAT ' + (seat.seatIndex + 1)) : 'YOU';
@@ -1394,17 +1402,14 @@ function drawHandPanel() {
         cx.fillText(label, panelX, curY + 8);
         
         if (isSplit) {
-            // Show H1 value
             const v1 = handValue(seat.hand), v2 = handValue(seat.hand2);
             cx.font = '900 ' + valueFs + 'px Poppins';
             cx.fillStyle = v1 > 21 ? '#e74c3c' : '#fff'; cx.textAlign = 'right';
             cx.fillText(v1 + '/' + v2, panelX + panelW - 15, curY + 10);
             
             curY += 15;
-            // H1 cards
             seat.hand.forEach((c, i) => { cardFace(cx, c, panelX + i * panelOverlap, curY, cw, ch); });
             curY += ch + 4;
-            // H2 cards
             seat.hand2.forEach((c, i) => { cardFace(cx, c, panelX + i * panelOverlap, curY, cw, ch); });
             curY += ch + 8;
         } else {
@@ -1425,8 +1430,6 @@ function drawHandPanel() {
 }
 
 function drawActions() {
-    
-    // --- BETTING COUNTDOWN TIMER ---
     if (tableState && tableState.phase === 'waiting' && tableState.betStartTime) {
         const tsParsed = tableState.betStartTime.endsWith && tableState.betStartTime.endsWith('Z') ? tableState.betStartTime : (tableState.betStartTime + 'Z');
         const elapsed = (Date.now() - new Date(tsParsed).getTime()) / 1000;
@@ -1439,7 +1442,6 @@ function drawActions() {
             cx.font = '900 14px Poppins'; cx.fillStyle = remaining <= 4 ? '#e74c3c' : '#E8A000';
             cx.textAlign = 'center'; cx.textBaseline = 'middle';
             cx.fillText('BET  ' + Math.ceil(remaining) + 's', acx, acy);
-            // Bar
             const barW = 100, barH = 3, barX = acx - barW / 2, barY = acy + 18;
             cx.fillStyle = 'rgba(255,255,255,.15)';
             roundRect(cx, barX, barY, barW, barH, 2); cx.fill();
@@ -1449,7 +1451,6 @@ function drawActions() {
         }
     }
     
-    // --- RESULT BANNER during 'done' phase ---
     if (tableState && tableState.phase === 'done' && mySeats.length > 0) {
         const mySeatData = tableState.seats.find(s => mySeats.includes(s.seatIndex) && s.bet > 0);
         if (mySeatData && mySeatData.status && mySeatData.bet > 0) {
@@ -1481,22 +1482,18 @@ function drawActions() {
         return;
     }
     
-    // --- ACTION BUTTONS during 'playing' phase ---
     if (!tableState || tableState.phase !== 'playing') return;
     if (mySeats.length === 0 || !mySeats.includes(tableState.activeSeat)) return;
     
     const mySeatData = tableState.seats.find(s => s.seatIndex === tableState.activeSeat);
     if (!mySeatData) return;
     
-    // Check correct status based on split phase
     const sp = mySeatData.splitPhase || 0;
     const activeStatus = (sp === 1) ? mySeatData.status2 : mySeatData.status;
     if (activeStatus !== 'playing') return;
     
-    // Determine which hand is active for canSplit/canDouble checks
     const activeHand = (sp === 1) ? (mySeatData.hand2 || []) : (mySeatData.hand || []);
     
-    // On mobile: below the table. On desktop: center of table
     const acx = W / 2;
     const acy = isMobile ? dy + dh + 30 : dy + dh * 0.48;
     const btnR = isMobile ? Math.max(W * 0.04, 15) : Math.max(dw * 0.022, 22);
@@ -1526,7 +1523,6 @@ function drawActions() {
         grad.addColorStop(0, b.c); grad.addColorStop(1, shadeColor(b.c, -30));
         cx.fillStyle = grad; cx.fill();
         cx.strokeStyle = 'rgba(255,255,255,.3)'; cx.lineWidth = 2; cx.stroke();
-        // Label inside button
         cx.fillStyle = '#fff';
         cx.font = '900 ' + Math.max(btnR * (isMobile ? 0.5 : 0.45), 7) + 'px Poppins';
         cx.textAlign = 'center'; cx.textBaseline = 'middle';
@@ -1536,7 +1532,6 @@ function drawActions() {
         sx += gap;
     });
     
-    // Turn timer bar — gold/orange (not green, to contrast with table felt)
     if (tableState.turnStartTime) {
         const tsParsed = tableState.turnStartTime.endsWith('Z') ? tableState.turnStartTime : tableState.turnStartTime + 'Z';
         const elapsed = (Date.now() - new Date(tsParsed).getTime()) / 1000;
@@ -1552,7 +1547,6 @@ function drawActions() {
     }
 }
 
-// Helpers
 function handValue(hand) {
     let total = 0, aces = 0;
     for (const c of hand) {
@@ -1572,26 +1566,18 @@ function cardFace(c, cd, x, y, w, h) {
     const rankFs = Math.max(w * 0.32, 9);
     const suitFs = Math.max(w * 0.28, 8);
     c.save();
-    // Shadow
     c.fillStyle = 'rgba(0,0,0,.3)'; roundRect(c, x + 2, y + 2, w, h, 4); c.fill();
-    // Card body
     c.fillStyle = '#fff'; roundRect(c, x, y, w, h, 4); c.fill();
-    // Rank top-left
     c.fillStyle = color; c.font = '900 ' + rankFs + 'px Poppins'; c.textAlign = 'left'; c.textBaseline = 'top';
     c.fillText(cd.rank, x + 3, y + 2);
-    // Suit bottom-right
     c.font = suitFs + 'px sans-serif'; c.textAlign = 'right'; c.textBaseline = 'bottom';
     c.fillText(cd.suit, x + w - 3, y + h - 2);
     c.restore();
 }
 function cardBack(c, x, y, w, h) { c.save(); c.fillStyle = 'rgba(0,0,0,.3)'; roundRect(c, x + 2, y + 2, w, h, 4); c.fill(); c.fillStyle = G; roundRect(c, x, y, w, h, 4); c.fill(); c.fillStyle = '#8B5A00'; roundRect(c, x + 3, y + 3, w - 6, h - 6, 3); c.fill(); c.font = Math.max(w * 0.4, 14) + 'px sans-serif'; c.textAlign = 'center'; c.fillText('🐱', x + w / 2, y + h / 2 + Math.max(w * 0.4, 14) * 0.3); c.restore(); }
 
-// ============================================================
-// CLICK HANDLING
-// ============================================================
 function onClick(ex, ey) {
     const r = cv.getBoundingClientRect();
-    // Use CSS coordinates directly — drawing uses setTransform(dpr) so coords match CSS pixels
     const mx = ex - r.left, my = ey - r.top;
     
     for (const b of aBtns) {
@@ -1647,18 +1633,13 @@ async function leaveSeat(seatIndex) {
 cv.addEventListener('click', function(e) { onClick(e.clientX, e.clientY); });
 cv.addEventListener('touchend', function(e) { e.preventDefault(); if (e.changedTouches && e.changedTouches.length) onClick(e.changedTouches[0].clientX, e.changedTouches[0].clientY); }, { passive: false });
 
-// ============================================================
-// UI
-// ============================================================
 function updateUI() {
-    document.getElementById('balanceDisplay').textContent = '🪙 ' + pts;
-    document.getElementById('lobbyUserPoints').textContent = pts;
+    document.getElementById('balanceDisplay').textContent = '🪙 ' + pts.toLocaleString();
+    document.getElementById('lobbyUserPoints').textContent = pts.toLocaleString();
     
     const betBox = document.getElementById('betBox');
-    // Total bet across all my seats (local + server)
     let totalBet = 0;
     Object.values(myBets).forEach(b => { totalBet += b.bet || 0; });
-    // Also check server state
     if (tableState && mySeats.length > 0) {
         tableState.seats.forEach(s => {
             if (mySeats.includes(s.seatIndex) && s.bet > 0) {
@@ -1668,7 +1649,7 @@ function updateUI() {
     }
     if (totalBet > 0) {
         betBox.style.display = 'block';
-        document.getElementById('betDisplay').textContent = '🎰 ' + totalBet;
+        document.getElementById('betDisplay').textContent = '🎰 ' + totalBet.toLocaleString();
     } else {
         betBox.style.display = 'none';
     }
@@ -1699,7 +1680,6 @@ function collapseChat() {
     }
 }
 
-// Collapse chat when clicking on the game canvas
 cv.addEventListener('mousedown', collapseChat);
 cv.addEventListener('touchstart', collapseChat, { passive: true });
 
@@ -1710,7 +1690,6 @@ async function sendChat() {
     input.value = '';
     collapseChat();
     
-    // Show locally immediately
     addPlayerChat(twName || 'You', msg);
     
     try {
@@ -1718,7 +1697,6 @@ async function sendChat() {
     } catch (e) {}
 }
 
-// Enter key to send
 document.getElementById('chatInput').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') sendChat();
 });
