@@ -366,6 +366,13 @@ function saveSession(userData) {
     localStorage.setItem(SK, JSON.stringify({ data: userData, timestamp: Date.now() }));
 }
 
+// Clear session helper (for auth failures)
+function clearSessionAndReload(msg) {
+    localStorage.removeItem(SK);
+    showErr(msg || 'Session expirée — reconnecte-toi');
+    setTimeout(() => { window.location.reload(); }, 1500);
+}
+
 // API helper — includes guest info automatically
 function yjFetch(body) {
     const payload = { ...body };
@@ -512,6 +519,8 @@ let dealSoundsPlayed = 0;
 let seenChatKeys = new Set();
 let tableBgCache = null;
 let tableBgDirty = true;
+let connectionRetries = 0;
+const MAX_RETRIES = 3;
 
 function showErr(m) {
     const t = document.getElementById('errorToast');
@@ -543,6 +552,16 @@ async function loadTables() {
     try {
         const r = await yjFetch({ action: 'getTables' });
         const d = await r.json();
+        
+        // FIX: Handle auth failure in lobby
+        if (d.error) {
+            console.warn('getTables error:', d.error);
+            if (d.error === 'Not authenticated' || (d.error && d.error.includes && d.error.includes('authenticated'))) {
+                clearSessionAndReload('Session expirée — reconnecte-toi');
+                return;
+            }
+        }
+        
         renderLobby(d.tables || []);
     } catch (e) {
         console.log('Failed to load tables');
@@ -613,6 +632,7 @@ async function joinTable(id) {
     activeBetSeat = null;
     tableState = null;
     chatMessages = [];
+    connectionRetries = 0;
     
     loadTableImg(id);
     document.getElementById('lobbyView').classList.add('hidden');
@@ -719,8 +739,24 @@ async function pollTable() {
         
         if (d.error) {
             console.warn('YellowJack API error:', d.error, d.debug || '');
+            
+            // FIX: Handle auth failure — clear session and redirect to login
+            if (d.error === 'Not authenticated' || (d.error && d.error.includes && d.error.includes('authenticated'))) {
+                clearSessionAndReload('Session expirée — reconnecte-toi');
+                return;
+            }
+            
+            // FIX: Show real error to user instead of silent fail
+            connectionRetries++;
+            if (connectionRetries >= MAX_RETRIES) {
+                showErr(d.error);
+                document.getElementById('tableStatus').textContent = d.error;
+            }
             return;
         }
+        
+        // Reset retry counter on success
+        connectionRetries = 0;
         
         if (d.tableId) {
             const oldPhase = tableState?.phase;
@@ -838,6 +874,10 @@ async function pollTable() {
         }
     } catch (e) {
         console.log('Poll error:', e);
+        connectionRetries++;
+        if (connectionRetries >= MAX_RETRIES) {
+            document.getElementById('tableStatus').textContent = 'Connection error';
+        }
     }
 }
 
