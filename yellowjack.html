@@ -64,7 +64,9 @@
         .lb-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;flex-wrap:wrap;gap:10px}
         .lb-timer{font-size:11px;color:#888;font-weight:600;background:rgba(232,160,0,.1);padding:4px 12px;border-radius:12px;border:1px solid rgba(232,160,0,.2)}
         
-        .lobby{padding:20px;max-width:1000px;margin:0 auto;min-height:100vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:120px}
+        /* FIX SCROLL MOBILE : lobby en position fixed avec scroll propre */
+        .lobby{position:fixed;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px;padding-bottom:120px}
+        .lobby > *{max-width:1000px;margin-left:auto;margin-right:auto}
         .lobby.hidden{display:none}
         .lobby-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:25px;padding:10px 15px;background:rgba(0,0,0,.5);border-radius:10px;border:1px solid #333;flex-wrap:wrap;gap:10px}
         .lobby-logo{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:3px;color:var(--gold)}
@@ -366,14 +368,12 @@ function saveSession(userData) {
     localStorage.setItem(SK, JSON.stringify({ data: userData, timestamp: Date.now() }));
 }
 
-// Clear session helper (for auth failures)
 function clearSessionAndReload(msg) {
     localStorage.removeItem(SK);
     showErr(msg || 'Session expirée — reconnecte-toi');
     setTimeout(() => { window.location.reload(); }, 1500);
 }
 
-// API helper — includes guest info automatically
 function yjFetch(body) {
     const payload = { ...body };
     if (isGuest && guestToken) {
@@ -389,12 +389,10 @@ function yjFetch(body) {
     });
 }
 
-// X login button
 document.getElementById('loginCat').addEventListener('click', () => {
     window.location.href = '/api/auth?action=login';
 });
 
-// Guest login button
 document.getElementById('guestBtn').addEventListener('click', () => {
     const name = document.getElementById('guestNameInput').value.trim();
     if (!name) { showErr('Enter a username'); return; }
@@ -408,7 +406,6 @@ document.getElementById('guestBtn').addEventListener('click', () => {
     showAuthenticatedUI();
 });
 
-// Enter to submit guest
 document.getElementById('guestNameInput').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') document.getElementById('guestBtn').click();
 });
@@ -426,7 +423,6 @@ async function showAuthenticatedUI() {
     loadSeasonTimer();
 }
 
-// Check cached X session
 const cached = getSession();
 if (cached && cached.authenticated) {
     const u = cached.user || {};
@@ -435,7 +431,6 @@ if (cached && cached.authenticated) {
     showAuthenticatedUI();
 }
 
-// X auth check
 async function checkAuth() {
     try {
         const r = await fetch('/api/user', { credentials: 'include' });
@@ -452,7 +447,6 @@ async function checkAuth() {
 }
 checkAuth();
 
-// Season timer
 let seasonEndMs = 0;
 async function loadSeasonTimer() {
     try {
@@ -552,8 +546,6 @@ async function loadTables() {
     try {
         const r = await yjFetch({ action: 'getTables' });
         const d = await r.json();
-        
-        // FIX: Handle auth failure in lobby
         if (d.error) {
             console.warn('getTables error:', d.error);
             if (d.error === 'Not authenticated' || (d.error && d.error.includes && d.error.includes('authenticated'))) {
@@ -561,7 +553,6 @@ async function loadTables() {
                 return;
             }
         }
-        
         renderLobby(d.tables || []);
     } catch (e) {
         console.log('Failed to load tables');
@@ -582,12 +573,10 @@ function renderLeaderboard(players) {
     const list = document.getElementById('lbList');
     if (!list) return;
     list.innerHTML = '';
-    
     if (players.length === 0) {
         list.innerHTML = '<div style="text-align:center;color:#555;padding:20px;font-size:12px;">No players yet</div>';
         return;
     }
-    
     players.forEach(function(p, i) {
         const rank = i + 1;
         const div = document.createElement('div');
@@ -603,18 +592,15 @@ function renderLeaderboard(players) {
 function renderLobby(tables) {
     const g = document.getElementById('tablesGrid');
     g.innerHTML = '';
-    
     for (let i = 1; i <= 6; i++) {
         const tbl = tables.find(t => t.id === i) || { id: i, players: [] };
         const c = tbl.players.length;
         const hasPlayers = c > 0;
-        
         const e = document.createElement('div');
         e.className = 'table-card' + (hasPlayers ? ' has-players' : '');
         e.innerHTML = '<div class="table-card-header"><div class="table-card-name">Table ' + i + '</div><div class="table-card-status ' + (hasPlayers ? 'active' : '') + '">' + c + '/7 ' + (hasPlayers ? 'PLAYING' : 'OPEN') + '</div></div><div class="table-card-players">' + Array.from({ length: 7 }, (_, j) => { const player = tbl.players.find(p => p.seat === j); if (player) { return '<div class="table-card-seat occupied" title="' + player.name + '"><img src="' + (player.avatar || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png') + '"></div>'; } return '<div class="table-card-seat">·</div>'; }).join('') + '</div><div class="table-card-actions"><button class="table-card-btn join" onclick="joinTable(' + i + ')">Join</button></div>';
         g.appendChild(e);
     }
-    
     document.getElementById('lobbyUserPoints').textContent = pts.toLocaleString();
 }
 
@@ -665,7 +651,6 @@ async function leaveTable() {
             await yjFetch({ action: 'leaveTable', tableId: curTable });
         } catch (e) {}
     }
-    
     stopPolling();
     stopHeartbeat();
     curTable = null;
@@ -675,7 +660,6 @@ async function leaveTable() {
     tableState = null;
     chatMessages = [];
     seenChatKeys = new Set();
-    
     document.getElementById('gameView').classList.remove('active');
     document.getElementById('lobbyView').classList.remove('hidden');
     hideBet();
@@ -723,30 +707,21 @@ function startFastPoll() {
     fastPollTimer = setInterval(() => {
         pollTable();
         count++;
-        if (count >= 22) {
-            clearInterval(fastPollTimer);
-            fastPollTimer = null;
-        }
+        if (count >= 22) { clearInterval(fastPollTimer); fastPollTimer = null; }
     }, 300);
 }
 
 async function pollTable() {
     if (!curTable) return;
-    
     try {
         const r = await yjFetch({ action: 'getTable', tableId: curTable });
         const d = await r.json();
-        
         if (d.error) {
             console.warn('YellowJack API error:', d.error, d.debug || '');
-            
-            // FIX: Handle auth failure — clear session and redirect to login
             if (d.error === 'Not authenticated' || (d.error && d.error.includes && d.error.includes('authenticated'))) {
                 clearSessionAndReload('Session expirée — reconnecte-toi');
                 return;
             }
-            
-            // FIX: Show real error to user instead of silent fail
             connectionRetries++;
             if (connectionRetries >= MAX_RETRIES) {
                 showErr(d.error);
@@ -754,15 +729,11 @@ async function pollTable() {
             }
             return;
         }
-        
-        // Reset retry counter on success
         connectionRetries = 0;
-        
         if (d.tableId) {
             const oldPhase = tableState?.phase;
             tableState = d;
             myUserId = d.myUserId;
-            
             mySeats = d.seats.filter(s => s.userId === myUserId).map(s => s.seatIndex);
             
             let statusText = '';
@@ -776,7 +747,6 @@ async function pollTable() {
             }
             else if (d.phase === 'dealer') statusText = 'Dealer playing...';
             else if (d.phase === 'done') statusText = 'Round complete';
-            
             document.getElementById('tableStatus').textContent = statusText;
             
             const turnInd = document.getElementById('turnIndicator');
@@ -820,7 +790,6 @@ async function pollTable() {
                         const bet = ms.bet, sn = ms.seatIndex + 1;
                         const prefix = mySeats.length > 1 ? 'Seat ' + sn + ': ' : '';
                         const isSplit = ms.splitPhase > 0 && ms.hand2 && ms.hand2.length > 0;
-                        
                         function showResult(st, label) {
                             if (st === 'win') { playSound('sndWin'); addSystemChat(label + 'Win +' + bet); }
                             else if (st === 'blackjack') { playSound('sndWin'); addSystemChat(label + 'BJ +' + Math.floor(bet * 1.5)); }
@@ -828,7 +797,6 @@ async function pollTable() {
                             else if (st === 'lose') { addSystemChat(label + 'Lose -' + bet); }
                             else if (st === 'push') { addSystemChat(label + 'Push ±0'); }
                         }
-                        
                         if (isSplit) {
                             showResult(ms.status, prefix + 'L: ');
                             showResult(ms.status2, prefix + 'R: ');
@@ -869,7 +837,6 @@ async function pollTable() {
                     }
                 });
             }
-            
             render();
         }
     } catch (e) {
@@ -887,9 +854,7 @@ async function pollTable() {
 function startHeartbeat() {
     heartbeatInterval = setInterval(async () => {
         if (!curTable) return;
-        try {
-            await yjFetch({ action: 'heartbeat', tableId: curTable });
-        } catch (e) {}
+        try { await yjFetch({ action: 'heartbeat', tableId: curTable }); } catch (e) {}
     }, 10000);
 }
 
@@ -906,9 +871,7 @@ function getMyTotalBetOnTable() {
     if (tableState && mySeats.length > 0) {
         tableState.seats.forEach(s => {
             if (mySeats.includes(s.seatIndex) && s.bet > 0) {
-                if (!myBets[s.seatIndex] || myBets[s.seatIndex].bet === 0) {
-                    total += s.bet;
-                }
+                if (!myBets[s.seatIndex] || myBets[s.seatIndex].bet === 0) total += s.bet;
             }
         });
     }
@@ -918,29 +881,19 @@ function getMyTotalBetOnTable() {
 function updateChipStates() {
     const currentTotal = getMyTotalBetOnTable();
     const remaining = MAX_BET_PER_ROUND - currentTotal;
-    
     document.querySelectorAll('.bet-overlay .chip').forEach(chip => {
         const value = parseInt(chip.getAttribute('data-value'));
-        if (value > remaining || value > pts) {
-            chip.classList.add('disabled');
-        } else {
-            chip.classList.remove('disabled');
-        }
+        if (value > remaining || value > pts) chip.classList.add('disabled');
+        else chip.classList.remove('disabled');
     });
 }
 
 function addBet(a) {
     if (!activeBetSeat && activeBetSeat !== 0) return;
-    
     const currentTotal = getMyTotalBetOnTable();
-    if (currentTotal + a > MAX_BET_PER_ROUND) {
-        showErr('Max 10,000 per round');
-        return;
-    }
-    
+    if (currentTotal + a > MAX_BET_PER_ROUND) { showErr('Max 10,000 per round'); return; }
     const b = myBets[activeBetSeat] || { bet: 0, chips: [] };
     if (b.bet + a > pts) { showErr('Not enough points'); return; }
-    
     playSound('sndChip');
     b.bet += a;
     b.chips.push(a);
@@ -962,36 +915,24 @@ async function confirmBet() {
     const b = myBets[activeBetSeat] || { bet: 0, chips: [] };
     if (b.bet <= 0) { showErr('Place a bet first'); return; }
     if (b.bet > pts) { showErr('Not enough points'); return; }
-    
     const totalOnTable = getMyTotalBetOnTable();
-    if (totalOnTable > MAX_BET_PER_ROUND) {
-        showErr('Max 10,000 per round');
-        return;
-    }
-    
+    if (totalOnTable > MAX_BET_PER_ROUND) { showErr('Max 10,000 per round'); return; }
     try {
         const r = await yjFetch({ action: 'placeBet', tableId: curTable, bet: b.bet, chips: b.chips, seatIndex: activeBetSeat });
         const d = await r.json();
         if (d.error) { showErr(d.error); return; }
-        
         pts -= b.bet;
         addSystemChat('Seat ' + (activeBetSeat + 1) + ': bet ' + b.bet);
-        
         activeBetSeat = null;
         hideBet();
         updateUI();
         render();
         pollTable();
         startFastPoll();
-    } catch (e) {
-        showErr('Failed to place bet');
-    }
+    } catch (e) { showErr('Failed to place bet'); }
 }
 
-function showBet() { 
-    document.getElementById('betOverlay').classList.add('active'); 
-    updateChipStates();
-}
+function showBet() { document.getElementById('betOverlay').classList.add('active'); updateChipStates(); }
 function hideBet() { document.getElementById('betOverlay').classList.remove('active'); }
 
 // ============================================================
@@ -1001,7 +942,6 @@ async function playerAction(actionType) {
     if (!curTable || mySeats.length === 0) return;
     if (!tableState || tableState.phase !== 'playing') return;
     if (!mySeats.includes(tableState.activeSeat)) { showErr('Not your turn'); return; }
-    
     if (actionType === 'hit' && tableState) {
         const seat = tableState.seats.find(s => s.seatIndex === tableState.activeSeat);
         if (seat) {
@@ -1012,20 +952,14 @@ async function playerAction(actionType) {
             render();
         }
     }
-    
     playSound('sndCard');
-    
     try {
         const r = await yjFetch({ action: 'playerAction', tableId: curTable, actionType });
         const d = await r.json();
         if (d.error) { showErr(d.error); pollTable(); return; }
-        
         pollTable();
         startFastPoll();
-    } catch (e) {
-        showErr('Action failed');
-        pollTable();
-    }
+    } catch (e) { showErr('Action failed'); pollTable(); }
 }
 
 // ============================================================
@@ -1052,7 +986,7 @@ function resize() {
     W = vw; H = vh;
     if (!tLoaded || !tImg) { dx = 0; dy = 0; dw = W; dh = H; return; }
     const ir = tImg.width / tImg.height, cr = W / H;
-    if (cr > ir) { dh = H; dw = dh * ir; dx = (W - dw) / 2; dy = 0; } 
+    if (cr > ir) { dh = H; dw = dh * ir; dx = (W - dw) / 2; dy = 0; }
     else { dw = W; dh = dw / ir; dx = 0; dy = (H - dh) / 2; }
     tableBgDirty = true;
 }
@@ -1078,7 +1012,6 @@ window.addEventListener('orientationchange', () => setTimeout(() => { if (curTab
 
 function render() {
     if (tableBgDirty) cacheTableBg();
-    
     if (tableBgCache) {
         cx.drawImage(tableBgCache, 0, 0, W, H);
     } else {
@@ -1087,27 +1020,20 @@ function render() {
         cx.save(); roundRectPath(cx, dx, dy, dw, dh, 15); cx.clip();
         cx.drawImage(tImg, dx, dy, dw, dh); cx.restore();
     }
-    
     cv.style.cursor = 'default';
-    
     if (!tableState) { drawEmptySpots(); return; }
-    
     aBtns = [];
     drawSeats();
     drawDealerCards();
     drawHandPanel();
     drawActions();
-    
     if (dealAnimStart > 0 && tableState.phase === 'playing') {
         const elapsed = Date.now() - dealAnimStart;
         const totalCards = tableState.seats.reduce((a, s) => a + (s.hand?.length || 0), 0) + (tableState.dealerHand?.length || 0);
         const cardsVisible = Math.min(totalCards, Math.floor(elapsed / 350) + 1);
         if (cardsVisible > dealSoundsPlayed) { playSound('sndCard'); dealSoundsPlayed = cardsVisible; }
     }
-    
-    if (dealAnimStart > 0 && Date.now() - dealAnimStart < 4000) {
-        requestAnimationFrame(render);
-    }
+    if (dealAnimStart > 0 && Date.now() - dealAnimStart < 4000) requestAnimationFrame(render);
 }
 
 function roundRectPath(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath(); }
@@ -1125,13 +1051,10 @@ function drawEmptySpots() {
 
 function drawSeats() {
     const sr = Math.max(dw * 0.020, 14);
-    const _handSeats = tableState.seats.filter(s => s.hand && s.hand.length > 0)
-        .sort((a, b) => b.seatIndex - a.seatIndex);
-    
+    const _handSeats = tableState.seats.filter(s => s.hand && s.hand.length > 0).sort((a, b) => b.seatIndex - a.seatIndex);
     SPOTS.forEach((p, i) => {
         const sx = dx + p.x * dw, sy = dy + p.y * dh;
         const seatData = tableState.seats.find(s => s.seatIndex === i);
-        
         if (!seatData) {
             if (mySeats.length < 2) {
                 cx.save();
@@ -1143,10 +1066,8 @@ function drawSeats() {
         } else {
             const isMe = mySeats.includes(i);
             const isActive = tableState.activeSeat === i && tableState.phase === 'playing';
-            
             const localBetChips = (isMe && myBets[i]) ? myBets[i].chips : [];
-            const displayChips = (isMe && localBetChips.length > 0 && (!seatData.chips || seatData.chips.length === 0))
-                ? localBetChips : (seatData.chips || []);
+            const displayChips = (isMe && localBetChips.length > 0 && (!seatData.chips || seatData.chips.length === 0)) ? localBetChips : (seatData.chips || []);
             if (displayChips.length > 0) {
                 const cr = Math.max(dw * (isMobile ? 0.008 : 0.012), isMobile ? 7 : 10);
                 displayChips.forEach((v, ci) => {
@@ -1167,7 +1088,6 @@ function drawSeats() {
                 cx.fillText(totalBet, sx, sy - displayChips.length * 3 - cr - 18);
                 cx.restore();
             }
-            
             if (seatData.hand && seatData.hand.length > 0) {
                 const mobileScale = isMobile ? 0.7 : 1;
                 const isMyTurn = isActive && isMe;
@@ -1176,7 +1096,6 @@ function drawSeats() {
                 const ch = cw * 1.42;
                 const offY = ch * 0.22, offX = cw * 0.12;
                 const isSplit = seatData.splitPhase > 0 && seatData.hand2 && seatData.hand2.length > 0;
-                
                 function drawPile(cards, pileBaseX, pileBaseY, highlight) {
                     cards.forEach((c, ci) => {
                         const cardX = pileBaseX + ci * offX;
@@ -1206,7 +1125,6 @@ function drawSeats() {
                         cx.restore();
                     }
                 }
-                
                 if (isSplit) {
                     const hGap = cw + (isMobile ? 6 : 10);
                     const pile1W = cw + (seatData.hand.length - 1) * offX;
@@ -1217,7 +1135,6 @@ function drawSeats() {
                     const maxH2 = ch + (seatData.hand2.length - 1) * offY;
                     const maxH = Math.max(maxH1, maxH2);
                     const baseY = sy - maxH - dw * (isMobile ? 0.01 : 0.02);
-                    
                     const isLeftActive = isMyTurn && seatData.splitPhase === 2;
                     const isRightActive = isMyTurn && seatData.splitPhase === 1;
                     drawPile(seatData.hand, startX, baseY, isLeftActive);
@@ -1227,7 +1144,6 @@ function drawSeats() {
                     const pileW = cw + (seatData.hand.length - 1) * offX;
                     const baseX = sx - pileW / 2;
                     const baseY = sy - pileH - dw * (isMobile ? 0.01 : 0.02);
-                    
                     let visibleCount = seatData.hand.length;
                     if (dealAnimStart > 0 && tableState.phase === 'playing') {
                         const elapsed = Date.now() - dealAnimStart;
@@ -1238,11 +1154,9 @@ function drawSeats() {
                             if (elapsed >= cardDelay) visibleCount++;
                         }
                     }
-                    
                     const showCards = seatData.hand.slice(0, visibleCount);
                     const showPileW = cw + (showCards.length - 1) * offX;
                     const showBaseX = sx - showPileW / 2;
-                    
                     showCards.forEach((c, ci) => {
                         let cardX = showBaseX + ci * offX;
                         let cardY = baseY + ci * offY;
@@ -1260,7 +1174,6 @@ function drawSeats() {
                         else cardFace(cx, c, cardX, cardY, cw, ch);
                         cx.globalAlpha = 1;
                     });
-                    
                     if (visibleCount >= seatData.hand.length) {
                         const v = handValue(seatData.hand);
                         const hasBJ = seatData.hand.length === 2 && v === 21;
@@ -1281,7 +1194,6 @@ function drawSeats() {
                     }
                 }
             }
-            
             cx.save();
             const fontSize = isMobile ? Math.max(dw * 0.009, 7) : Math.max(dw * 0.012, 9);
             cx.font = '700 ' + fontSize + 'px Poppins';
@@ -1290,7 +1202,6 @@ function drawSeats() {
             const tw = cx.measureText(nmTrunc).width;
             const tW = tw + (isMobile ? 10 : 16), tH = fontSize + (isMobile ? 5 : 8);
             const tX = sx - tW / 2, tY = sy + sr + (isMobile ? 4 : 8);
-            
             cx.fillStyle = isMe ? 'rgba(232,160,0,0.9)' : 'rgba(0,0,0,0.85)';
             if (isActive) { cx.shadowColor = isMe ? '#2ecc71' : G; cx.shadowBlur = 15; }
             roundRect(cx, tX, tY, tW, tH, 4); cx.fill();
@@ -1298,14 +1209,12 @@ function drawSeats() {
             cx.fillStyle = isMe ? '#000' : G;
             cx.textAlign = 'center';
             cx.fillText(nmTrunc, sx, tY + tH - (isMobile ? 2 : 4));
-            
             {
                 const pfpR = isMobile ? Math.max(sr * 0.4, 7) : Math.max(sr * 0.6, 10);
                 const pfpY = tY + tH + pfpR + (isMobile ? 2 : 4);
                 cx.beginPath(); cx.arc(sx, pfpY, pfpR, 0, Math.PI * 2);
                 cx.fillStyle = 'rgba(0,0,0,.6)'; cx.fill();
                 cx.strokeStyle = isMe ? G : '#555'; cx.lineWidth = isMobile ? 1 : 2; cx.stroke();
-                
                 const pfpImg = pfpCache[seatData.avatar];
                 if (pfpImg && pfpImg.complete) {
                     cx.save();
@@ -1317,7 +1226,6 @@ function drawSeats() {
                     cx.fillText('👤', sx, pfpY + pfpR * 0.35);
                 }
             }
-            
             if (isMe && (tableState.phase === 'waiting' || tableState.phase === 'done')) {
                 const xSize = isMobile ? 12 : 14;
                 const xX = sx + (isMobile ? 26 : 34), xY = sy + sr - 2;
@@ -1328,7 +1236,6 @@ function drawSeats() {
                 cx.fillText('×', xX, xY + 1);
                 aBtns.push({ x: xX - xSize - 4, y: xY - xSize - 4, w: (xSize + 4) * 2, h: (xSize + 4) * 2, action: function() { leaveSeat(i); } });
             }
-            
             cx.restore();
         }
     });
@@ -1336,14 +1243,12 @@ function drawSeats() {
 
 function drawDealerCards() {
     if (!tableState || !tableState.dealerHand || tableState.dealerHand.length === 0) return;
-    
     const dcx = dx + DPO.x * dw, dcy = dy + DPO.y * dh;
     const mobileScale = isMobile ? 0.75 : 1;
     const cw = Math.max(Math.min(dw * 0.045 * mobileScale, 50), isMobile ? 26 : 35);
     const ch = cw * 1.42;
     const hGap = cw * 0.38;
     const hand = tableState.dealerHand;
-    
     let visibleCount = hand.length;
     if (dealAnimStart > 0 && tableState.phase === 'playing') {
         const elapsed = Date.now() - dealAnimStart;
@@ -1354,11 +1259,9 @@ function drawDealerCards() {
             if (elapsed >= dealerDelay) visibleCount++;
         }
     }
-    
     const showHand = hand.slice(0, visibleCount);
     const totalW = showHand.length > 0 ? cw + (showHand.length - 1) * hGap : 0;
     const startX = dcx - totalW / 2;
-    
     showHand.forEach((c, i) => {
         let cardX = startX + i * hGap;
         let cardY = dcy;
@@ -1376,7 +1279,6 @@ function drawDealerCards() {
         else cardFace(cx, c, cardX, cardY, cw, ch);
         cx.globalAlpha = 1;
     });
-    
     if (visibleCount >= hand.length) {
         const visibleCards = hand.filter(c => c.rank !== '?');
         if (visibleCards.length > 0) {
@@ -1394,10 +1296,8 @@ function drawDealerCards() {
 
 function drawHandPanel() {
     if (!tableState || !tableState.dealerHand || tableState.dealerHand.length === 0) return;
-    
     const myHandSeats = tableState.seats.filter(s => mySeats.includes(s.seatIndex) && s.hand && s.hand.length > 0);
     if (myHandSeats.length === 0) return;
-    
     const panelX = W - (isMobile ? 140 : 180);
     const panelY = isMobile ? 40 : 50;
     const cw = isMobile ? 22 : 32, ch = cw * 1.42;
@@ -1406,26 +1306,19 @@ function drawHandPanel() {
     const labelFs = isMobile ? 8 : 10;
     const valueFs = isMobile ? 12 : 15;
     const rowH = ch + 25;
-    
     const splitCount = myHandSeats.filter(s => s.splitPhase > 0 && s.hand2 && s.hand2.length > 0).length;
     const totalH = rowH + (myHandSeats.length + splitCount) * rowH + 10;
     cx.save();
     cx.fillStyle = 'rgba(0,0,0,0.75)';
-    roundRect(cx, panelX - 10, panelY - 5, panelW, totalH, 10);
-    cx.fill();
-    
+    roundRect(cx, panelX - 10, panelY - 5, panelW, totalH, 10); cx.fill();
     let curY = panelY;
-    cx.font = '700 ' + labelFs + 'px Poppins';
-    cx.fillStyle = '#888'; cx.textAlign = 'left';
+    cx.font = '700 ' + labelFs + 'px Poppins'; cx.fillStyle = '#888'; cx.textAlign = 'left';
     cx.fillText('DEALER', panelX, curY + 8);
-    
     const dealerVisible = tableState.dealerHand.filter(c => c.rank !== '?');
     const dv = handValue(dealerVisible);
     const showFull = tableState.phase === 'done' || tableState.phase === 'dealer';
-    cx.font = '900 ' + valueFs + 'px Poppins';
-    cx.fillStyle = G; cx.textAlign = 'right';
+    cx.font = '900 ' + valueFs + 'px Poppins'; cx.fillStyle = G; cx.textAlign = 'right';
     cx.fillText(showFull ? dv : dv + '+?', panelX + panelW - 15, curY + 10);
-    
     curY += 15;
     tableState.dealerHand.forEach((c, i) => {
         const x = panelX + i * panelOverlap;
@@ -1433,20 +1326,16 @@ function drawHandPanel() {
         else cardFace(cx, c, x, curY, cw, ch);
     });
     curY += ch + 10;
-    
     myHandSeats.forEach((seat, si) => {
         const isSplit = seat.splitPhase > 0 && seat.hand2 && seat.hand2.length > 0;
         const label = myHandSeats.length > 1 ? ('SEAT ' + (seat.seatIndex + 1)) : 'YOU';
-        cx.font = '700 ' + labelFs + 'px Poppins';
-        cx.fillStyle = G; cx.textAlign = 'left';
+        cx.font = '700 ' + labelFs + 'px Poppins'; cx.fillStyle = G; cx.textAlign = 'left';
         cx.fillText(label, panelX, curY + 8);
-        
         if (isSplit) {
             const v1 = handValue(seat.hand), v2 = handValue(seat.hand2);
             cx.font = '900 ' + valueFs + 'px Poppins';
             cx.fillStyle = v1 > 21 ? '#e74c3c' : '#fff'; cx.textAlign = 'right';
             cx.fillText(v1 + '/' + v2, panelX + panelW - 15, curY + 10);
-            
             curY += 15;
             seat.hand.forEach((c, i) => { cardFace(cx, c, panelX + i * panelOverlap, curY, cw, ch); });
             curY += ch + 4;
@@ -1459,13 +1348,11 @@ function drawHandPanel() {
             cx.fillStyle = mv > 21 ? '#e74c3c' : myBJ ? GOLD_BJ : '#fff';
             cx.textAlign = 'right';
             cx.fillText(myBJ ? 'BJ' : mv, panelX + panelW - 15, curY + 10);
-            
             curY += 15;
             seat.hand.forEach((c, i) => { cardFace(cx, c, panelX + i * panelOverlap, curY, cw, ch); });
             curY += ch + 8;
         }
     });
-    
     cx.restore();
 }
 
@@ -1490,7 +1377,6 @@ function drawActions() {
             cx.restore();
         }
     }
-    
     if (tableState && tableState.phase === 'done' && mySeats.length > 0) {
         const mySeatData = tableState.seats.find(s => mySeats.includes(s.seatIndex) && s.bet > 0);
         if (mySeatData && mySeatData.status && mySeatData.bet > 0) {
@@ -1503,7 +1389,6 @@ function drawActions() {
             else if (status === 'bust') { label = 'BUST  -' + bet; color = '#e74c3c'; }
             else if (status === 'lose') { label = 'LOSE  -' + bet; color = '#e74c3c'; }
             else if (status === 'push') { label = 'PUSH  ±0'; color = '#888'; }
-            
             if (label) {
                 cx.save();
                 const fs = Math.max(dw * 0.024, 20);
@@ -1521,39 +1406,29 @@ function drawActions() {
         }
         return;
     }
-    
     if (!tableState || tableState.phase !== 'playing') return;
     if (mySeats.length === 0 || !mySeats.includes(tableState.activeSeat)) return;
-    
     const mySeatData = tableState.seats.find(s => s.seatIndex === tableState.activeSeat);
     if (!mySeatData) return;
-    
     const sp = mySeatData.splitPhase || 0;
     const activeStatus = (sp === 1) ? mySeatData.status2 : mySeatData.status;
     if (activeStatus !== 'playing') return;
-    
     const activeHand = (sp === 1) ? (mySeatData.hand2 || []) : (mySeatData.hand || []);
-    
     const acx = W / 2;
     const acy = isMobile ? dy + dh + 30 : dy + dh * 0.48;
     const btnR = isMobile ? Math.max(W * 0.04, 15) : Math.max(dw * 0.022, 22);
     const gap = btnR * (isMobile ? 2.5 : 2.6);
-    
     const canDouble = !sp && activeHand.length === 2 && mySeatData.bet <= pts;
     function cardVal(r) { return ['J','Q','K'].includes(r) ? 10 : r === 'A' ? 11 : parseInt(r); }
-    const canSplit = !sp && activeHand.length === 2 && 
-        cardVal(activeHand[0].rank) === cardVal(activeHand[1].rank) && mySeatData.bet <= pts;
-    
+    const canSplit = !sp && activeHand.length === 2 && cardVal(activeHand[0].rank) === cardVal(activeHand[1].rank) && mySeatData.bet <= pts;
     const btns = [
         { l: '2x', c: '#f39c12', a: function() { playerAction('double'); }, enabled: canDouble },
         { l: 'HIT', c: '#2ecc71', a: function() { playerAction('hit'); }, enabled: true },
         { l: 'STAND', c: '#e74c3c', a: function() { playerAction('stand'); }, enabled: true },
     ];
     if (canSplit) btns.push({ l: 'SPLIT', c: '#3498db', a: function() { playerAction('split'); }, enabled: true });
-    
     const enabledBtns = btns.filter(b => b.enabled);
     let sx = acx - (enabledBtns.length * gap) / 2 + gap / 2;
-    
     enabledBtns.forEach(b => {
         cx.save();
         cx.beginPath(); cx.arc(sx, acy + 2, btnR, 0, Math.PI * 2);
@@ -1571,7 +1446,6 @@ function drawActions() {
         aBtns.push({ x: sx - btnR, y: acy - btnR, w: btnR * 2, h: btnR * 2, action: b.a });
         sx += gap;
     });
-    
     if (tableState.turnStartTime) {
         const tsParsed = tableState.turnStartTime.endsWith('Z') ? tableState.turnStartTime : tableState.turnStartTime + 'Z';
         const elapsed = (Date.now() - new Date(tsParsed).getTime()) / 1000;
@@ -1619,14 +1493,9 @@ function cardBack(c, x, y, w, h) { c.save(); c.fillStyle = 'rgba(0,0,0,.3)'; rou
 function onClick(ex, ey) {
     const r = cv.getBoundingClientRect();
     const mx = ex - r.left, my = ey - r.top;
-    
     for (const b of aBtns) {
-        if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
-            b.action();
-            return;
-        }
+        if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) { b.action(); return; }
     }
-    
     if (mySeats.length < 2 && tableState) {
         const sr = Math.max(dw * 0.020, 14);
         for (let i = 0; i < SPOTS.length; i++) {
@@ -1647,16 +1516,13 @@ async function joinSeat(seatIndex) {
         const r = await yjFetch({ action: 'joinTable', tableId: curTable, seatIndex: seatIndex });
         const d = await r.json();
         if (d.error) { showErr(d.error); return; }
-        
         if (!mySeats.includes(seatIndex)) mySeats.push(seatIndex);
         if (d.points) pts = d.points;
         addSystemChat('You joined seat ' + (seatIndex + 1));
         showBet();
         updateUI();
         pollTable();
-    } catch (e) {
-        showErr('Failed to join seat');
-    }
+    } catch (e) { showErr('Failed to join seat'); }
 }
 
 async function leaveSeat(seatIndex) {
@@ -1676,7 +1542,6 @@ cv.addEventListener('touchend', function(e) { e.preventDefault(); if (e.changedT
 function updateUI() {
     document.getElementById('balanceDisplay').textContent = '🪙 ' + pts.toLocaleString();
     document.getElementById('lobbyUserPoints').textContent = pts.toLocaleString();
-    
     const betBox = document.getElementById('betBox');
     let totalBet = 0;
     Object.values(myBets).forEach(b => { totalBet += b.bet || 0; });
@@ -1715,9 +1580,7 @@ function expandChat() {
 
 function collapseChat() {
     const wrap = document.getElementById('chatInputWrap');
-    if (!document.getElementById('chatInput').value) {
-        wrap.classList.remove('expanded');
-    }
+    if (!document.getElementById('chatInput').value) wrap.classList.remove('expanded');
 }
 
 cv.addEventListener('mousedown', collapseChat);
@@ -1729,12 +1592,8 @@ async function sendChat() {
     if (!msg || !curTable) return;
     input.value = '';
     collapseChat();
-    
     addPlayerChat(twName || 'You', msg);
-    
-    try {
-        await yjFetch({ action: 'sendChat', tableId: curTable, message: msg });
-    } catch (e) {}
+    try { await yjFetch({ action: 'sendChat', tableId: curTable, message: msg }); } catch (e) {}
 }
 
 document.getElementById('chatInput').addEventListener('keypress', function(e) {
