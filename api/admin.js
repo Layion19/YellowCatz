@@ -589,6 +589,67 @@ export default async function handler(req, res) {
       });
     }
 
+    // ============================================================
+    // BADGE 10 — LIST SUBMISSIONS
+    // ============================================================
+    if (action === 'badge10Submissions') {
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS badge10_submissions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          username TEXT NOT NULL,
+          wallet TEXT NOT NULL,
+          status TEXT DEFAULT 'pending',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      const submissions = await db.execute(`
+        SELECT s.id, s.user_id, s.username, s.wallet, s.status, s.created_at,
+               u.avatar_url
+        FROM badge10_submissions s
+        LEFT JOIN users u ON s.user_id = u.id
+        ORDER BY
+          CASE s.status WHEN 'pending' THEN 0 WHEN 'rejected' THEN 1 ELSE 2 END,
+          s.created_at DESC
+      `);
+
+      return res.status(200).json({ success: true, submissions: submissions.rows });
+    }
+
+    // ============================================================
+    // BADGE 10 — APPROVE (award badge)
+    // ============================================================
+    if (action === 'badge10Approve') {
+      const { submissionId, userId } = body;
+
+      await db.execute({
+        sql: 'UPDATE badge10_submissions SET status = ? WHERE id = ?',
+        args: ['approved', submissionId]
+      });
+
+      await db.execute({
+        sql: 'INSERT OR IGNORE INTO user_badges (user_id, badge_id) VALUES (?, ?)',
+        args: [userId, 'badge_10']
+      });
+
+      return res.status(200).json({ success: true, message: 'Badge 10 awarded to user' });
+    }
+
+    // ============================================================
+    // BADGE 10 — REJECT
+    // ============================================================
+    if (action === 'badge10Reject') {
+      const { submissionId } = body;
+
+      await db.execute({
+        sql: 'UPDATE badge10_submissions SET status = ? WHERE id = ?',
+        args: ['rejected', submissionId]
+      });
+
+      return res.status(200).json({ success: true, message: 'Submission rejected — user can resubmit' });
+    }
+
     return res.status(400).json({ error: 'Invalid action' });
 
   } catch (err) {

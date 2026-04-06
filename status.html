@@ -303,6 +303,23 @@
             box-shadow: 0 0 25px rgba(232, 160, 0, 0.5);
         }
 
+        /* --- BADGE 10 PENDING STATE --- */
+        .badge.pending-review {
+            background-color: #1a1a1a;
+            border: 2px solid #f39c12;
+            color: #f39c12;
+            animation: pending-pulse 2s ease-in-out infinite;
+        }
+
+        .badge.pending-review:hover {
+            transform: scale(1.05);
+        }
+
+        @keyframes pending-pulse {
+            0%, 100% { box-shadow: 0 0 6px rgba(243, 156, 18, 0.3); }
+            50% { box-shadow: 0 0 16px rgba(243, 156, 18, 0.7); }
+        }
+
         .badge-label {
             font-size: 9px;
             letter-spacing: 0.5px;
@@ -313,6 +330,10 @@
         .badge.unlocked .badge-label {
             opacity: 1;
             color: #8B5A00;
+        }
+
+        .badge.pending-review .badge-label {
+            opacity: 1;
         }
 
         .badge-tooltip {
@@ -428,6 +449,8 @@
             width: 90%;
             text-align: center;
             border: 2px solid #333;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .modal-badge {
@@ -502,6 +525,17 @@
             color: #000;
         }
 
+        /* pump.fun link style */
+        .mission-link.pump {
+            border-color: #00ff88;
+            color: #00ff88;
+        }
+
+        .mission-link.pump:hover {
+            background: #00ff88;
+            color: #000;
+        }
+
         .claim-btn {
             display: block;
             width: 100%;
@@ -568,6 +602,89 @@
 
         .modal-unlocked span {
             font-size: 24px;
+        }
+
+        /* ---------- BADGE 10 WALLET SECTION ---------- */
+        .wallet-section {
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .wallet-label {
+            display: block;
+            font-size: 11px;
+            color: #888;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .wallet-input {
+            width: 100%;
+            padding: 12px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 12px;
+            font-family: monospace;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .wallet-input:focus {
+            border-color: #E8A000;
+        }
+
+        .wallet-input::placeholder {
+            color: #555;
+            font-family: Arial, sans-serif;
+        }
+
+        .wallet-submit-btn {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+            padding: 15px;
+            background: #E8A000;
+            border: none;
+            border-radius: 10px;
+            color: #000;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .wallet-submit-btn:hover {
+            background: #ffb700;
+        }
+
+        .wallet-submit-btn:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        /* ---------- BADGE 10 PENDING BOX ---------- */
+        .pending-box {
+            background: #1a1400;
+            border: 1px solid #f39c12;
+            border-radius: 10px;
+            padding: 18px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .pending-box .pending-icon {
+            font-size: 30px;
+            margin-bottom: 10px;
+        }
+
+        .pending-box p {
+            color: #f39c12;
+            font-size: 13px;
+            line-height: 1.6;
         }
 
         @media (max-width: 400px) {
@@ -663,8 +780,29 @@
                     <a href="#" class="mission-link" id="missionLink" target="_blank" style="display:none;">Go to Twitter</a>
                 </div>
 
+                <!-- Standard claim button (hidden for badge_10) -->
                 <button class="claim-btn" id="claimBtn" onclick="claimBadge()">Complete Mission First</button>
                 <p class="claim-status" id="claimStatus"></p>
+
+                <!-- Badge 10: wallet input (shown after clicking pump.fun link) -->
+                <div id="walletSection" style="display:none;">
+                    <div class="wallet-section">
+                        <span class="wallet-label">Your Solana Wallet Address</span>
+                        <input type="text" class="wallet-input" id="walletInput"
+                               placeholder="e.g. 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
+                               maxlength="100">
+                    </div>
+                    <button class="wallet-submit-btn" id="walletSubmitBtn" onclick="submitBadge10()">
+                        Submit for Review 🏆
+                    </button>
+                    <p class="claim-status" id="walletStatus"></p>
+                </div>
+
+                <!-- Badge 10: pending confirmation -->
+                <div id="pendingBox" style="display:none;" class="pending-box">
+                    <div class="pending-icon">⏳</div>
+                    <p><strong>Wallet submitted!</strong><br>We are verifying your $YELLOWCATZ holdings manually. The badge will be awarded once confirmed.</p>
+                </div>
                 
                 <div class="modal-unlocked" id="modalUnlocked" style="display:none;">
                     <span>✓</span> Badge Unlocked!
@@ -730,6 +868,12 @@
         function clearSession() {
             localStorage.removeItem(SESSION_KEY);
         }
+
+        // ============================================================
+        // BADGE 10 STATUS CACHE
+        // ============================================================
+        function getBadge10Status() { return localStorage.getItem('badge10_status'); }
+        function setBadge10Status(s) { localStorage.setItem('badge10_status', s); }
 
         // ============================================================
         // BADGE CLICK PERSISTENCE (pour les délais longs)
@@ -842,10 +986,12 @@
                 id: 'badge_10', 
                 name: 'Legend', 
                 emoji: '🏆',
-                description: 'The ultimate Yellow Catz member.',
-                mission: '🚧 Not live yet... Unlock all badges to earn this one.',
+                description: 'The ultimate Yellow Catz member — Hold $20+ of $YELLOWCATZ.',
+                mission: 'Hold at least $20 worth of $YELLOWCATZ on pump.fun. Click the link below to buy, then come back and submit your Solana wallet address. We will verify your holdings manually and award the badge.',
                 claimable: false,
-                link: null
+                special: 'wallet',
+                link: 'https://pump.fun/coin/9zcYAff5kaZfVDkEv3DzD2ojvocYyoRL2pFEko53pump',
+                linkText: '🟡 Buy $YELLOWCATZ on pump.fun'
             }
         ];
 
@@ -862,18 +1008,27 @@
             const grid = document.getElementById('badgesGrid');
             grid.innerHTML = '';
 
+            const b10Status = getBadge10Status();
+
             badgesData.forEach(badge => {
                 const isUnlocked = userBadges.includes(badge.id);
+                const isPending = badge.id === 'badge_10' && b10Status === 'pending' && !isUnlocked;
                 
                 const el = document.createElement('div');
-                el.className = 'badge ' + (isUnlocked ? 'unlocked' : 'locked');
+                el.className = 'badge ' + (isUnlocked ? 'unlocked' : isPending ? 'pending-review' : 'locked');
                 el.setAttribute('data-badge', badge.id);
                 el.onclick = () => openModal(badge.id);
+
+                const emoji = isUnlocked ? badge.emoji : (isPending ? '⏳' : '?');
+                const label = isUnlocked ? badge.name : (isPending ? 'REVIEW' : '???');
+                const tooltipText = isUnlocked
+                    ? badge.name + ' — ' + badge.description
+                    : isPending ? 'Under review...' : 'Locked badge';
                 
                 el.innerHTML = `
-                    <span>${isUnlocked ? badge.emoji : '?'}</span>
-                    <span class="badge-label">${isUnlocked ? badge.name : '???'}</span>
-                    <div class="badge-tooltip ${isUnlocked ? 'unlocked-tip' : ''}">${isUnlocked ? badge.name + ' — ' + badge.description : 'Locked badge'}</div>
+                    <span>${emoji}</span>
+                    <span class="badge-label">${label}</span>
+                    <div class="badge-tooltip ${isUnlocked ? 'unlocked-tip' : ''}">${tooltipText}</div>
                 `;
                 
                 grid.appendChild(el);
@@ -902,22 +1057,72 @@
                 linkClickTime = savedTime;
             }
 
-            document.getElementById('modalBadge').textContent = isUnlocked ? badge.emoji : '?';
+            document.getElementById('modalBadge').textContent = isUnlocked ? badge.emoji : (badge.id === 'badge_10' ? '🏆' : '?');
             document.getElementById('modalBadge').className = 'modal-badge' + (isUnlocked ? '' : ' locked');
             document.getElementById('modalTitle').textContent = badge.name;
             document.getElementById('modalDescription').textContent = badge.description;
             document.getElementById('modalMissionText').textContent = badge.mission;
 
+            // Reset all sections
+            document.getElementById('claimStatus').textContent = '';
+            document.getElementById('claimStatus').className = 'claim-status';
+            document.getElementById('walletStatus').textContent = '';
+            document.getElementById('walletInput').value = '';
+            document.getElementById('walletSection').style.display = 'none';
+            document.getElementById('pendingBox').style.display = 'none';
+
             const linkBtn = document.getElementById('missionLink');
-            
-            // Show link for badges with links (including badge_9 Twitter link)
+            const claimBtn = document.getElementById('claimBtn');
+            const unlockedMsg = document.getElementById('modalUnlocked');
+
+            if (isUnlocked) {
+                claimBtn.style.display = 'none';
+                document.getElementById('modalMission').style.display = 'none';
+                linkBtn.style.display = 'none';
+                unlockedMsg.style.display = 'block';
+                document.getElementById('missionModal').classList.add('open');
+                return;
+            }
+
+            document.getElementById('modalMission').style.display = 'block';
+            unlockedMsg.style.display = 'none';
+
+            // ── BADGE 10 — wallet flow ──
+            if (badge.id === 'badge_10') {
+                claimBtn.style.display = 'none';
+
+                // pump.fun link (always visible)
+                linkBtn.style.display = 'inline-block';
+                linkBtn.href = badge.link;
+                linkBtn.textContent = badge.linkText;
+                linkBtn.className = 'mission-link pump';
+                linkBtn.setAttribute('target', '_blank');
+                linkBtn.onclick = null;
+
+                const b10Status = getBadge10Status();
+                if (b10Status === 'pending') {
+                    document.getElementById('pendingBox').style.display = 'block';
+                } else {
+                    document.getElementById('walletSection').style.display = 'block';
+                    document.getElementById('walletSubmitBtn').disabled = false;
+                    document.getElementById('walletSubmitBtn').textContent = 'Submit for Review 🏆';
+                }
+
+                document.getElementById('missionModal').classList.add('open');
+                return;
+            }
+
+            // ── STANDARD BADGES ──
+            claimBtn.style.display = 'block';
+
+            // Show link for badges with links
             if (badge.link && !isUnlocked) {
                 linkBtn.style.display = 'inline-block';
                 linkBtn.href = badge.link;
                 linkBtn.textContent = badge.linkText || 'Go';
+                linkBtn.className = 'mission-link';
                 linkBtn.setAttribute('target', '_blank');
                 
-                // For badge_9, no need to track click time (auto-awarded via yellowcard.js)
                 if (badge.id === 'badge_9') {
                     linkBtn.onclick = null;
                 } else {
@@ -932,53 +1137,34 @@
                 linkBtn.style.display = 'none';
             }
 
-            const claimBtn = document.getElementById('claimBtn');
-            const claimStatus = document.getElementById('claimStatus');
-            const unlockedMsg = document.getElementById('modalUnlocked');
-
-            if (isUnlocked) {
-                claimBtn.style.display = 'none';
-                document.getElementById('modalMission').style.display = 'none';
-                unlockedMsg.style.display = 'block';
-            } else {
-                claimBtn.style.display = 'block';
-                document.getElementById('modalMission').style.display = 'block';
-                unlockedMsg.style.display = 'none';
-                
-                if (badge.id === 'og') {
-                    claimBtn.textContent = '👑 Claim OG Badge';
-                    claimBtn.classList.add('ready');
-                    linkClicked = true;
-                    linkClickTime = Date.now() - (badge.delay || DEFAULT_DELAY);
-                } else if (badge.id === 'badge_9') {
-                    // Badge 9 is auto-awarded via Yellow Cards
-                    claimBtn.textContent = 'Awarded automatically';
-                    claimBtn.classList.remove('ready');
-                    claimBtn.style.cursor = 'default';
-                } else if (badge.claimable && badge.link) {
-                    // Vérifier si le délai est déjà passé (grâce au localStorage)
-                    if (savedTime) {
-                        const delay = badge.delay || DEFAULT_DELAY;
-                        const elapsed = Date.now() - savedTime;
-                        if (elapsed >= delay) {
-                            claimBtn.textContent = "I've completed the mission ✓";
-                            claimBtn.classList.add('ready');
-                        } else {
-                            claimBtn.classList.remove('ready');
-                            updateClaimButton();
-                        }
+            if (badge.id === 'og') {
+                claimBtn.textContent = '👑 Claim OG Badge';
+                claimBtn.classList.add('ready');
+                linkClicked = true;
+                linkClickTime = Date.now() - (badge.delay || DEFAULT_DELAY);
+            } else if (badge.id === 'badge_9') {
+                claimBtn.textContent = 'Awarded automatically';
+                claimBtn.classList.remove('ready');
+                claimBtn.style.cursor = 'default';
+            } else if (badge.claimable && badge.link) {
+                if (savedTime) {
+                    const delay = badge.delay || DEFAULT_DELAY;
+                    const elapsed = Date.now() - savedTime;
+                    if (elapsed >= delay) {
+                        claimBtn.textContent = "I've completed the mission ✓";
+                        claimBtn.classList.add('ready');
                     } else {
-                        claimBtn.textContent = 'Click the link first';
                         claimBtn.classList.remove('ready');
+                        updateClaimButton();
                     }
                 } else {
-                    claimBtn.textContent = 'Cannot be claimed yet';
+                    claimBtn.textContent = 'Click the link first';
                     claimBtn.classList.remove('ready');
                 }
+            } else {
+                claimBtn.textContent = 'Cannot be claimed yet';
+                claimBtn.classList.remove('ready');
             }
-
-            claimStatus.textContent = '';
-            claimStatus.className = 'claim-status';
 
             document.getElementById('missionModal').classList.add('open');
         }
@@ -1026,7 +1212,7 @@
         }
 
         // ============================================================
-        // CLAIM BADGE
+        // CLAIM BADGE (standard badges)
         // ============================================================
         async function claimBadge() {
             if (!currentBadge) return;
@@ -1074,7 +1260,7 @@
                     claimStatus.textContent = '🎉 Badge unlocked!';
                     claimStatus.className = 'claim-status success';
                     userBadges.push(currentBadge.id);
-                    clearClickTime(currentBadge.id); // Nettoyer le localStorage
+                    clearClickTime(currentBadge.id);
                     
                     const cached = getSession();
                     if (cached) {
@@ -1104,6 +1290,52 @@
         }
 
         // ============================================================
+        // BADGE 10 — WALLET SUBMISSION
+        // ============================================================
+        async function submitBadge10() {
+            const wallet = document.getElementById('walletInput').value.trim();
+            const statusEl = document.getElementById('walletStatus');
+            const submitBtn = document.getElementById('walletSubmitBtn');
+
+            if (!wallet || wallet.length < 32) {
+                statusEl.textContent = '⚠️ Please enter a valid Solana wallet address';
+                statusEl.className = 'claim-status error';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            try {
+                const response = await fetch('/api/badge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ badgeId: 'badge_10', wallet })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    setBadge10Status('pending');
+                    document.getElementById('walletSection').style.display = 'none';
+                    document.getElementById('pendingBox').style.display = 'block';
+                    renderBadges();
+                } else {
+                    statusEl.textContent = '❌ ' + (data.error || 'Submission failed — please try again');
+                    statusEl.className = 'claim-status error';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit for Review 🏆';
+                }
+            } catch (error) {
+                statusEl.textContent = '❌ Connection error — please try again';
+                statusEl.className = 'claim-status error';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit for Review 🏆';
+            }
+        }
+
+        // ============================================================
         // FETCH USER DATA
         // ============================================================
         function formatDate(dateStr) {
@@ -1120,6 +1352,11 @@
             userBadges = userData.badges
                 .filter(b => b.unlocked)
                 .map(b => b.id);
+
+            // If badge_10 is already unlocked, clear the pending state
+            if (userBadges.includes('badge_10')) {
+                setBadge10Status('approved');
+            }
             
             renderBadges();
         }

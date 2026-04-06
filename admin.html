@@ -644,6 +644,27 @@
       <h2>🕐 Recent Users</h2>
       <div class="user-list" id="recentUsers"></div>
     </div>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!-- BADGE 10 — LEGEND SUBMISSIONS (ADDED)                  -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <div class="section" style="border:2px solid #f1c40f;background:linear-gradient(135deg,#1a1a0a 0%,#2a2a1a 100%);">
+      <h2 style="color:#f1c40f;">🏆 Badge 10 — Legend Submissions</h2>
+      <p style="color:#888;margin-bottom:15px;font-size:13px;">
+        Wallets soumis pour le badge Legend. Vérifie que l'utilisateur détient bien
+        <strong style="color:#f1c40f;">$20+ de $YELLOWCATZ</strong> sur
+        <a href="https://pump.fun/coin/9zcYAff5kaZfVDkEv3DzD2ojvocYyoRL2pFEko53pump"
+           target="_blank" style="color:#00ff88;">pump.fun</a>
+        avant d'approuver.
+      </p>
+      <div style="margin-bottom:15px;">
+        <button class="btn btn-warning" onclick="loadBadge10Submissions()" style="max-width:160px;">🔄 Charger</button>
+      </div>
+      <div id="badge10SubmissionsList">
+        <p style="color:#666;padding:10px;font-size:13px;">Clique sur "Charger" pour afficher les soumissions.</p>
+      </div>
+    </div>
+
   </div>
 
   <!-- YELLOWJACK TAB -->
@@ -1710,6 +1731,88 @@ document.getElementById('userModal').addEventListener('click', (e) => {
 document.getElementById('yjPlayerModal').addEventListener('click', (e) => {
   if (e.target.id === 'yjPlayerModal') closeYJModal();
 });
+
+// ============================================================
+// BADGE 10 — LEGEND SUBMISSIONS (ADDED)
+// ============================================================
+async function loadBadge10Submissions() {
+  const container = document.getElementById('badge10SubmissionsList');
+  container.innerHTML = '<p style="color:#888;padding:10px;">Loading...</p>';
+
+  const data = await apiCall('badge10Submissions');
+
+  if (!data.submissions || data.submissions.length === 0) {
+    container.innerHTML = '<p style="color:#666;padding:10px;">Aucune soumission pour l\'instant.</p>';
+    return;
+  }
+
+  const pendingCount = data.submissions.filter(s => s.status === 'pending').length;
+
+  let html = `<p style="color:#888;font-size:12px;margin-bottom:12px;">
+    ${data.submissions.length} total — <span style="color:#f1c40f;font-weight:bold;">${pendingCount} en attente</span>
+  </p>`;
+
+  data.submissions.forEach(s => {
+    const statusColor = s.status === 'approved' ? '#2ecc71' : s.status === 'rejected' ? '#ff4444' : '#f39c12';
+    const statusLabel = s.status === 'approved' ? '✅ Approved' : s.status === 'rejected' ? '❌ Rejected' : '⏳ Pending';
+
+    html += `
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid #333;flex-wrap:wrap;">
+        <img src="${s.avatar_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'}"
+             style="width:40px;height:40px;border-radius:50%;flex-shrink:0;">
+        <div style="flex:1;min-width:100px;">
+          <div style="font-weight:bold;color:#E8A000;">@${s.username}</div>
+          <div style="font-size:11px;color:#666;">ID: ${s.user_id} · ${new Date(s.created_at).toLocaleString()}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex:2;min-width:200px;">
+          <code style="background:#111;padding:5px 10px;border-radius:4px;font-size:11px;color:#2ecc71;word-break:break-all;flex:1;">${s.wallet}</code>
+          <button onclick="copyWallet('${s.wallet}')"
+                  style="flex-shrink:0;background:#3a3a3a;border:1px solid #555;color:#E8A000;padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;">
+            📋 Copier
+          </button>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+          <span style="font-size:12px;font-weight:bold;color:${statusColor};">${statusLabel}</span>
+          ${s.status === 'pending' ? `
+            <div style="display:flex;gap:6px;">
+              <button onclick="badge10Action(${s.id}, ${s.user_id}, 'approve')"
+                      style="background:#2ecc71;border:none;border-radius:6px;color:#000;padding:7px 14px;font-size:12px;font-weight:bold;cursor:pointer;">
+                ✅ Approve
+              </button>
+              <button onclick="badge10Action(${s.id}, ${s.user_id}, 'reject')"
+                      style="background:#ff4444;border:none;border-radius:6px;color:#fff;padding:7px 14px;font-size:12px;font-weight:bold;cursor:pointer;">
+                ❌ Reject
+              </button>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+async function badge10Action(submissionId, userId, action) {
+  const confirmMsg = action === 'approve'
+    ? '✅ Attribuer le Badge 10 (Legend) à cet utilisateur ?'
+    : '❌ Rejeter cette soumission ? L\'utilisateur pourra re-soumettre.';
+
+  if (!confirm(confirmMsg)) return;
+
+  const apiAction = action === 'approve' ? 'badge10Approve' : 'badge10Reject';
+  const data = await apiCall(apiAction, { submissionId, userId });
+
+  if (data.success) {
+    const toast = document.getElementById('toast') || createToast();
+    toast.textContent = action === 'approve' ? '🏆 Badge attribué !' : '❌ Soumission rejetée';
+    toast.style.display = 'block';
+    setTimeout(() => toast.style.display = 'none', 2500);
+    loadBadge10Submissions();
+  } else {
+    alert('Erreur : ' + (data.error || 'Unknown error'));
+  }
+}
 </script>
 </body>
 </html>
