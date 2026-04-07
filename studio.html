@@ -1,34 +1,22 @@
 <!DOCTYPE html>
-<!-- YellowCatz v2.1 — Badge 10 Legend update -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yellow World - Your Status</title>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+    <title>YellowCatz Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
-            max-width: 100vw;
-            overflow-x: hidden;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             min-height: 100vh;
-            background-color: #E8A000;
-            font-family: 'Arial', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 40px 20px;
+            background: repeating-linear-gradient(45deg, #E8A000, #E8A000 20px, #F4B400 20px, #F4B400 40px);
+            font-family: 'Poppins', sans-serif;
+            padding: 20px;
+            padding-bottom: 100px;
         }
 
-        /* ---------- HAMBURGER MENU ---------- */
+        /* ---------- HAMBURGER ---------- */
         .menu-btn {
             position: fixed;
             top: 20px;
@@ -42,680 +30,258 @@
             justify-content: center;
             align-items: center;
             gap: 6px;
+            background: #000;
+            border-radius: 8px;
+            padding: 8px;
         }
+        .menu-btn span { display: block; width: 24px; height: 2px; background: #E8A000; border-radius: 2px; transition: all 0.3s; }
+        .menu-btn.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+        .menu-btn.active span:nth-child(2) { opacity: 0; }
+        .menu-btn.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
 
-        .menu-btn span {
-            display: block;
-            width: 30px;
-            height: 3px;
-            background-color: #000;
-            border-radius: 3px;
-            transition: all 0.3s ease;
-        }
-
-        .menu-btn.active span:nth-child(1) {
-            transform: rotate(45deg) translate(6px, 6px);
-        }
-
-        .menu-btn.active span:nth-child(2) {
-            opacity: 0;
-        }
-
-        .menu-btn.active span:nth-child(3) {
-            transform: rotate(-45deg) translate(7px, -7px);
-        }
-
-        .menu-btn.active {
-            background-color: #000;
-            border-radius: 0;
-            padding: 20px;
-            top: 0;
-            right: 0;
-        }
-
-        .menu-btn.active span {
-            background-color: #E8A000;
-        }
-
-        /* ---------- SIDEBAR ---------- */
         .sidebar {
             position: fixed;
             top: 0;
             right: -300px;
             width: 300px;
             height: 100vh;
-            background-color: #000;
-            transition: right 0.3s ease;
+            background: #000;
+            transition: right 0.3s;
             z-index: 999;
             display: flex;
             flex-direction: column;
             padding: 80px 30px 30px;
         }
+        .sidebar.active { right: 0; }
+        .sidebar a { color: #E8A000; text-decoration: none; font-size: 22px; padding: 12px 0; border-bottom: 1px solid #333; transition: color 0.3s; }
+        .sidebar a:hover { color: #fff; }
+        .sidebar a.active-page { color: #fff; }
+        .sidebar a.active-page::before { content: '▸'; margin-right: 8px; }
+        .secret-cat { font-size: 14px; margin: 20px auto 0; cursor: pointer; opacity: 0.4; transition: all 0.3s; }
+        .secret-cat:hover { opacity: 1; transform: scale(1.2); }
 
-        .sidebar.active {
-            right: 0;
-        }
-
-        .sidebar a {
-            color: #E8A000;
-            text-decoration: none;
-            font-size: 24px;
-            padding: 15px 0;
-            border-bottom: 1px solid #333;
-            transition: color 0.3s ease;
-        }
-
-        .sidebar a:hover {
-            color: #fff;
-        }
-
-        .sidebar a.active-page {
-            color: #fff;
-            position: relative;
-        }
-
-        .sidebar a.active-page::before {
-            content: '▸';
-            margin-right: 8px;
-        }
-
-        .sidebar .logout-link {
-            margin-top: auto;
-            color: #666;
-            font-size: 16px;
-            border-bottom: none;
-            padding-top: 20px;
-        }
-
-        .sidebar .logout-link:hover {
-            color: #ff4444;
-        }
-
-        .secret-cat {
-            font-size: 14px;
-            margin: 25px auto 0;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            opacity: 0.4;
-        }
-
-        .secret-cat:hover {
-            opacity: 1;
-            transform: scale(1.2);
-        }
-
-        /* ---------- OVERLAY ---------- */
         .overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            inset: 0;
+            background: rgba(0,0,0,0.5);
             opacity: 0;
             visibility: hidden;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
             z-index: 998;
         }
+        .overlay.active { opacity: 1; visibility: visible; }
 
-        .overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* ---------- MAIN CONTENT ---------- */
-        .container {
-            width: 100%;
-            max-width: 500px;
-        }
-
-        .page-title {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 36px;
-            letter-spacing: 4px;
-            color: #8B5A00;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .identity-card {
-            background-color: #000;
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 25px;
-        }
-
-        .identity-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #222;
-        }
-
-        .identity-row:last-child {
-            border-bottom: none;
-        }
-
-        .identity-label {
-            font-size: 12px;
-            letter-spacing: 2px;
-            color: #666;
-            text-transform: uppercase;
-        }
-
-        .identity-value {
-            font-size: 16px;
-            color: #E8A000;
-            font-weight: bold;
-        }
-
-        .identity-value.username {
-            font-size: 18px;
-        }
-
-        /* ---------- SESSION STATUS ---------- */
-        .session-status {
+        /* ---------- HEADER ---------- */
+        .header {
             display: flex;
             align-items: center;
-            gap: 8px;
-        }
-
-        .session-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #00c853;
-            animation: pulse-dot 2s infinite;
-        }
-
-        @keyframes pulse-dot {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .session-text {
-            font-size: 11px;
-            color: #00c853;
-            letter-spacing: 1px;
-        }
-
-        /* ---------- BADGES ---------- */
-        .badges-section {
-            background-color: #000;
-            border-radius: 16px;
-            padding: 25px;
-        }
-
-        .badges-title {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 24px;
-            letter-spacing: 3px;
-            color: #E8A000;
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        .badges-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
             gap: 15px;
             margin-bottom: 25px;
+            padding: 15px 20px;
+            background: #000;
+            border-radius: 15px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
         }
+        .header-logo { width: 50px; height: 50px; border-radius: 10px; overflow: hidden; }
+        .header-logo img { width: 100%; height: 100%; object-fit: cover; }
+        .header-text h1 { font-family: 'Poppins', sans-serif; font-size: 22px; color: #fff; }
+        .header-text h1 span { color: #E8A000; }
+        .header-text p { font-size: 10px; color: #888; letter-spacing: 3px; }
+        .header-stars { margin-left: auto; font-size: 20px; }
 
-        .badge {
-            aspect-ratio: 1;
-            border-radius: 50%;
+        /* ---------- MODE SELECTION ---------- */
+        .mode-selection {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 25px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .mode-btn {
+            flex: 1;
+            max-width: 180px;
+            padding: 15px;
+            background: #000;
+            border: 3px solid #333;
+            border-radius: 15px;
+            color: #888;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 13px;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-            position: relative;
-            cursor: pointer;
-            line-height: 1.1;
-            text-align: center;
-            padding: 4px;
+            gap: 5px;
         }
+        .mode-btn span { font-size: 24px; }
+        .mode-btn.active { border-color: #E8A000; color: #E8A000; }
+        .mode-btn:hover { border-color: #E8A000; color: #E8A000; }
 
-        .badge.locked {
-            background-color: #1a1a1a;
-            border: 2px solid #333;
-            color: #444;
+        /* ---------- SECTIONS ---------- */
+        .section {
+            background: #000;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
         }
-
-        .badge.locked:hover {
-            border-color: #E8A000;
-            transform: scale(1.05);
-        }
-
-        .badge.unlocked {
-            background-color: #E8A000;
-            border: 2px solid #8B5A00;
-            color: #000;
-            box-shadow: 0 0 15px rgba(232, 160, 0, 0.3);
-        }
-
-        .badge.unlocked:hover {
-            transform: scale(1.1);
-            box-shadow: 0 0 25px rgba(232, 160, 0, 0.5);
-        }
-
-        /* --- BADGE 10 PENDING STATE --- */
-        .badge.pending-review {
-            background-color: #1a1a1a;
-            border: 2px solid #f39c12;
-            color: #f39c12;
-            animation: pending-pulse 2s ease-in-out infinite;
-        }
-
-        .badge.pending-review:hover {
-            transform: scale(1.05);
-        }
-
-        @keyframes pending-pulse {
-            0%, 100% { box-shadow: 0 0 6px rgba(243, 156, 18, 0.3); }
-            50% { box-shadow: 0 0 16px rgba(243, 156, 18, 0.7); }
-        }
-
-        .badge-label {
-            font-size: 9px;
-            letter-spacing: 0.5px;
-            margin-top: 2px;
-            opacity: 0.7;
-        }
-
-        .badge.unlocked .badge-label {
-            opacity: 1;
-            color: #8B5A00;
-        }
-
-        .badge.pending-review .badge-label {
-            opacity: 1;
-        }
-
-        .badge-tooltip {
-            position: absolute;
-            bottom: calc(100% + 10px);
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #000;
-            border: 1px solid #333;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-family: 'Arial', sans-serif;
-            font-size: 11px;
-            letter-spacing: 0;
-            color: #888;
-            white-space: normal;
-            max-width: 180px;
-            text-align: center;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.2s ease;
-            z-index: 10;
-        }
-
-        .badge-tooltip::after {
-            content: '';
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 6px solid transparent;
-            border-top-color: #333;
-        }
-
-        .badge:hover .badge-tooltip {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .badge-tooltip.unlocked-tip {
+        .section-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
             color: #E8A000;
-            border-color: #8B5A00;
+            margin-bottom: 8px;
+            font-weight: 700;
         }
-
-        .badge-tooltip.unlocked-tip::after {
-            border-top-color: #8B5A00;
-        }
-
-        .signal-message {
-            text-align: center;
-            font-size: 13px;
-            letter-spacing: 1px;
-            color: #555;
-            font-style: italic;
-        }
-
-        .badges-counter {
-            text-align: center;
+        .section-subtitle {
             font-size: 12px;
             color: #666;
-            margin-bottom: 15px;
-            letter-spacing: 1px;
+            margin-bottom: 20px;
         }
 
-        .badges-counter span {
-            color: #E8A000;
-            font-weight: bold;
-        }
+        /* ---------- UPLOAD ZONE ---------- */
+        .upload-wrapper { display: flex; justify-content: center; }
 
-        .back-btn {
-            display: block;
-            margin: 30px auto 0;
-            padding: 12px 30px;
-            background-color: transparent;
-            border: 2px solid #8B5A00;
-            border-radius: 30px;
-            color: #8B5A00;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 16px;
-            letter-spacing: 2px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .back-btn:hover {
-            background-color: #8B5A00;
-            color: #E8A000;
-        }
-
-        /* ---------- MISSION MODAL ---------- */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .modal.open {
-            display: flex;
-        }
-
-        .modal-content {
+        .upload-zone {
+            position: relative;
             background: #1a1a1a;
-            padding: 30px;
-            border-radius: 16px;
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-            border: 2px solid #333;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-
-        .modal-badge {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: #E8A000;
-            margin: 0 auto 20px;
+            border: 3px dashed #333;
+            border-radius: 15px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 24px;
-            color: #000;
-        }
-
-        .modal-badge.locked {
-            background: #333;
-            color: #666;
-        }
-
-        .modal-title {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 28px;
-            color: #E8A000;
-            margin-bottom: 10px;
-        }
-
-        .modal-description {
-            color: #888;
-            font-size: 14px;
-            margin-bottom: 20px;
-        }
-
-        .modal-mission {
-            background: #222;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-
-        .modal-mission-label {
-            font-size: 10px;
-            letter-spacing: 2px;
-            color: #666;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-
-        .modal-mission-text {
-            color: #E8A000;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .mission-link {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 12px 25px;
-            background: transparent;
-            border: 2px solid #E8A000;
-            border-radius: 25px;
-            color: #E8A000;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
-
-        .mission-link:hover {
-            background: #E8A000;
-            color: #000;
-        }
-
-        /* pump.fun link style */
-        .mission-link.pump {
-            border-color: #00ff88;
-            color: #00ff88;
-        }
-
-        .mission-link.pump:hover {
-            background: #00ff88;
-            color: #000;
-        }
-
-        .claim-btn {
-            display: block;
-            width: 100%;
-            margin-top: 15px;
-            padding: 15px;
-            background: #333;
-            border: none;
-            border-radius: 10px;
-            color: #666;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: not-allowed;
-            transition: all 0.3s;
-        }
-
-        .claim-btn.ready {
-            background: #E8A000;
-            color: #000;
             cursor: pointer;
+            overflow: hidden;
+            transition: border-color 0.3s;
         }
+        .upload-zone:hover { border-color: #E8A000; }
+        .upload-zone.has-image { border-style: solid; border-color: #E8A000; cursor: default; }
+        .upload-zone.mode-pfp { width: 300px; height: 300px; }
+        .upload-zone.mode-banner { width: 100%; max-width: 750px; aspect-ratio: 3/1; }
 
-        .claim-btn.ready:hover {
-            background: #ffb700;
-        }
+        .upload-content { text-align: center; pointer-events: none; }
+        .upload-icon { font-size: 48px; margin-bottom: 10px; }
+        .upload-text { font-size: 16px; font-weight: 700; color: #E8A000; }
+        .upload-hint { font-size: 12px; color: #555; margin-top: 5px; }
+        .upload-zone.has-image .upload-content { display: none; }
 
-        .claim-status {
-            margin-top: 10px;
-            font-size: 12px;
-            color: #666;
-        }
-
-        .claim-status.error {
-            color: #ff4444;
-        }
-
-        .claim-status.success {
-            color: #00c853;
-        }
-
-        .close-modal {
+        .canvas-container {
             position: absolute;
-            top: 15px;
-            right: 20px;
-            background: none;
-            border: none;
-            color: #666;
-            font-size: 30px;
-            cursor: pointer;
+            inset: 0;
+            display: none;
+            justify-content: center;
+            align-items: center;
         }
+        .canvas-container.visible { display: flex; }
 
-        .close-modal:hover {
-            color: #fff;
-        }
-
-        .modal-inner {
-            position: relative;
-        }
-
-        .modal-unlocked {
-            color: #00c853;
-            font-size: 16px;
-            margin-top: 15px;
-        }
-
-        .modal-unlocked span {
-            font-size: 24px;
-        }
-
-        /* ---------- BADGE 10 WALLET SECTION ---------- */
-        .wallet-section {
-            margin-top: 15px;
-            text-align: left;
-        }
-
-        .wallet-label {
+        #mainCanvas {
             display: block;
-            font-size: 11px;
-            color: #888;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            margin-bottom: 8px;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
         }
 
-        .wallet-input {
-            width: 100%;
-            padding: 12px;
-            background: #2a2a2a;
-            border: 1px solid #444;
-            border-radius: 8px;
-            color: #fff;
-            font-size: 12px;
-            font-family: monospace;
-            outline: none;
-            transition: border-color 0.2s;
-        }
+        #fileInput { display: none; }
 
-        .wallet-input:focus {
-            border-color: #E8A000;
+        /* ---------- ACTION BUTTONS ---------- */
+        .action-buttons {
+            display: none;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
         }
-
-        .wallet-input::placeholder {
-            color: #555;
-            font-family: Arial, sans-serif;
-        }
-
-        .wallet-submit-btn {
-            display: block;
-            width: 100%;
-            margin-top: 10px;
-            padding: 15px;
-            background: #E8A000;
-            border: none;
-            border-radius: 10px;
-            color: #000;
+        .action-buttons.visible { display: flex; }
+        .action-btn {
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-family: 'Poppins', sans-serif;
             font-size: 14px;
-            font-weight: bold;
+            font-weight: 700;
             cursor: pointer;
-            transition: background 0.2s;
+            border: none;
+            transition: all 0.2s;
         }
+        .action-btn.primary { background: #E8A000; color: #000; }
+        .action-btn.primary:hover { background: #ffb700; }
+        .action-btn.secondary { background: #222; color: #E8A000; border: 2px solid #E8A000; }
+        .action-btn.secondary:hover { background: #E8A000; color: #000; }
 
-        .wallet-submit-btn:hover {
-            background: #ffb700;
-        }
-
-        .wallet-submit-btn:disabled {
-            background: #333;
-            color: #666;
-            cursor: not-allowed;
-        }
-
-        /* ---------- BADGE 10 PENDING BOX ---------- */
-        .pending-box {
-            background: #1a1400;
-            border: 1px solid #f39c12;
-            border-radius: 10px;
-            padding: 18px;
+        /* ---------- STICKER EDIT PANEL ---------- */
+        .sticker-panel {
+            display: none;
+            background: #111;
+            border-radius: 12px;
+            padding: 15px;
             margin-top: 15px;
-            text-align: center;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
         }
-
-        .pending-box .pending-icon {
-            font-size: 30px;
-            margin-bottom: 10px;
+        .sticker-panel.visible { display: flex; }
+        .sticker-panel label { font-size: 12px; color: #888; }
+        .sticker-panel input[type="range"] { width: 100px; accent-color: #E8A000; }
+        .sticker-panel button {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
         }
+        .btn-delete { background: #ff4444; color: #fff; }
+        .btn-delete:hover { background: #cc0000; }
+        .btn-rotate { background: #E8A000; color: #000; }
+        .btn-rotate:hover { background: #ffb700; }
+        .btn-deselect { background: #333; color: #888; }
+        .btn-deselect:hover { background: #555; color: #fff; }
 
-        .pending-box p {
-            color: #f39c12;
-            font-size: 13px;
-            line-height: 1.6;
+        /* ---------- STICKERS GRID ---------- */
+        .stickers-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
         }
+        .sticker-item {
+            aspect-ratio: 1;
+            background: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 6px;
+            overflow: hidden;
+        }
+        .sticker-item:hover { border-color: #E8A000; transform: scale(1.05); background: #111; }
+        .sticker-item img { width: 100%; height: 100%; object-fit: contain; }
 
-        @media (max-width: 400px) {
-            .badges-grid {
-                gap: 10px;
-            }
+        /* ---------- TIPS ---------- */
+        .tips { font-size: 13px; color: #555; line-height: 2; }
 
-            .badge {
-                font-size: 11px;
-            }
-
-            .page-title {
-                font-size: 28px;
-            }
-
-            .sidebar {
-                width: 100%;
-                right: -100%;
-            }
+        /* ---------- RESPONSIVE ---------- */
+        @media (max-width: 600px) {
+            .upload-zone.mode-pfp { width: 220px; height: 220px; }
+            .stickers-grid { grid-template-columns: repeat(4, 1fr); }
+            .mode-btn { padding: 12px; font-size: 12px; }
+            .mode-btn span { font-size: 20px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Hamburger Menu Button -->
-    <div class="menu-btn" id="menuBtn">
-        <span></span>
-        <span></span>
-        <span></span>
-    </div>
+    <!-- Hamburger -->
+    <div class="menu-btn" id="menuBtn"><span></span><span></span><span></span></div>
 
     <!-- Sidebar -->
     <nav class="sidebar" id="sidebar">
@@ -724,707 +290,513 @@
         <a href="about.html">About</a>
         <a href="yellowmap.html">YellowMap</a>
         <a href="yellowgame.html">YellowGame</a>
+        <a href="studio.html" class="active-page">YellowStudio</a>
         <a href="gallery.html">Gallery</a>
         <a href="galleryv2.html">GalleryV2</a>
         <a href="enter.html">Enter</a>
-        <a href="status.html" class="active-page">My Status</a>
+        <a href="status.html">My Status</a>
         <div class="secret-cat" id="secretCat">😼</div>
     </nav>
 
-    <!-- Overlay -->
     <div class="overlay" id="overlay"></div>
 
-    <div class="container">
-        <h1 class="page-title">Your Yellow Status</h1>
-
-        <div class="identity-card">
-            <div class="identity-row">
-                <span class="identity-label">Username</span>
-                <span class="identity-value username" id="username">Loading...</span>
-            </div>
-            <div class="identity-row">
-                <span class="identity-label">Join Date</span>
-                <span class="identity-value" id="joinDate">...</span>
-            </div>
-            <div class="identity-row">
-                <span class="identity-label">Session</span>
-                <div class="session-status">
-                    <div class="session-dot"></div>
-                    <span class="session-text">CONNECTED</span>
-                </div>
-            </div>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-logo">
+            <img src="images/studiocatz.png" alt="YellowCatz Studio" onerror="this.style.display='none'">
         </div>
-
-        <div class="badges-section">
-            <h2 class="badges-title">Badges</h2>
-            <p class="badges-counter"><span id="badgeCount">0</span> / 10 unlocked</p>
-            <div class="badges-grid" id="badgesGrid"></div>
-            <p class="signal-message">Click on a badge to see its mission.</p>
+        <div class="header-text">
+            <h1>Yellow<span>C</span>atz <span>Studio</span></h1>
+            <p>SNAP • SNIP • STICK</p>
         </div>
-
-        <button class="back-btn" id="backBtn">Back to Home</button>
-        <a href="/api/auth/logout" style="display:block;text-align:center;margin-top:15px;color:#8B5A00;font-size:12px;letter-spacing:1px;opacity:0.6;text-decoration:none;transition:opacity 0.3s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.6'">Disconnect</a>
+        <div class="header-stars">⭐✨🌟</div>
     </div>
 
-    <!-- MISSION MODAL -->
-    <div class="modal" id="missionModal">
-        <div class="modal-content">
-            <div class="modal-inner">
-                <button class="close-modal" onclick="closeModal()">&times;</button>
-                <div class="modal-badge" id="modalBadge">?</div>
-                <h3 class="modal-title" id="modalTitle">Badge Name</h3>
-                <p class="modal-description" id="modalDescription">Description</p>
-                
-                <div class="modal-mission" id="modalMission">
-                    <p class="modal-mission-label">Mission</p>
-                    <p class="modal-mission-text" id="modalMissionText">Mission details...</p>
-                    <a href="#" class="mission-link" id="missionLink" target="_blank" style="display:none;">Go to Twitter</a>
-                </div>
+    <!-- Mode Selection -->
+    <div class="mode-selection">
+        <button class="mode-btn active" data-mode="pfp" onclick="selectMode('pfp')">
+            <span>👤</span>PFP
+        </button>
+        <button class="mode-btn" data-mode="banner" onclick="selectMode('banner')">
+            <span>🖼️</span>Banner
+        </button>
+    </div>
 
-                <!-- Standard claim button (hidden for badge_10) -->
-                <button class="claim-btn" id="claimBtn" onclick="claimBadge()">Complete Mission First</button>
-                <p class="claim-status" id="claimStatus"></p>
+    <!-- Upload Section -->
+    <div class="section" id="uploadSection">
+        <h2 class="section-title">📸 Upload Your Photo</h2>
+        <p class="section-subtitle">Click or drag & drop an image to get started</p>
 
-                <!-- Badge 10: wallet input (shown after clicking pump.fun link) -->
-                <div id="walletSection" style="display:none;">
-                    <div class="wallet-section">
-                        <span class="wallet-label">Your Solana Wallet Address</span>
-                        <input type="text" class="wallet-input" id="walletInput"
-                               placeholder="e.g. 7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU"
-                               maxlength="100">
-                    </div>
-                    <button class="wallet-submit-btn" id="walletSubmitBtn" onclick="submitBadge10()">
-                        Submit for Review 🏆
-                    </button>
-                    <p class="claim-status" id="walletStatus"></p>
+        <div class="upload-wrapper">
+            <div class="upload-zone mode-pfp" id="uploadZone" onclick="handleUploadClick(event)">
+                <div class="upload-content" id="uploadContent">
+                    <div class="upload-icon">📷</div>
+                    <div class="upload-text">Upload a Photo</div>
+                    <div class="upload-hint">Click or drag & drop</div>
                 </div>
-
-                <!-- Badge 10: pending confirmation -->
-                <div id="pendingBox" style="display:none;" class="pending-box">
-                    <div class="pending-icon">⏳</div>
-                    <p><strong>Wallet submitted!</strong><br>We are verifying your $YELLOWCATZ holdings manually. The badge will be awarded once confirmed.</p>
-                </div>
-                
-                <div class="modal-unlocked" id="modalUnlocked" style="display:none;">
-                    <span>✓</span> Badge Unlocked!
+                <div class="canvas-container" id="canvasContainer">
+                    <canvas id="mainCanvas"></canvas>
                 </div>
             </div>
         </div>
+        <input type="file" id="fileInput" accept="image/*" onchange="handleImageUpload(event)">
+
+        <!-- Sticker edit panel -->
+        <div class="sticker-panel" id="stickerPanel">
+            <label>Size</label>
+            <input type="range" id="sizeSlider" min="10" max="500" value="100" oninput="resizeSticker(this.value)">
+            <button class="btn-rotate" onclick="rotateSticker()">🔄 Rotate</button>
+            <button class="btn-delete" onclick="deleteSticker()">🗑️ Delete</button>
+            <button class="btn-deselect" onclick="deselectSticker()">✕ Deselect</button>
+        </div>
+
+        <div class="action-buttons" id="actionButtons">
+            <button class="action-btn secondary" onclick="document.getElementById('fileInput').click()">📁 Change Photo</button>
+            <button class="action-btn primary" onclick="downloadImage()">⬇️ Download</button>
+        </div>
+    </div>
+
+    <!-- Stickers Section -->
+    <div class="section" id="stickersSection" style="display:none;">
+        <h2 class="section-title">⭐ Stickers</h2>
+        <p class="section-subtitle">Tap a sticker to add it, then drag to position</p>
+        <div class="stickers-grid" id="stickersGrid"></div>
+    </div>
+
+    <!-- Tips -->
+    <div class="section" id="tipsSection" style="display:none;">
+        <h2 class="section-title">💡 Tips</h2>
+        <p class="tips">
+            • Tap a sticker to add it<br>
+            • Drag to move it on the canvas<br>
+            • Use the Size slider to resize<br>
+            • Rotate button to rotate 15°<br>
+            • Download when you're done!
+        </p>
     </div>
 
     <script>
         // ============================================================
-        // MENU TOGGLE
+        // MENU
         // ============================================================
-        const menuBtn = document.getElementById('menuBtn');
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('overlay');
-
-        menuBtn.addEventListener('click', () => {
-            menuBtn.classList.toggle('active');
-            sidebar.classList.toggle('active');
-            overlay.classList.toggle('active');
+        document.getElementById('menuBtn').addEventListener('click', function() {
+            this.classList.toggle('active');
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('overlay').classList.toggle('active');
         });
-
-        overlay.addEventListener('click', () => {
-            menuBtn.classList.remove('active');
-            sidebar.classList.remove('active');
-            overlay.classList.remove('active');
+        document.getElementById('overlay').addEventListener('click', () => {
+            document.getElementById('menuBtn').classList.remove('active');
+            document.getElementById('sidebar').classList.remove('active');
+            document.getElementById('overlay').classList.remove('active');
         });
-
-        document.getElementById('secretCat').addEventListener('click', () => {
-            window.location.href = 'yellow.html';
-        });
+        document.getElementById('secretCat').addEventListener('click', () => { window.location.href = 'yellow.html'; });
 
         // ============================================================
-        // SESSION PERSISTENCE - localStorage cache
+        // CONSTANTS
         // ============================================================
-        const SESSION_KEY = 'yellowcatz_session';
-        const SESSION_EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days
+        const STICKER_COUNT = 20;
+        const BANNER_WIDTH  = 1500;
+        const BANNER_HEIGHT = 500;
+        const PFP_SIZE      = 1000;
 
-        function saveSession(userData) {
-            const session = {
-                data: userData,
-                timestamp: Date.now()
-            };
-            localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+        // ============================================================
+        // STATE
+        // ============================================================
+        let currentMode     = 'pfp';
+        let uploadedImage   = null;
+        let placedStickers  = [];
+        let selectedSticker = null;
+        let stickerIdCounter = 0;
+        let isDragging      = false;
+        let dragOffsetX     = 0;
+        let dragOffsetY     = 0;
+        let canvasWidth     = PFP_SIZE;
+        let canvasHeight    = PFP_SIZE;
+
+        // Clean sticker images (pre-converted to data URL to avoid canvas taint)
+        let cleanStickerImages = {};
+
+        const canvas    = document.getElementById('mainCanvas');
+        const ctx       = canvas.getContext('2d');
+        const uploadZone = document.getElementById('uploadZone');
+
+        // ============================================================
+        // PRELOAD STICKERS — Convert to dataURL to avoid taint
+        // ============================================================
+        function toCleanDataURL(src) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    const c = document.createElement('canvas');
+                    c.width = img.naturalWidth || img.width;
+                    c.height = img.naturalHeight || img.height;
+                    const cx = c.getContext('2d');
+                    cx.drawImage(img, 0, 0);
+                    try {
+                        const dataURL = c.toDataURL('image/png');
+                        const clean = new Image();
+                        clean.onload = () => resolve(clean);
+                        clean.onerror = () => resolve(img);
+                        clean.src = dataURL;
+                    } catch(e) {
+                        resolve(img);
+                    }
+                };
+                img.onerror = () => resolve(null);
+                img.src = src;
+            });
         }
 
-        function getSession() {
-            try {
-                const stored = localStorage.getItem(SESSION_KEY);
-                if (!stored) return null;
-                
-                const session = JSON.parse(stored);
-                if (Date.now() - session.timestamp > SESSION_EXPIRY) {
-                    localStorage.removeItem(SESSION_KEY);
-                    return null;
-                }
-                return session.data;
-            } catch (e) {
-                return null;
-            }
-        }
-
-        function clearSession() {
-            localStorage.removeItem(SESSION_KEY);
-        }
-
-        // ============================================================
-        // BADGE 10 STATUS CACHE
-        // ============================================================
-        function getBadge10Status() { return localStorage.getItem('badge10_status'); }
-        function setBadge10Status(s) { localStorage.setItem('badge10_status', s); }
-
-        // ============================================================
-        // BADGE CLICK PERSISTENCE (pour les délais longs)
-        // ============================================================
-        function getSavedClickTime(badgeId) {
-            const saved = localStorage.getItem(`badge_click_${badgeId}`);
-            return saved ? parseInt(saved, 10) : null;
-        }
-
-        function saveClickTime(badgeId) {
-            localStorage.setItem(`badge_click_${badgeId}`, Date.now().toString());
-        }
-
-        function clearClickTime(badgeId) {
-            localStorage.removeItem(`badge_click_${badgeId}`);
-        }
-
-        // ============================================================
-        // BADGES DATA
-        // ============================================================
-        const badgesData = [
-            { 
-                id: 'og', 
-                name: 'OG', 
-                emoji: '👑',
-                description: 'First 24 hours founder — The originals.',
-                mission: 'Be among the first to enter the Yellow World within 24 hours of launch.',
-                claimable: true,
-                link: null
-            },
-            { 
-                id: 'badge_2', 
-                name: 'Supporter', 
-                emoji: '💛',
-                description: 'Community supporter — You showed love.',
-                mission: 'Like and RT the pinned tweet on our profile. Wait 30 seconds before claiming.',
-                claimable: true,
-                link: 'https://x.com/Yellowcatz_',
-                linkText: '🐦 Go to @Yellowcatz_'
-            },
-            { 
-                id: 'badge_3', 
-                name: 'Yellow Army', 
-                emoji: '⚡',
-                description: 'Spread the yellow — You rep the culture.',
-                mission: 'Post a tweet with your new PFP from the gallery and include #YELLOWCATZ. Wait 30 seconds before claiming.',
-                claimable: true,
-                link: 'https://twitter.com/intent/tweet?text=I%20joined%20the%20Yellow%20World%20%F0%9F%9F%A1%20%23YELLOWCATZ&url=https://yellowcatz.io',
-                linkText: '📝 Post your tweet'
-            },
-            { 
-                id: 'badge_4', 
-                name: 'Reach the Moon', 
-                emoji: '🚀',
-                description: 'You reached the moon — A true explorer.',
-                mission: 'Complete the YellowGame challenge and click the green button when you reach the moon.',
-                claimable: false,
-                link: null
-            },
-            { 
-                id: 'badge_5', 
-                name: 'X Hunter', 
-                emoji: '🔍',
-                description: 'Found the X secret — Sharp eyes.',
-                mission: 'Find and download the hidden YellowCatzX image on the home page. (Hint: look at the title...)',
-                claimable: false,
-                link: null
-            },
-            { 
-                id: 'badge_6', 
-                name: 'M Hunter', 
-                emoji: '👻',
-                description: 'Found the M secret — Nothing is invisible to you.',
-                mission: 'Find and download the hidden YellowCatzM image on the home page. (Hint: something invisible...)',
-                claimable: false,
-                link: null
-            },
-            { 
-                id: 'badge_7', 
-                name: 'Doorkeeper', 
-                emoji: '🚪',
-                description: 'You entered the portal — Welcome inside.',
-                mission: 'Join our Telegram community through the Enter page.',
-                claimable: true,
-                link: 'https://t.me/YellowCatzPortal',
-                linkText: '📲 Join Telegram'
-            },
-            { 
-                id: 'badge_8', 
-                name: 'Ambassador', 
-                emoji: '🎙️',
-                description: 'You brought the crew — True leader.',
-                mission: 'Invite at least 3 new members to join the Yellow Army on Discord. Share the link, grow the community, then come back to claim.',
-                claimable: true,
-                link: 'https://discord.gg/dJgsZqFV7K',
-                linkText: '🎮 Share Discord Link',
-                delay: 3600000
-            },
-            { 
-                id: 'badge_9', 
-                name: 'Yellow Cards', 
-                emoji: '🎴',
-                description: 'Yellow Cards participant — You secured your spot.',
-                mission: 'Complete the Yellow Cards registration to earn this badge automatically.',
-                claimable: false,
-                link: 'https://x.com/i/status/2034624285772558399',
-                linkText: '🐦 View Yellow Cards Tweet'
-            },
-            { 
-                id: 'badge_10', 
-                name: 'Legend', 
-                emoji: '🏆',
-                description: 'The ultimate Yellow Catz member — Hold $20+ of $YELLOWCATZ.',
-                mission: 'Hold at least $20 worth of $YELLOWCATZ on pump.fun. Click the link below to buy, then come back and submit your Solana wallet address. We will verify your holdings manually and award the badge.',
-                claimable: false,
-                special: 'wallet',
-                link: 'https://pump.fun/coin/9zcYAff5kaZfVDkEv3DzD2ojvocYyoRL2pFEko53pump',
-                linkText: '🟡 Buy $YELLOWCATZ on pump.fun'
-            }
-        ];
-
-        let userBadges = [];
-        let currentBadge = null;
-        let linkClicked = false;
-        let linkClickTime = null;
-        const DEFAULT_DELAY = 30000; // 30 seconds
-
-        // ============================================================
-        // RENDER BADGES
-        // ============================================================
-        function renderBadges() {
-            const grid = document.getElementById('badgesGrid');
+        async function preloadStickers() {
+            const grid = document.getElementById('stickersGrid');
             grid.innerHTML = '';
+            for (let i = 1; i <= STICKER_COUNT; i++) {
+                const src = `images/sticker${i}.png`;
+                const cleanImg = await toCleanDataURL(src);
+                if (cleanImg) cleanStickerImages[i] = cleanImg;
 
-            const b10Status = getBadge10Status();
+                const item = document.createElement('div');
+                item.className = 'sticker-item';
+                item.title = `Sticker ${i}`;
+                const img = document.createElement('img');
+                img.src = src;
+                img.alt = `Sticker ${i}`;
+                item.appendChild(img);
+                item.onclick = () => addSticker(i);
+                grid.appendChild(item);
+            }
+        }
 
-            badgesData.forEach(badge => {
-                const isUnlocked = userBadges.includes(badge.id);
-                const isPending = badge.id === 'badge_10' && b10Status === 'pending' && !isUnlocked;
-                
-                const el = document.createElement('div');
-                el.className = 'badge ' + (isUnlocked ? 'unlocked' : isPending ? 'pending-review' : 'locked');
-                el.setAttribute('data-badge', badge.id);
-                el.onclick = () => openModal(badge.id);
+        preloadStickers();
 
-                const emoji = isUnlocked ? badge.emoji : (isPending ? '⏳' : '?');
-                const label = isUnlocked ? badge.name : (isPending ? 'REVIEW' : '???');
-                const tooltipText = isUnlocked
-                    ? badge.name + ' — ' + badge.description
-                    : isPending ? 'Under review...' : 'Locked badge';
-                
-                el.innerHTML = `
-                    <span>${emoji}</span>
-                    <span class="badge-label">${label}</span>
-                    <div class="badge-tooltip ${isUnlocked ? 'unlocked-tip' : ''}">${tooltipText}</div>
-                `;
-                
-                grid.appendChild(el);
+        // ============================================================
+        // MODE SELECTION
+        // ============================================================
+        function selectMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+
+            const zone = document.getElementById('uploadZone');
+            zone.classList.remove('mode-pfp', 'mode-banner');
+            zone.classList.add(`mode-${mode}`);
+
+            if (mode === 'pfp') {
+                canvasWidth  = PFP_SIZE;
+                canvasHeight = PFP_SIZE;
+            } else {
+                canvasWidth  = BANNER_WIDTH;
+                canvasHeight = BANNER_HEIGHT;
+            }
+
+            // Reset
+            uploadedImage  = null;
+            placedStickers = [];
+            selectedSticker = null;
+            canvas.width  = canvasWidth;
+            canvas.height = canvasHeight;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            document.getElementById('canvasContainer').classList.remove('visible');
+            document.getElementById('uploadContent').style.display = '';
+            uploadZone.classList.remove('has-image');
+            document.getElementById('actionButtons').classList.remove('visible');
+            document.getElementById('stickerPanel').classList.remove('visible');
+            document.getElementById('stickersSection').style.display = 'none';
+            document.getElementById('tipsSection').style.display = 'none';
+        }
+
+        // ============================================================
+        // UPLOAD
+        // ============================================================
+        function handleUploadClick(e) {
+            if (uploadZone.classList.contains('has-image')) return;
+            document.getElementById('fileInput').click();
+        }
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    uploadedImage = img;
+                    initCanvas();
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+            // Reset input so same file can be selected again
+            e.target.value = '';
+        }
+
+        function initCanvas() {
+            canvas.width  = canvasWidth;
+            canvas.height = canvasHeight;
+
+            // Draw uploaded image (cover fit)
+            const imgRatio    = uploadedImage.width / uploadedImage.height;
+            const canvasRatio = canvasWidth / canvasHeight;
+            let sx, sy, sw, sh;
+            if (imgRatio > canvasRatio) {
+                sh = uploadedImage.height;
+                sw = sh * canvasRatio;
+                sy = 0;
+                sx = (uploadedImage.width - sw) / 2;
+            } else {
+                sw = uploadedImage.width;
+                sh = sw / canvasRatio;
+                sx = 0;
+                sy = (uploadedImage.height - sh) / 2;
+            }
+            ctx.drawImage(uploadedImage, sx, sy, sw, sh, 0, 0, canvasWidth, canvasHeight);
+
+            uploadZone.classList.add('has-image');
+            document.getElementById('uploadContent').style.display = 'none';
+            document.getElementById('canvasContainer').classList.add('visible');
+            document.getElementById('actionButtons').classList.add('visible');
+            document.getElementById('stickersSection').style.display = 'block';
+            document.getElementById('tipsSection').style.display = 'block';
+        }
+
+        // ============================================================
+        // REDRAW CANVAS
+        // ============================================================
+        function redrawCanvas() {
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+            // Background image
+            if (uploadedImage) {
+                const imgRatio    = uploadedImage.width / uploadedImage.height;
+                const canvasRatio = canvasWidth / canvasHeight;
+                let sx, sy, sw, sh;
+                if (imgRatio > canvasRatio) {
+                    sh = uploadedImage.height;
+                    sw = sh * canvasRatio;
+                    sy = 0;
+                    sx = (uploadedImage.width - sw) / 2;
+                } else {
+                    sw = uploadedImage.width;
+                    sh = sw / canvasRatio;
+                    sx = 0;
+                    sy = (uploadedImage.height - sh) / 2;
+                }
+                ctx.drawImage(uploadedImage, sx, sy, sw, sh, 0, 0, canvasWidth, canvasHeight);
+            }
+
+            // Stickers
+            placedStickers.forEach(s => {
+                ctx.save();
+                ctx.translate(s.x, s.y);
+                ctx.rotate((s.rotation * Math.PI) / 180);
+                ctx.drawImage(s.img, -s.size / 2, -s.size / 2, s.size, s.size);
+
+                // Selection border
+                if (s === selectedSticker) {
+                    ctx.strokeStyle = '#E8A000';
+                    ctx.lineWidth   = Math.max(2, canvasWidth * 0.003);
+                    ctx.setLineDash([8, 4]);
+                    ctx.strokeRect(-s.size / 2 - 4, -s.size / 2 - 4, s.size + 8, s.size + 8);
+                    ctx.setLineDash([]);
+                }
+                ctx.restore();
+            });
+        }
+
+        // ============================================================
+        // STICKERS
+        // ============================================================
+        function addSticker(index) {
+            if (!uploadedImage) return;
+            const img = cleanStickerImages[index];
+            if (!img) { console.warn('Sticker not loaded:', index); return; }
+
+            const size = Math.round(Math.min(canvasWidth, canvasHeight) * 0.2);
+            const sticker = {
+                id: stickerIdCounter++,
+                img,
+                x: canvasWidth / 2 + (Math.random() - 0.5) * 100,
+                y: canvasHeight / 2 + (Math.random() - 0.5) * 100,
+                size,
+                rotation: 0
+            };
+            placedStickers.push(sticker);
+            selectSticker(sticker);
+            redrawCanvas();
+        }
+
+        function selectSticker(s) {
+            selectedSticker = s;
+            const panel = document.getElementById('stickerPanel');
+            panel.classList.add('visible');
+            document.getElementById('sizeSlider').value = s.size;
+            redrawCanvas();
+        }
+
+        function deselectSticker() {
+            selectedSticker = null;
+            document.getElementById('stickerPanel').classList.remove('visible');
+            redrawCanvas();
+        }
+
+        function deleteSticker() {
+            if (!selectedSticker) return;
+            placedStickers = placedStickers.filter(s => s !== selectedSticker);
+            selectedSticker = null;
+            document.getElementById('stickerPanel').classList.remove('visible');
+            redrawCanvas();
+        }
+
+        function rotateSticker() {
+            if (!selectedSticker) return;
+            selectedSticker.rotation = (selectedSticker.rotation + 15) % 360;
+            redrawCanvas();
+        }
+
+        function resizeSticker(val) {
+            if (!selectedSticker) return;
+            selectedSticker.size = parseInt(val);
+            redrawCanvas();
+        }
+
+        // ============================================================
+        // HIT TEST
+        // ============================================================
+        function getCanvasPos(e) {
+            const rect  = canvas.getBoundingClientRect();
+            const scaleX = canvasWidth  / rect.width;
+            const scaleY = canvasHeight / rect.height;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top)  * scaleY
+            };
+        }
+
+        function findStickerAt(x, y) {
+            // Iterate in reverse (top sticker first)
+            for (let i = placedStickers.length - 1; i >= 0; i--) {
+                const s = placedStickers[i];
+                const half = s.size / 2 + 8;
+                const dx = x - s.x;
+                const dy = y - s.y;
+                // Rotate point back
+                const angle = -(s.rotation * Math.PI) / 180;
+                const rx = dx * Math.cos(angle) - dy * Math.sin(angle);
+                const ry = dx * Math.sin(angle) + dy * Math.cos(angle);
+                if (Math.abs(rx) <= half && Math.abs(ry) <= half) return s;
+            }
+            return null;
+        }
+
+        // ============================================================
+        // CANVAS EVENTS
+        // ============================================================
+        function onDown(e) {
+            if (!uploadedImage) return;
+            e.preventDefault();
+            const pos = getCanvasPos(e);
+            const s   = findStickerAt(pos.x, pos.y);
+            if (s) {
+                isDragging  = true;
+                dragOffsetX = pos.x - s.x;
+                dragOffsetY = pos.y - s.y;
+                // Bring to top
+                placedStickers = placedStickers.filter(st => st !== s);
+                placedStickers.push(s);
+                selectSticker(s);
+            } else {
+                deselectSticker();
+            }
+        }
+
+        function onMove(e) {
+            if (!isDragging || !selectedSticker) return;
+            e.preventDefault();
+            const pos = getCanvasPos(e);
+            selectedSticker.x = pos.x - dragOffsetX;
+            selectedSticker.y = pos.y - dragOffsetY;
+            redrawCanvas();
+        }
+
+        function onUp() { isDragging = false; }
+
+        canvas.addEventListener('mousedown',  onDown, { passive: false });
+        canvas.addEventListener('mousemove',  onMove, { passive: false });
+        canvas.addEventListener('mouseup',    onUp);
+        canvas.addEventListener('touchstart', onDown, { passive: false });
+        canvas.addEventListener('touchmove',  onMove, { passive: false });
+        canvas.addEventListener('touchend',   onUp);
+
+        // ============================================================
+        // DRAG & DROP FILE
+        // ============================================================
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (!uploadZone.classList.contains('has-image')) uploadZone.style.borderColor = '#E8A000';
+        });
+        uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = ''; });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.style.borderColor = '';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleImageUpload({ target: { files: [file] } });
+            }
+        });
+
+        // ============================================================
+        // DOWNLOAD — Flat canvas, no selection border
+        // ============================================================
+        function downloadImage() {
+            if (!uploadedImage) return;
+
+            // Create a clean export canvas
+            const exportCanvas = document.createElement('canvas');
+            exportCanvas.width  = canvasWidth;
+            exportCanvas.height = canvasHeight;
+            const ectx = exportCanvas.getContext('2d');
+
+            // Draw background image
+            const imgRatio    = uploadedImage.width / uploadedImage.height;
+            const canvasRatio = canvasWidth / canvasHeight;
+            let sx, sy, sw, sh;
+            if (imgRatio > canvasRatio) {
+                sh = uploadedImage.height;
+                sw = sh * canvasRatio;
+                sy = 0;
+                sx = (uploadedImage.width - sw) / 2;
+            } else {
+                sw = uploadedImage.width;
+                sh = sw / canvasRatio;
+                sx = 0;
+                sy = (uploadedImage.height - sh) / 2;
+            }
+            ectx.drawImage(uploadedImage, sx, sy, sw, sh, 0, 0, canvasWidth, canvasHeight);
+
+            // Draw stickers (no selection border)
+            placedStickers.forEach(s => {
+                ectx.save();
+                ectx.translate(s.x, s.y);
+                ectx.rotate((s.rotation * Math.PI) / 180);
+                ectx.drawImage(s.img, -s.size / 2, -s.size / 2, s.size, s.size);
+                ectx.restore();
             });
 
-            document.getElementById('badgeCount').textContent = userBadges.length;
-        }
-
-        // ============================================================
-        // MODAL
-        // ============================================================
-        function openModal(badgeId) {
-            const badge = badgesData.find(b => b.id === badgeId);
-            if (!badge) return;
-
-            currentBadge = badge;
-            linkClicked = false;
-            linkClickTime = null;
-
-            const isUnlocked = userBadges.includes(badgeId);
-
-            // Vérifier si on a un clic sauvegardé pour ce badge
-            const savedTime = getSavedClickTime(badgeId);
-            if (savedTime) {
-                linkClicked = true;
-                linkClickTime = savedTime;
-            }
-
-            document.getElementById('modalBadge').textContent = isUnlocked ? badge.emoji : (badge.id === 'badge_10' ? '🏆' : '?');
-            document.getElementById('modalBadge').className = 'modal-badge' + (isUnlocked ? '' : ' locked');
-            document.getElementById('modalTitle').textContent = badge.name;
-            document.getElementById('modalDescription').textContent = badge.description;
-            document.getElementById('modalMissionText').textContent = badge.mission;
-
-            // Reset all sections
-            document.getElementById('claimStatus').textContent = '';
-            document.getElementById('claimStatus').className = 'claim-status';
-            document.getElementById('walletStatus').textContent = '';
-            document.getElementById('walletInput').value = '';
-            document.getElementById('walletSection').style.display = 'none';
-            document.getElementById('pendingBox').style.display = 'none';
-
-            const linkBtn = document.getElementById('missionLink');
-            const claimBtn = document.getElementById('claimBtn');
-            const unlockedMsg = document.getElementById('modalUnlocked');
-
-            if (isUnlocked) {
-                claimBtn.style.display = 'none';
-                document.getElementById('modalMission').style.display = 'none';
-                linkBtn.style.display = 'none';
-                unlockedMsg.style.display = 'block';
-                document.getElementById('missionModal').classList.add('open');
-                return;
-            }
-
-            document.getElementById('modalMission').style.display = 'block';
-            unlockedMsg.style.display = 'none';
-
-            // ── BADGE 10 — wallet flow ──
-            if (badge.id === 'badge_10') {
-                claimBtn.style.display = 'none';
-
-                // pump.fun link (always visible)
-                linkBtn.style.display = 'inline-block';
-                linkBtn.href = badge.link;
-                linkBtn.textContent = badge.linkText;
-                linkBtn.className = 'mission-link pump';
-                linkBtn.setAttribute('target', '_blank');
-                linkBtn.onclick = null;
-
-                const b10Status = getBadge10Status();
-                if (b10Status === 'pending') {
-                    document.getElementById('pendingBox').style.display = 'block';
-                } else {
-                    document.getElementById('walletSection').style.display = 'block';
-                    document.getElementById('walletSubmitBtn').disabled = false;
-                    document.getElementById('walletSubmitBtn').textContent = 'Submit for Review 🏆';
-                }
-
-                document.getElementById('missionModal').classList.add('open');
-                return;
-            }
-
-            // ── STANDARD BADGES ──
-            claimBtn.style.display = 'block';
-
-            // Show link for badges with links
-            if (badge.link && !isUnlocked) {
-                linkBtn.style.display = 'inline-block';
-                linkBtn.href = badge.link;
-                linkBtn.textContent = badge.linkText || 'Go';
-                linkBtn.className = 'mission-link';
-                linkBtn.setAttribute('target', '_blank');
-                
-                if (badge.id === 'badge_9') {
-                    linkBtn.onclick = null;
-                } else {
-                    linkBtn.onclick = () => {
-                        linkClicked = true;
-                        linkClickTime = Date.now();
-                        saveClickTime(badgeId);
-                        updateClaimButton();
-                    };
-                }
-            } else {
-                linkBtn.style.display = 'none';
-            }
-
-            if (badge.id === 'og') {
-                claimBtn.textContent = '👑 Claim OG Badge';
-                claimBtn.classList.add('ready');
-                linkClicked = true;
-                linkClickTime = Date.now() - (badge.delay || DEFAULT_DELAY);
-            } else if (badge.id === 'badge_9') {
-                claimBtn.textContent = 'Awarded automatically';
-                claimBtn.classList.remove('ready');
-                claimBtn.style.cursor = 'default';
-            } else if (badge.claimable && badge.link) {
-                if (savedTime) {
-                    const delay = badge.delay || DEFAULT_DELAY;
-                    const elapsed = Date.now() - savedTime;
-                    if (elapsed >= delay) {
-                        claimBtn.textContent = "I've completed the mission ✓";
-                        claimBtn.classList.add('ready');
-                    } else {
-                        claimBtn.classList.remove('ready');
-                        updateClaimButton();
-                    }
-                } else {
-                    claimBtn.textContent = 'Click the link first';
-                    claimBtn.classList.remove('ready');
-                }
-            } else {
-                claimBtn.textContent = 'Cannot be claimed yet';
-                claimBtn.classList.remove('ready');
-            }
-
-            document.getElementById('missionModal').classList.add('open');
-        }
-
-        function closeModal() {
-            document.getElementById('missionModal').classList.remove('open');
-            currentBadge = null;
-        }
-
-        function updateClaimButton() {
-            if (!currentBadge || !currentBadge.claimable) return;
-            if (currentBadge.id === 'og') return;
-
-            const claimBtn = document.getElementById('claimBtn');
-            const claimStatus = document.getElementById('claimStatus');
-
-            const delay = currentBadge.delay || DEFAULT_DELAY;
-
-            if (!linkClicked) {
-                claimBtn.textContent = 'Click the link first';
-                claimBtn.classList.remove('ready');
-                claimStatus.textContent = '';
-                return;
-            }
-
-            const elapsed = Date.now() - linkClickTime;
-            const remaining = delay - elapsed;
-
-            if (remaining > 0) {
-                if (delay > 60000) {
-                    claimBtn.textContent = 'Verification in progress...';
-                    claimStatus.textContent = 'Check back later';
-                } else {
-                    const secs = Math.ceil(remaining / 1000);
-                    claimBtn.textContent = `Wait ${secs}s...`;
-                    claimStatus.textContent = 'Complete the mission and wait...';
-                }
-                claimBtn.classList.remove('ready');
-                setTimeout(updateClaimButton, 1000);
-            } else {
-                claimBtn.textContent = "I've completed the mission ✓";
-                claimBtn.classList.add('ready');
-                claimStatus.textContent = '';
-            }
-        }
-
-        // ============================================================
-        // CLAIM BADGE (standard badges)
-        // ============================================================
-        async function claimBadge() {
-            if (!currentBadge) return;
-            if (!currentBadge.claimable && currentBadge.id !== 'og') return;
-
-            const claimBtn = document.getElementById('claimBtn');
-            const claimStatus = document.getElementById('claimStatus');
-
-            const delay = currentBadge.delay || DEFAULT_DELAY;
-
-            if (currentBadge.id !== 'og' && !linkClicked) {
-                claimStatus.textContent = '⚠️ You must click the link first!';
-                claimStatus.className = 'claim-status error';
-                return;
-            }
-
-            if (currentBadge.id !== 'og') {
-                const elapsed = Date.now() - linkClickTime;
-                if (elapsed < delay) {
-                    if (delay > 60000) {
-                        claimStatus.textContent = '⚠️ Verification still in progress...';
-                    } else {
-                        const remaining = Math.ceil((delay - elapsed) / 1000);
-                        claimStatus.textContent = `⚠️ Please wait ${remaining} more seconds`;
-                    }
-                    claimStatus.className = 'claim-status error';
-                    return;
-                }
-            }
-
-            claimBtn.textContent = 'Claiming...';
-            claimBtn.classList.remove('ready');
-
+            // Download
             try {
-                const response = await fetch('/api/badge', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ badgeId: currentBadge.id })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    claimStatus.textContent = '🎉 Badge unlocked!';
-                    claimStatus.className = 'claim-status success';
-                    userBadges.push(currentBadge.id);
-                    clearClickTime(currentBadge.id);
-                    
-                    const cached = getSession();
-                    if (cached) {
-                        const updatedBadges = cached.badges || [];
-                        updatedBadges.push({ id: currentBadge.id, unlocked: true });
-                        cached.badges = updatedBadges;
-                        saveSession(cached);
-                    }
-                    
-                    renderBadges();
-                    
-                    setTimeout(() => {
-                        closeModal();
-                    }, 1500);
-                } else {
-                    claimStatus.textContent = '❌ ' + (data.error || 'Failed to claim badge');
-                    claimStatus.className = 'claim-status error';
-                    claimBtn.textContent = currentBadge.id === 'og' ? '👑 Claim OG Badge' : "I've completed the mission";
-                    claimBtn.classList.add('ready');
-                }
-            } catch (error) {
-                claimStatus.textContent = '❌ Connection error';
-                claimStatus.className = 'claim-status error';
-                claimBtn.textContent = currentBadge.id === 'og' ? '👑 Claim OG Badge' : "I've completed the mission";
-                claimBtn.classList.add('ready');
+                const dataURL = exportCanvas.toDataURL('image/png');
+                const link    = document.createElement('a');
+                link.download = currentMode === 'pfp' ? 'yellowcatz-pfp.png' : 'yellowcatz-banner.png';
+                link.href     = dataURL;
+                link.click();
+            } catch(e) {
+                alert('Download failed — make sure sticker images are hosted on the same domain.');
+                console.error(e);
             }
         }
-
-        // ============================================================
-        // BADGE 10 — WALLET SUBMISSION
-        // ============================================================
-        async function submitBadge10() {
-            const wallet = document.getElementById('walletInput').value.trim();
-            const statusEl = document.getElementById('walletStatus');
-            const submitBtn = document.getElementById('walletSubmitBtn');
-
-            if (!wallet || wallet.length < 32) {
-                statusEl.textContent = '⚠️ Please enter a valid Solana wallet address';
-                statusEl.className = 'claim-status error';
-                return;
-            }
-
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Submitting...';
-
-            try {
-                const response = await fetch('/api/badge', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({ badgeId: 'badge_10', wallet })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    setBadge10Status('pending');
-                    document.getElementById('walletSection').style.display = 'none';
-                    document.getElementById('pendingBox').style.display = 'block';
-                    renderBadges();
-                } else {
-                    statusEl.textContent = '❌ ' + (data.error || 'Submission failed — please try again');
-                    statusEl.className = 'claim-status error';
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Submit for Review 🏆';
-                }
-            } catch (error) {
-                statusEl.textContent = '❌ Connection error — please try again';
-                statusEl.className = 'claim-status error';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Submit for Review 🏆';
-            }
-        }
-
-        // ============================================================
-        // FETCH USER DATA
-        // ============================================================
-        function formatDate(dateStr) {
-            const date = new Date(dateStr);
-            const options = { day: '2-digit', month: 'short', year: 'numeric' };
-            return date.toLocaleDateString('en-US', options);
-        }
-
-        function applyUserData(userData) {
-            const username = userData.user.username.replace(/^@/, '');
-            document.getElementById('username').textContent = '@' + username;
-            document.getElementById('joinDate').textContent = formatDate(userData.user.joinDate);
-            
-            userBadges = userData.badges
-                .filter(b => b.unlocked)
-                .map(b => b.id);
-
-            // If badge_10 is already unlocked, clear the pending state
-            if (userBadges.includes('badge_10')) {
-                setBadge10Status('approved');
-            }
-            
-            renderBadges();
-        }
-
-        async function fetchUserData() {
-            const cached = getSession();
-            if (cached && cached.authenticated) {
-                applyUserData(cached);
-            }
-
-            try {
-                const response = await fetch('/api/user', {
-                    credentials: 'include'
-                });
-                
-                if (response.status === 401) {
-                    clearSession();
-                    window.location.href = '/yellow.html';
-                    return;
-                }
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch user data');
-                }
-                
-                const userData = await response.json();
-                
-                if (!userData.authenticated) {
-                    clearSession();
-                    window.location.href = '/yellow.html';
-                    return;
-                }
-                
-                saveSession(userData);
-                applyUserData(userData);
-                
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-                
-                if (cached && cached.authenticated) {
-                    console.log('Using cached session data');
-                    return;
-                }
-                
-                document.getElementById('username').textContent = 'Error';
-                document.getElementById('joinDate').textContent = 'Connection failed';
-                
-                setTimeout(() => {
-                    window.location.href = '/yellow.html';
-                }, 2000);
-            }
-        }
-
-        // ============================================================
-        // INIT
-        // ============================================================
-        document.getElementById('backBtn').addEventListener('click', () => {
-            window.location.href = 'index.html';
-        });
-
-        document.getElementById('missionModal').addEventListener('click', (e) => {
-            if (e.target.id === 'missionModal') closeModal();
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchUserData();
-        });
     </script>
 </body>
 </html>
