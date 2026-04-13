@@ -629,7 +629,12 @@ function drawWheel() {
 // ============================================================
 // SPIN ANIMATION
 // ============================================================
-function animateSpin(targetIdx, totalSegs, onComplete) {
+  function animateSpin(targetIdx, totalSegs, onComplete) {
+  // Play wheel sound
+  const sound = new Audio('images/wheel-song.mp3');
+  sound.volume = 0.6;
+  sound.play().catch(()=>{});
+  setTimeout(() => { sound.pause(); sound.currentTime = 0; }, 5200);
   const arc = (2*Math.PI)/totalSegs;
   let targetAngle = -Math.PI/2 - (targetIdx*arc + arc/2);
   targetAngle = ((targetAngle%(2*Math.PI))+(2*Math.PI))%(2*Math.PI);
