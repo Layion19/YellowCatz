@@ -7,503 +7,221 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
+:root { --gold:#E8A000; --dark-gold:#8B5A00; --yellow:#FFD700; }
+body { min-height:100vh; font-family:'Space Grotesk',sans-serif; transition:background 0.6s,color 0.6s; overflow-x:hidden; }
+body.theme-simple { background:#f5e6c8; color:#3a2800; }
+body.theme-yellow { background:#080800; color:#E8A000; }
+body.theme-gold { background:#030303; color:#D4A000; }
 
-:root {
-  --gold: #E8A000;
-  --dark-gold: #8B5A00;
-  --yellow: #FFD700;
-}
+.screen { display:none; }
+.screen.active { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
 
-/* ── THEMES ── */
-body {
-  min-height: 100vh;
-  font-family: 'Space Grotesk', sans-serif;
-  transition: background 0.6s, color 0.6s;
-  overflow-x: hidden;
-}
-body.theme-simple {
-  background: #f5e6c8;
-  color: #3a2800;
-}
-body.theme-yellow {
-  background: #080800;
-  color: #E8A000;
-}
-body.theme-gold {
-  background: #030303;
-  color: #D4A000;
-}
+/* CONNECT */
+.connect-card { background:#000; border:2px solid var(--gold); border-radius:24px; padding:50px 40px; text-align:center; max-width:440px; width:100%; }
+.connect-logo { font-size:64px; margin-bottom:15px; }
+.connect-title { font-family:'Bebas Neue',sans-serif; font-size:42px; color:var(--gold); letter-spacing:4px; margin-bottom:8px; }
+.connect-sub { font-size:14px; color:#888; margin-bottom:40px; line-height:1.6; }
+.wallet-btn { width:100%; padding:16px; border-radius:14px; border:2px solid var(--gold); background:transparent; color:var(--gold); font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:12px; justify-content:center; transition:all 0.2s; margin-bottom:12px; }
+.wallet-btn:hover { background:var(--gold); color:#000; }
 
-/* ── SCREENS ── */
-.screen { display: none; }
-.screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+/* LOADING */
+.spinner { width:50px; height:50px; border:4px solid rgba(232,160,0,0.2); border-top-color:var(--gold); border-radius:50%; animation:spin 1s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.loading-msg { margin-top:20px; font-size:16px; color:var(--gold); }
 
-/* ── CONNECT SCREEN ── */
-.connect-card {
-  background: #000;
-  border: 2px solid var(--gold);
-  border-radius: 24px;
-  padding: 50px 40px;
-  text-align: center;
-  max-width: 440px;
-  width: 100%;
-}
-.connect-logo { font-size: 64px; margin-bottom: 15px; }
-.connect-title { font-family: 'Bebas Neue', sans-serif; font-size: 42px; color: var(--gold); letter-spacing: 4px; margin-bottom: 8px; }
-.connect-sub { font-size: 14px; color: #888; margin-bottom: 40px; line-height: 1.6; }
-.wallet-btn {
-  width: 100%;
-  padding: 16px;
-  border-radius: 14px;
-  border: 2px solid var(--gold);
-  background: transparent;
-  color: var(--gold);
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  justify-content: center;
-  transition: all 0.2s;
-  margin-bottom: 12px;
-}
-.wallet-btn:hover { background: var(--gold); color: #000; }
-.wallet-btn img { width: 28px; height: 28px; border-radius: 6px; }
+/* INELIGIBLE */
+.inelig-card { background:#111; border:2px solid #333; border-radius:20px; padding:40px; text-align:center; max-width:400px; }
+.inelig-icon { font-size:60px; margin-bottom:15px; }
+.inelig-title { font-family:'Bebas Neue',sans-serif; font-size:32px; color:var(--gold); margin-bottom:10px; }
+.inelig-sub { font-size:13px; color:#888; margin-bottom:25px; line-height:1.6; }
 
-/* ── LOADING ── */
-.spinner {
-  width: 50px; height: 50px;
-  border: 4px solid rgba(232,160,0,0.2);
-  border-top-color: var(--gold);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.loading-msg { margin-top: 20px; font-size: 16px; color: var(--gold); }
-
-/* ── INELIGIBLE ── */
-.inelig-card {
-  background: #111;
-  border: 2px solid #333;
-  border-radius: 20px;
-  padding: 40px;
-  text-align: center;
-  max-width: 400px;
-}
-.inelig-icon { font-size: 60px; margin-bottom: 15px; }
-.inelig-title { font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: var(--gold); margin-bottom: 10px; }
-.inelig-sub { font-size: 13px; color: #888; margin-bottom: 25px; line-height: 1.6; }
-
-/* ── MAIN INTERFACE ── */
-#s-main {
-  min-height: 100vh;
-  width: 100%;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px 15px 40px;
-}
-#s-main.active { display: flex; }
+/* MAIN */
+#s-main { min-height:100vh; width:100%; display:none; flex-direction:column; align-items:center; padding:20px 15px 40px; }
+#s-main.active { display:flex; }
 
 /* Header */
-.wheel-header {
-  width: 100%;
-  max-width: 600px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 20px;
-  border-radius: 14px;
-  margin-bottom: 20px;
-}
-body.theme-simple .wheel-header { background: rgba(0,0,0,0.08); }
-body.theme-yellow .wheel-header { background: rgba(232,160,0,0.08); border: 1px solid rgba(232,160,0,0.2); }
-body.theme-gold .wheel-header { background: rgba(212,160,0,0.06); border: 1px solid rgba(212,160,0,0.15); }
+.wheel-header { width:100%; max-width:520px; display:flex; justify-content:space-between; align-items:center; padding:12px 20px; border-radius:14px; margin-bottom:20px; }
+body.theme-simple .wheel-header { background:rgba(0,0,0,0.08); }
+body.theme-yellow .wheel-header { background:rgba(232,160,0,0.08); border:1px solid rgba(232,160,0,0.2); }
+body.theme-gold .wheel-header { background:rgba(212,160,0,0.06); border:1px solid rgba(212,160,0,0.15); }
+.header-logo { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:3px; color:var(--gold); }
+.header-wallet { font-size:12px; opacity:0.6; display:flex; align-items:center; gap:6px; }
+.wallet-dot { width:6px; height:6px; background:#00c853; border-radius:50%; }
+.disconnect-btn { background:none; border:1px solid #555; border-radius:20px; padding:4px 12px; font-size:11px; color:#888; cursor:pointer; margin-left:8px; }
+.disconnect-btn:hover { border-color:#ff4444; color:#ff4444; }
 
-.header-logo { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 3px; color: var(--gold); }
-.header-wallet { font-size: 12px; opacity: 0.6; display: flex; align-items: center; gap: 6px; }
-.wallet-dot { width: 6px; height: 6px; background: #00c853; border-radius: 50%; }
-.disconnect-btn { background: none; border: 1px solid #555; border-radius: 20px; padding: 4px 12px; font-size: 11px; color: #888; cursor: pointer; margin-left: 8px; }
-.disconnect-btn:hover { border-color: #ff4444; color: #ff4444; }
+/* Price bar */
+.price-bar { width:100%; max-width:520px; display:flex; align-items:center; justify-content:center; gap:16px; padding:8px 16px; border-radius:10px; margin-bottom:14px; font-size:12px; }
+body.theme-simple .price-bar { background:rgba(0,0,0,0.06); color:#8B5A00; }
+body.theme-yellow .price-bar { background:rgba(232,160,0,0.06); color:#E8A000; border:1px solid rgba(232,160,0,0.12); }
+body.theme-gold .price-bar { background:rgba(212,160,0,0.05); color:#D4A000; border:1px solid rgba(212,160,0,0.1); }
+.price-pulse { width:6px; height:6px; border-radius:50%; background:#00c853; animation:pulse-dot 2s infinite; }
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
-/* Wheel Tabs */
-.wheel-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-  width: 100%;
-  max-width: 500px;
-}
-.wheel-tab {
-  flex: 1;
-  padding: 12px 8px;
-  border-radius: 12px;
-  border: 2px solid #333;
-  background: transparent;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-}
-body.theme-simple .wheel-tab { color: #8B5A00; border-color: #c8a87a; }
-body.theme-simple .wheel-tab.active { background: #3a2800; color: var(--gold); border-color: #3a2800; }
-body.theme-yellow .wheel-tab { color: #666; border-color: #333; }
-body.theme-yellow .wheel-tab.active { background: var(--gold); color: #000; border-color: var(--gold); }
-body.theme-gold .wheel-tab { color: #555; border-color: #222; }
-body.theme-gold .wheel-tab.active { background: #8B6914; color: var(--yellow); border-color: #8B6914; }
+/* Tabs */
+.wheel-tabs { display:flex; gap:8px; margin-bottom:16px; width:100%; max-width:520px; }
+.wheel-tab { flex:1; padding:12px 8px; border-radius:12px; border:2px solid #333; background:transparent; font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; position:relative; }
+body.theme-simple .wheel-tab { color:#8B5A00; border-color:#c8a87a; }
+body.theme-simple .wheel-tab.active { background:#3a2800; color:var(--gold); border-color:#3a2800; }
+body.theme-yellow .wheel-tab { color:#666; border-color:#333; }
+body.theme-yellow .wheel-tab.active { background:var(--gold); color:#000; border-color:var(--gold); }
+body.theme-gold .wheel-tab { color:#555; border-color:#222; }
+body.theme-gold .wheel-tab.active { background:#8B6914; color:var(--yellow); border-color:#8B6914; }
+.tab-badge { position:absolute; top:-6px; right:-4px; border-radius:10px; font-size:10px; padding:1px 6px; font-weight:700; }
+.tab-badge.has { background:#00c853; color:#000; }
+.tab-badge.empty { background:#555; color:#999; }
 
-.tab-ticket-badge {
-  position: absolute;
-  top: -6px;
-  right: -4px;
-  background: #00c853;
-  color: #000;
-  border-radius: 10px;
-  font-size: 10px;
-  padding: 1px 6px;
-  font-weight: 700;
-}
-.tab-ticket-badge.empty { background: #555; color: #999; }
+/* Wheel */
+.wheel-wrap { position:relative; width:380px; height:380px; margin:0 auto 16px; }
+@media (max-width:420px) { .wheel-wrap { width:300px; height:300px; } }
+.pointer-top { position:absolute; top:-24px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:18px solid transparent; border-right:18px solid transparent; border-top:36px solid var(--gold); filter:drop-shadow(0 2px 6px rgba(232,160,0,0.5)); z-index:10; }
+#wheel-canvas { width:100%; height:100%; border-radius:50%; display:block; }
 
-/* Wheel Container */
-.wheel-wrap {
-  position: relative;
-  width: 380px;
-  height: 380px;
-  margin: 0 auto 16px;
-}
-@media (max-width: 420px) {
-  .wheel-wrap { width: 300px; height: 300px; }
-}
-.pointer-top {
-  position: absolute;
-  top: -24px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0; height: 0;
-  border-left: 18px solid transparent;
-  border-right: 18px solid transparent;
-  border-top: 36px solid var(--gold);
-  filter: drop-shadow(0 2px 6px rgba(232,160,0,0.5));
-  z-index: 10;
-}
-#wheel-canvas {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  display: block;
-}
-
-/* Tickets Display */
-.tickets-display {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 14px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.ticket-chip {
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-body.theme-simple .ticket-chip { background: rgba(0,0,0,0.08); color: #3a2800; }
-body.theme-yellow .ticket-chip { background: rgba(232,160,0,0.1); color: #E8A000; border: 1px solid rgba(232,160,0,0.2); }
-body.theme-gold .ticket-chip { background: rgba(212,160,0,0.08); color: #D4A000; border: 1px solid rgba(212,160,0,0.15); }
-.ticket-chip.active-wheel { background: var(--gold); color: #000; }
+/* Tickets */
+.tickets-display { display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap; justify-content:center; }
+.ticket-chip { padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700; display:flex; align-items:center; gap:5px; }
+body.theme-simple .ticket-chip { background:rgba(0,0,0,0.08); color:#3a2800; }
+body.theme-yellow .ticket-chip { background:rgba(232,160,0,0.1); color:#E8A000; border:1px solid rgba(232,160,0,0.2); }
+body.theme-gold .ticket-chip { background:rgba(212,160,0,0.08); color:#D4A000; border:1px solid rgba(212,160,0,0.15); }
+.ticket-chip.active-wheel { background:var(--gold); color:#000; }
 
 /* Spin Button */
-.spin-btn {
-  width: 100%;
-  max-width: 300px;
-  padding: 20px;
-  border-radius: 16px;
-  border: none;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 28px;
-  letter-spacing: 3px;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom: 6px;
-}
-body.theme-simple .spin-btn { background: #3a2800; color: var(--gold); }
-body.theme-simple .spin-btn:hover:not(:disabled) { background: #5a4000; }
-body.theme-yellow .spin-btn { background: var(--gold); color: #000; }
-body.theme-yellow .spin-btn:hover:not(:disabled) { background: #FFB700; }
-body.theme-gold .spin-btn { background: linear-gradient(135deg, #8B6914, #D4A000); color: #000; }
-body.theme-gold .spin-btn:hover:not(:disabled) { filter: brightness(1.1); }
-.spin-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.spin-sub { font-size: 12px; opacity: 0.5; margin-bottom: 20px; }
+.spin-btn { width:100%; max-width:300px; padding:20px; border-radius:16px; border:none; font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:3px; cursor:pointer; transition:all 0.2s; margin-bottom:6px; }
+body.theme-simple .spin-btn { background:#3a2800; color:var(--gold); }
+body.theme-simple .spin-btn:hover:not(:disabled) { background:#5a4000; }
+body.theme-yellow .spin-btn { background:var(--gold); color:#000; }
+body.theme-yellow .spin-btn:hover:not(:disabled) { background:#FFB700; }
+body.theme-gold .spin-btn { background:linear-gradient(135deg,#8B6914,#D4A000); color:#000; }
+body.theme-gold .spin-btn:hover:not(:disabled) { filter:brightness(1.1); }
+.spin-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.spin-sub { font-size:12px; opacity:0.5; margin-bottom:20px; }
 
 /* Divider */
-.divider {
-  width: 100%;
-  max-width: 500px;
-  height: 1px;
-  margin: 20px 0;
-}
-body.theme-simple .divider { background: rgba(0,0,0,0.1); }
-body.theme-yellow .divider { background: rgba(232,160,0,0.15); }
-body.theme-gold .divider { background: rgba(212,160,0,0.1); }
+.divider { width:100%; max-width:520px; height:1px; margin:20px 0; }
+body.theme-simple .divider { background:rgba(0,0,0,0.1); }
+body.theme-yellow .divider { background:rgba(232,160,0,0.15); }
+body.theme-gold .divider { background:rgba(212,160,0,0.1); }
 
-/* Buy Section */
-.buy-section { width: 100%; max-width: 500px; }
-.buy-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; margin-bottom: 15px; }
-body.theme-simple .buy-title { color: #3a2800; }
+/* Buy section */
+.buy-section { width:100%; max-width:520px; }
+.buy-title { font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:2px; margin-bottom:12px; }
+body.theme-simple .buy-title { color:#3a2800; }
 
-.sol-price-display {
-  padding: 10px 16px;
-  border-radius: 10px;
-  font-size: 12px;
-  margin-bottom: 14px;
-  line-height: 1.8;
-}
-body.theme-simple .sol-price-display { background: rgba(0,0,0,0.06); color: #8B5A00; }
-body.theme-yellow .sol-price-display { background: rgba(232,160,0,0.06); color: #888; border: 1px solid rgba(232,160,0,0.1); }
-body.theme-gold .sol-price-display { background: rgba(212,160,0,0.05); color: #666; border: 1px solid rgba(212,160,0,0.08); }
+.token-price-info { padding:12px 16px; border-radius:10px; font-size:13px; margin-bottom:14px; line-height:1.9; }
+body.theme-simple .token-price-info { background:rgba(0,0,0,0.06); color:#5a3e00; }
+body.theme-yellow .token-price-info { background:rgba(232,160,0,0.06); color:#E8A000; border:1px solid rgba(232,160,0,0.12); }
+body.theme-gold .token-price-info { background:rgba(212,160,0,0.05); color:#D4A000; border:1px solid rgba(212,160,0,0.1); }
 
-.buy-row { display: flex; gap: 10px; align-items: stretch; margin-bottom: 10px; }
-.ticket-input {
-  flex: 1;
-  padding: 14px 16px;
-  border-radius: 12px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  outline: none;
-  transition: border-color 0.2s;
-}
-body.theme-simple .ticket-input { background: #fff; border: 2px solid #c8a87a; color: #3a2800; }
-body.theme-simple .ticket-input:focus { border-color: var(--gold); }
-body.theme-yellow .ticket-input { background: #111; border: 2px solid #333; color: #E8A000; }
-body.theme-yellow .ticket-input:focus { border-color: var(--gold); }
-body.theme-gold .ticket-input { background: #0a0a0a; border: 2px solid #222; color: #D4A000; }
-body.theme-gold .ticket-input:focus { border-color: #8B6914; }
+.buy-row { display:flex; gap:10px; align-items:stretch; margin-bottom:8px; }
+.ticket-input { flex:1; padding:14px 16px; border-radius:12px; font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; outline:none; transition:border-color 0.2s; }
+body.theme-simple .ticket-input { background:#fff; border:2px solid #c8a87a; color:#3a2800; }
+body.theme-simple .ticket-input:focus { border-color:var(--gold); }
+body.theme-yellow .ticket-input { background:#111; border:2px solid #333; color:#E8A000; }
+body.theme-yellow .ticket-input:focus { border-color:var(--gold); }
+body.theme-gold .ticket-input { background:#0a0a0a; border:2px solid #222; color:#D4A000; }
+body.theme-gold .ticket-input:focus { border-color:#8B6914; }
 
-.buy-btn {
-  padding: 14px 24px;
-  border-radius: 12px;
-  border: none;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-body.theme-simple .buy-btn { background: var(--gold); color: #000; }
-body.theme-simple .buy-btn:hover { background: #FFB700; }
-body.theme-yellow .buy-btn { background: var(--gold); color: #000; }
-body.theme-yellow .buy-btn:hover { background: #FFB700; }
-body.theme-gold .buy-btn { background: #8B6914; color: var(--yellow); }
-body.theme-gold .buy-btn:hover { background: #A07820; }
+.buy-btn { padding:14px 24px; border-radius:12px; border:none; font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+body.theme-simple .buy-btn { background:var(--gold); color:#000; }
+body.theme-simple .buy-btn:hover { background:#FFB700; }
+body.theme-yellow .buy-btn { background:var(--gold); color:#000; }
+body.theme-yellow .buy-btn:hover { background:#FFB700; }
+body.theme-gold .buy-btn { background:#8B6914; color:var(--yellow); }
+body.theme-gold .buy-btn:hover { background:#A07820; }
 
-.buy-status { font-size: 13px; min-height: 22px; margin-top: 4px; }
-.buy-status.error { color: #ff4444; }
-.buy-status.success { color: #00c853; }
-.buy-status.loading { color: var(--gold); }
+.manual-send-box { padding:14px; border-radius:12px; font-size:12px; margin-bottom:10px; line-height:1.8; display:none; }
+body.theme-simple .manual-send-box { background:rgba(0,0,0,0.06); border:1px solid #c8a87a; color:#5a3e00; }
+body.theme-yellow .manual-send-box { background:rgba(232,160,0,0.04); border:1px solid rgba(232,160,0,0.2); color:#E8A000; }
+body.theme-gold .manual-send-box { background:rgba(212,160,0,0.04); border:1px solid rgba(212,160,0,0.15); color:#D4A000; }
 
-/* Tx input */
-.tx-section { margin-top: 12px; display: none; }
-.tx-input {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 10px;
-  font-family: monospace;
-  font-size: 12px;
-  outline: none;
-  margin-bottom: 8px;
-}
-body.theme-simple .tx-input { background: #fff; border: 2px solid #c8a87a; color: #3a2800; }
-body.theme-yellow .tx-input { background: #111; border: 2px solid #333; color: #E8A000; }
-body.theme-gold .tx-input { background: #0a0a0a; border: 2px solid #222; color: #D4A000; }
+.copy-addr { background:var(--gold); border:none; border-radius:6px; padding:3px 10px; font-size:11px; color:#000; cursor:pointer; font-weight:700; }
 
-.tx-verify-btn {
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  background: #333;
-  color: #E8A000;
-  transition: all 0.2s;
-}
-.tx-verify-btn:hover { background: #444; }
+.tx-section { display:none; margin-top:10px; }
+.tx-input { width:100%; padding:12px 14px; border-radius:10px; font-family:monospace; font-size:12px; outline:none; margin-bottom:8px; }
+body.theme-simple .tx-input { background:#fff; border:2px solid #c8a87a; color:#3a2800; }
+body.theme-yellow .tx-input { background:#111; border:2px solid #333; color:#E8A000; }
+body.theme-gold .tx-input { background:#0a0a0a; border:2px solid #222; color:#D4A000; }
+.tx-verify-btn { width:100%; padding:12px; border-radius:10px; border:none; font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:700; cursor:pointer; background:#333; color:#E8A000; transition:all 0.2s; }
+.tx-verify-btn:hover { background:#444; }
 
-/* History */
-.recent-wins {
-  width: 100%;
-  max-width: 500px;
-  margin-top: 20px;
-  padding: 16px;
-  border-radius: 14px;
-}
-body.theme-simple .recent-wins { background: rgba(0,0,0,0.05); }
-body.theme-yellow .recent-wins { background: rgba(232,160,0,0.04); border: 1px solid rgba(232,160,0,0.08); }
-body.theme-gold .recent-wins { background: rgba(212,160,0,0.03); border: 1px solid rgba(212,160,0,0.07); }
+.buy-status { font-size:13px; min-height:22px; margin-top:6px; }
+.buy-status.error { color:#ff4444; }
+.buy-status.success { color:#00c853; }
+.buy-status.loading { color:var(--gold); }
 
-.recent-title { font-size: 12px; font-weight: 700; letter-spacing: 2px; opacity: 0.5; margin-bottom: 10px; text-transform: uppercase; }
-.win-item { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 1px solid rgba(128,128,128,0.1); }
-.win-item:last-child { border-bottom: none; }
-.win-result { font-weight: 700; color: var(--gold); }
-.win-wheel { font-size: 11px; opacity: 0.5; }
+/* Modal */
+#modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000; justify-content:center; align-items:center; padding:20px; }
+#modal-overlay.open { display:flex; }
+.modal-box { border-radius:24px; padding:40px 30px; text-align:center; max-width:380px; width:100%; animation:popIn 0.3s ease; }
+body.theme-simple .modal-box { background:#f5e6c8; border:3px solid #c8a87a; color:#3a2800; }
+body.theme-yellow .modal-box { background:#0f0f00; border:3px solid var(--gold); color:#E8A000; }
+body.theme-gold .modal-box { background:#080808; border:3px solid #8B6914; color:#D4A000; }
+@keyframes popIn { from{transform:scale(0.7);opacity:0} to{transform:scale(1);opacity:1} }
+.modal-icon { font-size:80px; margin-bottom:15px; line-height:1; }
+.modal-title { font-family:'Bebas Neue',sans-serif; font-size:44px; letter-spacing:4px; margin-bottom:8px; }
+.modal-amount { font-family:'Bebas Neue',sans-serif; font-size:32px; color:var(--gold); margin-bottom:6px; }
+.modal-unlock { padding:12px 16px; border-radius:10px; margin-bottom:16px; font-size:13px; font-weight:600; }
+body.theme-simple .modal-unlock { background:rgba(232,160,0,0.1); color:#8B5A00; border:2px solid var(--gold); }
+body.theme-yellow .modal-unlock { background:rgba(255,215,0,0.08); color:var(--yellow); border:2px solid var(--yellow); }
+body.theme-gold .modal-unlock { background:rgba(255,215,0,0.06); color:var(--yellow); border:2px solid var(--yellow); }
+.modal-sub { font-size:13px; opacity:0.6; margin-bottom:25px; }
+.modal-btns { display:flex; gap:10px; }
+.modal-btn { flex:1; padding:14px; border-radius:12px; border:none; font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; }
+.modal-btn.primary { background:var(--gold); color:#000; }
+.modal-btn.primary:hover { background:#FFB700; }
+.modal-btn.secondary { background:#333; color:#888; }
+.modal-btn.secondary:hover { background:#444; color:#fff; }
 
-/* ── RESULT MODAL ── */
-#modal-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.85);
-  z-index: 1000;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-}
-#modal-overlay.open { display: flex; }
-.modal-box {
-  border-radius: 24px;
-  padding: 40px 30px;
-  text-align: center;
-  max-width: 380px;
-  width: 100%;
-  animation: popIn 0.3s ease;
-  position: relative;
-}
-body.theme-simple .modal-box { background: #f5e6c8; border: 3px solid #c8a87a; color: #3a2800; }
-body.theme-yellow .modal-box { background: #0f0f00; border: 3px solid var(--gold); color: #E8A000; }
-body.theme-gold .modal-box { background: #080808; border: 3px solid #8B6914; color: #D4A000; }
-
-@keyframes popIn {
-  from { transform: scale(0.7); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-.modal-icon { font-size: 80px; margin-bottom: 15px; line-height: 1; }
-.modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 48px; letter-spacing: 4px; margin-bottom: 8px; }
-.modal-amount { font-family: 'Bebas Neue', sans-serif; font-size: 32px; color: var(--gold); margin-bottom: 6px; }
-.modal-sub { font-size: 13px; opacity: 0.6; margin-bottom: 25px; }
-.modal-btns { display: flex; gap: 10px; }
-.modal-btn {
-  flex: 1;
-  padding: 14px;
-  border-radius: 12px;
-  border: none;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.modal-btn.primary { background: var(--gold); color: #000; }
-.modal-btn.primary:hover { background: #FFB700; }
-.modal-btn.secondary { background: #333; color: #888; }
-.modal-btn.secondary:hover { background: #444; color: #fff; }
-
-/* Special unlock popup */
-.modal-unlock {
-  padding: 14px 20px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  font-size: 14px;
-  font-weight: 600;
-}
-body.theme-simple .modal-unlock { background: rgba(232,160,0,0.15); color: #8B5A00; border: 2px solid var(--gold); }
-body.theme-yellow .modal-unlock { background: rgba(255,215,0,0.1); color: var(--yellow); border: 2px solid var(--yellow); }
-body.theme-gold .modal-unlock { background: rgba(255,215,0,0.08); color: var(--yellow); border: 2px solid var(--yellow); }
-
-/* General buttons */
-.btn {
-  padding: 14px 28px;
-  border-radius: 12px;
-  border: none;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.btn-gold { background: var(--gold); color: #000; }
-.btn-gold:hover { background: #FFB700; }
-.btn-outline {
-  background: transparent;
-  border: 2px solid var(--gold);
-  color: var(--gold);
-}
-.btn-outline:hover { background: var(--gold); color: #000; }
-.btn-dark { background: #222; color: #E8A000; }
-.btn-dark:hover { background: #333; }
-
-/* Fade */
-.fade { opacity: 0.5; }
+.btn { padding:14px 28px; border-radius:12px; border:none; font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; }
+.btn-gold { background:var(--gold); color:#000; }
+.btn-gold:hover { background:#FFB700; }
+.btn-outline { background:transparent; border:2px solid var(--gold); color:var(--gold); }
+.btn-outline:hover { background:var(--gold); color:#000; }
+.btn-dark { background:#222; color:#E8A000; }
+.btn-dark:hover { background:#333; }
 </style>
 </head>
 <body class="theme-simple">
 
-<!-- ═══════════════ SCREEN: CONNECT ═══════════════ -->
+<!-- CONNECT -->
 <section class="screen active" id="s-connect">
   <div class="connect-card">
     <div class="connect-logo">🎡</div>
     <h1 class="connect-title">YellowCatz Wheel</h1>
-    <p class="connect-sub">
-      Connect your Solana wallet to play.<br>
-      Hold $YC to be eligible.
-    </p>
-    <button class="wallet-btn" onclick="connectWallet('phantom')">
-      <img src="https://raw.githubusercontent.com/phantom-labs/phantom-app-icons/master/phantom-icon.png" 
-           onerror="this.style.display='none'" alt="">
-      🟣 Connect Phantom
-    </button>
-    <button class="wallet-btn" onclick="connectWallet('solflare')">
-      🔥 Connect Solflare
-    </button>
-    <button class="wallet-btn" onclick="connectWallet('other')" style="border-color:#555;color:#888;">
-      🔑 Enter Wallet Address
-    </button>
-    <div id="connect-status" style="margin-top:14px;font-size:13px;color:#888;"></div>
+    <p class="connect-sub">Connect your Solana wallet.<br>Hold $YELLOWCATZ to participate.</p>
+    <button class="wallet-btn" onclick="connectWallet('phantom')">🟣 Connect Phantom</button>
+    <button class="wallet-btn" onclick="connectWallet('solflare')">🔥 Connect Solflare</button>
+    <button class="wallet-btn" onclick="connectWallet('manual')" style="border-color:#555;color:#888;">🔑 Enter Address</button>
+    <div id="connect-status" style="margin-top:14px;font-size:13px;color:#888;min-height:20px;"></div>
   </div>
 </section>
 
-<!-- ═══════════════ SCREEN: LOADING ═══════════════ -->
+<!-- LOADING -->
 <section class="screen" id="s-loading">
   <div class="spinner"></div>
   <p class="loading-msg" id="loading-msg">Checking eligibility...</p>
 </section>
 
-<!-- ═══════════════ SCREEN: INELIGIBLE ═══════════════ -->
+<!-- INELIGIBLE -->
 <section class="screen" id="s-ineligible">
   <div class="inelig-card">
     <div class="inelig-icon">🔒</div>
     <h2 class="inelig-title">Access Required</h2>
-    <p class="inelig-sub" id="inelig-msg">
-      You need to hold $YELLOWCATZ tokens to access the wheel.
-    </p>
-    <a href="https://pump.fun/coin/9zcYAff5kaZfVDkEv3DzD2ojvocYyoRL2pFEko53pump" 
+    <p class="inelig-sub" id="inelig-msg">Hold $YELLOWCATZ tokens to access the wheel.</p>
+    <a href="https://pump.fun/coin/9zcYAff5kaZfVDkEv3DzD2ojvocYyoRL2pFEko53pump"
        target="_blank" class="btn btn-gold" style="display:inline-block;margin-bottom:12px;text-decoration:none;">
       🟡 Buy $YELLOWCATZ
-    </a>
-    <br>
-    <button class="btn btn-outline" onclick="checkWallet()" style="margin-top:10px;">↻ Check Again</button>
-    <br>
+    </a><br>
+    <button class="btn btn-outline" onclick="checkWallet()" style="margin-top:10px;">↻ Retry</button><br>
     <button class="btn btn-dark" onclick="showScreen('s-connect')" style="margin-top:10px;font-size:12px;">← Change Wallet</button>
   </div>
 </section>
 
-<!-- ═══════════════ MAIN WHEEL INTERFACE ═══════════════ -->
+<!-- MAIN WHEEL INTERFACE -->
 <section id="s-main">
 
   <!-- Header -->
-  <div class="wheel-header" style="max-width:520px;">
+  <div class="wheel-header">
     <div class="header-logo">🎡 YELLOWCATZ WHEEL</div>
     <div class="header-wallet">
       <div class="wallet-dot"></div>
@@ -512,23 +230,31 @@ body.theme-gold .modal-unlock { background: rgba(255,215,0,0.08); color: var(--y
     </div>
   </div>
 
+  <!-- Live $YC Price Bar -->
+  <div class="price-bar">
+    <div class="price-pulse"></div>
+    <span id="price-bar-text">Loading $YC price...</span>
+    <span style="opacity:0.4;">|</span>
+    <span id="price-bar-ticket">1 ticket = ... $YC</span>
+  </div>
+
   <!-- Wheel Tabs -->
-  <div class="wheel-tabs" style="max-width:520px;">
+  <div class="wheel-tabs">
     <button class="wheel-tab active" id="tab-simple" onclick="selectWheel('simple')">
       🎡 Simple
-      <span class="tab-ticket-badge" id="badge-simple">0</span>
+      <span class="tab-badge empty" id="badge-simple">0</span>
     </button>
     <button class="wheel-tab" id="tab-yellow" onclick="selectWheel('yellow')">
       ⭐ Yellow
-      <span class="tab-ticket-badge empty" id="badge-yellow">0</span>
+      <span class="tab-badge empty" id="badge-yellow">0</span>
     </button>
     <button class="wheel-tab" id="tab-gold" onclick="selectWheel('gold')">
       👑 Gold
-      <span class="tab-ticket-badge empty" id="badge-gold">0</span>
+      <span class="tab-badge empty" id="badge-gold">0</span>
     </button>
   </div>
 
-  <!-- Wheel -->
+  <!-- Wheel Canvas -->
   <div class="wheel-wrap">
     <div class="pointer-top"></div>
     <canvas id="wheel-canvas" width="380" height="380"></canvas>
@@ -537,52 +263,55 @@ body.theme-gold .modal-unlock { background: rgba(255,215,0,0.08); color: var(--y
   <!-- Ticket chips -->
   <div class="tickets-display">
     <div class="ticket-chip active-wheel" id="chip-current">🎫 0 tickets</div>
-    <div class="ticket-chip" id="chip-total-won">🏆 $0 total won</div>
+    <div class="ticket-chip" id="chip-total-won">🏆 $0 won</div>
   </div>
 
   <!-- Spin Button -->
-  <button class="spin-btn" id="spin-btn" onclick="handleSpin()">
-    🎰 SPIN
-  </button>
-  <p class="spin-sub">1 ticket per spin</p>
+  <button class="spin-btn" id="spin-btn" onclick="handleSpin()">🎰 SPIN</button>
+  <p class="spin-sub">1 ticket per spin · SPACE to spin</p>
 
   <div class="divider"></div>
 
   <!-- Buy Tickets -->
-  <div class="buy-section" style="max-width:520px;">
-    <div class="buy-title">🎫 Buy Simple Tickets</div>
-    <div class="sol-price-display">
-      <strong>1 ticket = $10 worth of SOL</strong><br>
-      <span id="sol-rate-display">≈ 0.067 SOL per ticket</span><br>
-      <span style="opacity:0.6;font-size:11px;">Send SOL to our treasury wallet, then paste the transaction signature below</span>
+  <div class="buy-section">
+    <div class="buy-title">🪙 Buy Tickets with $YELLOWCATZ</div>
+
+    <div class="token-price-info" id="token-price-info">
+      <strong>1 ticket = $10 worth of $YELLOWCATZ</strong><br>
+      <span id="yc-price-line">🔄 Fetching live $YC price...</span><br>
+      <span id="yc-per-ticket-line" style="opacity:0.7;">...</span>
     </div>
-    
-    <!-- Step 1: Enter ticket count -->
+
     <div class="buy-row">
-      <input type="number" class="ticket-input" id="ticket-count-input" value="1" min="1" max="100" 
-             placeholder="# tickets" oninput="updatePriceDisplay()">
-      <button class="buy-btn" onclick="initiatePayment()">💸 Send SOL</button>
+      <input type="number" class="ticket-input" id="ticket-count-input" value="1" min="1" max="100"
+             placeholder="# tickets" oninput="updateTokenDisplay()">
+      <button class="buy-btn" onclick="initiatePayment()">💸 Buy</button>
     </div>
-    <p id="total-sol-display" style="font-size:13px;opacity:0.6;margin-bottom:10px;">≈ 0.067 SOL total</p>
-    
-    <!-- Step 2: Verify transaction -->
+
+    <p id="total-yc-display" style="font-size:13px;opacity:0.65;margin-bottom:10px;">...</p>
+
+    <!-- Manual send box (shown when wallet is read-only or auto fails) -->
+    <div class="manual-send-box" id="manual-send-box">
+      <strong>Send $YELLOWCATZ tokens to this address:</strong><br>
+      <code id="treasury-ata-display" style="word-break:break-all;opacity:0.8;">...</code>
+      <button class="copy-addr" onclick="copyATA()" style="margin-left:6px;">📋 Copy</button><br>
+      <span style="opacity:0.6;">Amount: <strong id="manual-amount-display">...</strong> $YC</span>
+    </div>
+
+    <!-- TX verification -->
     <div class="tx-section" id="tx-section">
-      <p style="font-size:12px;opacity:0.6;margin-bottom:8px;">After sending, paste your transaction signature:</p>
-      <input type="text" class="tx-input" id="tx-sig-input" placeholder="Paste transaction signature here...">
+      <p style="font-size:12px;opacity:0.6;margin-bottom:8px;">
+        After sending, paste your transaction signature:
+      </p>
+      <input type="text" class="tx-input" id="tx-sig-input" placeholder="Transaction signature...">
       <button class="tx-verify-btn" onclick="verifyAndAddTickets()">✓ Verify & Get Tickets</button>
     </div>
     <div class="buy-status" id="buy-status"></div>
   </div>
 
-  <!-- Recent spins history -->
-  <div class="recent-wins" id="recent-wins-section" style="max-width:520px;display:none;">
-    <div class="recent-title">Recent Results</div>
-    <div id="recent-wins-list"></div>
-  </div>
-
 </section>
 
-<!-- ═══════════════ RESULT MODAL ═══════════════ -->
+<!-- RESULT MODAL -->
 <div id="modal-overlay">
   <div class="modal-box">
     <div class="modal-icon" id="modal-icon">🎰</div>
@@ -597,68 +326,63 @@ body.theme-gold .modal-unlock { background: rgba(255,215,0,0.08); color: var(--y
   </div>
 </div>
 
-<!-- Solana web3.js -->
 <script src="https://unpkg.com/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
 <script>
-
 // ============================================================
-// WHEEL SEGMENT DEFINITIONS — must match api/wheel.js exactly
+// WHEEL SEGMENT DEFINITIONS — matches api/wheel.js exactly
 // ============================================================
 const WHEEL_DEFS = {
   simple: {
-    theme: 'simple',
     segments: [
-      { label: '$10',    amount: 10,  special: null,     color: '#f0d9a0', textColor: '#5a3e00', font: 'bold 13px Space Grotesk, Arial' },
-      { label: 'LOSE',   amount: 0,   special: null,     color: '#d4b896', textColor: '#8B6914', font: '12px Space Grotesk, Arial' },
-      { label: '$20',    amount: 20,  special: null,     color: '#E8C060', textColor: '#3a2800', font: 'bold 13px Space Grotesk, Arial' },
-      { label: 'LOSE',   amount: 0,   special: null,     color: '#c8a87a', textColor: '#8B6914', font: '12px Space Grotesk, Arial' },
-      { label: '$10',    amount: 10,  special: null,     color: '#ead898', textColor: '#5a3e00', font: 'bold 13px Space Grotesk, Arial' },
-      { label: 'LOSE',   amount: 0,   special: null,     color: '#d4b896', textColor: '#8B6914', font: '12px Space Grotesk, Arial' },
-      { label: '$50',    amount: 50,  special: null,     color: '#E8A000', textColor: '#fff',    font: 'bold 14px Space Grotesk, Arial' },
-      { label: 'LOSE',   amount: 0,   special: null,     color: '#c8a87a', textColor: '#8B6914', font: '12px Space Grotesk, Arial' },
-      { label: '$10',    amount: 10,  special: null,     color: '#f0d9a0', textColor: '#5a3e00', font: 'bold 13px Space Grotesk, Arial' },
-      { label: 'LOSE',   amount: 0,   special: null,     color: '#d4b896', textColor: '#8B6914', font: '12px Space Grotesk, Arial' },
-      { label: '$20',    amount: 20,  special: null,     color: '#E8C060', textColor: '#3a2800', font: 'bold 13px Space Grotesk, Arial' },
-      { label: 'LOSE',   amount: 0,   special: null,     color: '#c8a87a', textColor: '#8B6914', font: '12px Space Grotesk, Arial' },
-      { label: 'YELLOW', amount: 0,   special: 'yellow', color: '#FFD700', textColor: '#000',    font: 'bold 12px Space Grotesk, Arial' },
-      { label: 'LOSE',   amount: 0,   special: null,     color: '#d4b896', textColor: '#8B6914', font: '12px Space Grotesk, Arial' },
-      { label: '$10',    amount: 10,  special: null,     color: '#ead898', textColor: '#5a3e00', font: 'bold 13px Space Grotesk, Arial' },
-      { label: 'LOSE',   amount: 0,   special: null,     color: '#c8a87a', textColor: '#8B6914', font: '12px Space Grotesk, Arial' },
-      { label: '$100',   amount: 100, special: null,     color: '#cc8800', textColor: '#fff',    font: 'bold 14px Space Grotesk, Arial' },
-      { label: '$20',    amount: 20,  special: null,     color: '#d4ac48', textColor: '#3a2800', font: 'bold 13px Space Grotesk, Arial' },
+      { label:'$10',    amount:10,  special:null,     color:'#f0d9a0', textColor:'#5a3e00', font:'bold 13px Space Grotesk,Arial' },
+      { label:'LOSE',   amount:0,   special:null,     color:'#d4b896', textColor:'#8B6914', font:'12px Space Grotesk,Arial' },
+      { label:'$20',    amount:20,  special:null,     color:'#E8C060', textColor:'#3a2800', font:'bold 13px Space Grotesk,Arial' },
+      { label:'LOSE',   amount:0,   special:null,     color:'#c8a87a', textColor:'#8B6914', font:'12px Space Grotesk,Arial' },
+      { label:'$10',    amount:10,  special:null,     color:'#ead898', textColor:'#5a3e00', font:'bold 13px Space Grotesk,Arial' },
+      { label:'LOSE',   amount:0,   special:null,     color:'#d4b896', textColor:'#8B6914', font:'12px Space Grotesk,Arial' },
+      { label:'$50',    amount:50,  special:null,     color:'#E8A000', textColor:'#fff',    font:'bold 14px Space Grotesk,Arial' },
+      { label:'LOSE',   amount:0,   special:null,     color:'#c8a87a', textColor:'#8B6914', font:'12px Space Grotesk,Arial' },
+      { label:'$10',    amount:10,  special:null,     color:'#f0d9a0', textColor:'#5a3e00', font:'bold 13px Space Grotesk,Arial' },
+      { label:'LOSE',   amount:0,   special:null,     color:'#d4b896', textColor:'#8B6914', font:'12px Space Grotesk,Arial' },
+      { label:'$20',    amount:20,  special:null,     color:'#E8C060', textColor:'#3a2800', font:'bold 13px Space Grotesk,Arial' },
+      { label:'LOSE',   amount:0,   special:null,     color:'#c8a87a', textColor:'#8B6914', font:'12px Space Grotesk,Arial' },
+      { label:'YELLOW', amount:0,   special:'yellow', color:'#FFD700', textColor:'#000',    font:'bold 11px Space Grotesk,Arial' },
+      { label:'LOSE',   amount:0,   special:null,     color:'#d4b896', textColor:'#8B6914', font:'12px Space Grotesk,Arial' },
+      { label:'$10',    amount:10,  special:null,     color:'#ead898', textColor:'#5a3e00', font:'bold 13px Space Grotesk,Arial' },
+      { label:'LOSE',   amount:0,   special:null,     color:'#c8a87a', textColor:'#8B6914', font:'12px Space Grotesk,Arial' },
+      { label:'$100',   amount:100, special:null,     color:'#cc8800', textColor:'#fff',    font:'bold 14px Space Grotesk,Arial' },
+      { label:'$20',    amount:20,  special:null,     color:'#d4ac48', textColor:'#3a2800', font:'bold 13px Space Grotesk,Arial' },
     ]
   },
   yellow: {
-    theme: 'yellow',
     segments: [
-      { label: 'LOSE',  amount: 0,   special: null,   color: '#1a1500', textColor: '#4a3a00', font: '12px Space Grotesk, Arial' },
-      { label: '$50',   amount: 50,  special: null,   color: '#E8A000', textColor: '#000',    font: 'bold 15px Space Grotesk, Arial' },
-      { label: 'LOSE',  amount: 0,   special: null,   color: '#221c00', textColor: '#4a3a00', font: '12px Space Grotesk, Arial' },
-      { label: '$100',  amount: 100, special: null,   color: '#FF8C00', textColor: '#000',    font: 'bold 14px Space Grotesk, Arial' },
-      { label: 'LOSE',  amount: 0,   special: null,   color: '#1a1500', textColor: '#4a3a00', font: '12px Space Grotesk, Arial' },
-      { label: '$50',   amount: 50,  special: null,   color: '#D4870A', textColor: '#000',    font: 'bold 15px Space Grotesk, Arial' },
-      { label: 'LOSE',  amount: 0,   special: null,   color: '#221c00', textColor: '#4a3a00', font: '12px Space Grotesk, Arial' },
-      { label: 'GOLD',  amount: 0,   special: 'gold', color: '#FFD700', textColor: '#000',    font: 'bold 13px Space Grotesk, Arial' },
-      { label: 'LOSE',  amount: 0,   special: null,   color: '#1a1500', textColor: '#4a3a00', font: '12px Space Grotesk, Arial' },
-      { label: 'LOSE',  amount: 0,   special: null,   color: '#221c00', textColor: '#4a3a00', font: '12px Space Grotesk, Arial' },
-      { label: 'LOSE',  amount: 0,   special: null,   color: '#1a1500', textColor: '#4a3a00', font: '12px Space Grotesk, Arial' },
+      { label:'LOSE',  amount:0,   special:null,   color:'#1a1500', textColor:'#4a3a00', font:'12px Space Grotesk,Arial' },
+      { label:'$50',   amount:50,  special:null,   color:'#E8A000', textColor:'#000',    font:'bold 15px Space Grotesk,Arial' },
+      { label:'LOSE',  amount:0,   special:null,   color:'#221c00', textColor:'#4a3a00', font:'12px Space Grotesk,Arial' },
+      { label:'$100',  amount:100, special:null,   color:'#FF8C00', textColor:'#000',    font:'bold 14px Space Grotesk,Arial' },
+      { label:'LOSE',  amount:0,   special:null,   color:'#1a1500', textColor:'#4a3a00', font:'12px Space Grotesk,Arial' },
+      { label:'$50',   amount:50,  special:null,   color:'#D4870A', textColor:'#000',    font:'bold 15px Space Grotesk,Arial' },
+      { label:'LOSE',  amount:0,   special:null,   color:'#221c00', textColor:'#4a3a00', font:'12px Space Grotesk,Arial' },
+      { label:'GOLD',  amount:0,   special:'gold', color:'#FFD700', textColor:'#000',    font:'bold 12px Space Grotesk,Arial' },
+      { label:'LOSE',  amount:0,   special:null,   color:'#1a1500', textColor:'#4a3a00', font:'12px Space Grotesk,Arial' },
+      { label:'LOSE',  amount:0,   special:null,   color:'#221c00', textColor:'#4a3a00', font:'12px Space Grotesk,Arial' },
+      { label:'LOSE',  amount:0,   special:null,   color:'#1a1500', textColor:'#4a3a00', font:'12px Space Grotesk,Arial' },
     ]
   },
   gold: {
-    theme: 'gold',
     segments: [
-      { label: '$50',  amount: 50,  special: null, color: '#8B6914', textColor: '#FFD700', font: 'bold 15px Space Grotesk, Arial' },
-      { label: 'LOSE', amount: 0,   special: null, color: '#111',    textColor: '#333',    font: '12px Space Grotesk, Arial' },
-      { label: '$50',  amount: 50,  special: null, color: '#A07820', textColor: '#FFD700', font: 'bold 15px Space Grotesk, Arial' },
-      { label: 'LOSE', amount: 0,   special: null, color: '#1a1a1a', textColor: '#333',    font: '12px Space Grotesk, Arial' },
-      { label: '$200', amount: 200, special: null, color: '#FFD700', textColor: '#000',    font: 'bold 14px Space Grotesk, Arial' },
-      { label: 'LOSE', amount: 0,   special: null, color: '#111',    textColor: '#333',    font: '12px Space Grotesk, Arial' },
-      { label: '$50',  amount: 50,  special: null, color: '#8B6914', textColor: '#FFD700', font: 'bold 15px Space Grotesk, Arial' },
-      { label: 'LOSE', amount: 0,   special: null, color: '#1a1a1a', textColor: '#333',    font: '12px Space Grotesk, Arial' },
-      { label: '$50',  amount: 50,  special: null, color: '#A07820', textColor: '#FFD700', font: 'bold 15px Space Grotesk, Arial' },
-      { label: 'LOSE', amount: 0,   special: null, color: '#111',    textColor: '#333',    font: '12px Space Grotesk, Arial' },
-      { label: '$50',  amount: 50,  special: null, color: '#8B6914', textColor: '#FFD700', font: 'bold 15px Space Grotesk, Arial' },
-      { label: 'LOSE', amount: 0,   special: null, color: '#1a1a1a', textColor: '#333',    font: '12px Space Grotesk, Arial' },
+      { label:'$50',  amount:50,  special:null, color:'#8B6914', textColor:'#FFD700', font:'bold 15px Space Grotesk,Arial' },
+      { label:'LOSE', amount:0,   special:null, color:'#111',    textColor:'#333',    font:'12px Space Grotesk,Arial' },
+      { label:'$50',  amount:50,  special:null, color:'#A07820', textColor:'#FFD700', font:'bold 15px Space Grotesk,Arial' },
+      { label:'LOSE', amount:0,   special:null, color:'#1a1a1a', textColor:'#333',    font:'12px Space Grotesk,Arial' },
+      { label:'$200', amount:200, special:null, color:'#FFD700', textColor:'#000',    font:'bold 14px Space Grotesk,Arial' },
+      { label:'LOSE', amount:0,   special:null, color:'#111',    textColor:'#333',    font:'12px Space Grotesk,Arial' },
+      { label:'$50',  amount:50,  special:null, color:'#8B6914', textColor:'#FFD700', font:'bold 15px Space Grotesk,Arial' },
+      { label:'LOSE', amount:0,   special:null, color:'#1a1a1a', textColor:'#333',    font:'12px Space Grotesk,Arial' },
+      { label:'$50',  amount:50,  special:null, color:'#A07820', textColor:'#FFD700', font:'bold 15px Space Grotesk,Arial' },
+      { label:'LOSE', amount:0,   special:null, color:'#111',    textColor:'#333',    font:'12px Space Grotesk,Arial' },
+      { label:'$50',  amount:50,  special:null, color:'#8B6914', textColor:'#FFD700', font:'bold 15px Space Grotesk,Arial' },
+      { label:'LOSE', amount:0,   special:null, color:'#1a1a1a', textColor:'#333',    font:'12px Space Grotesk,Arial' },
     ]
   }
 };
@@ -667,60 +391,125 @@ const WHEEL_DEFS = {
 // STATE
 // ============================================================
 let connectedWallet = null;
-let walletProvider = null; // 'phantom' | 'solflare' | 'manual'
+let walletProvider = null;
 let currentWheel = 'simple';
 let currentRotation = 0;
 let isSpinning = false;
-let animationId = null;
-let solPrice = 150; // fallback, will be updated
-let playerData = { simple_tickets: 0, yellow_tickets: 0, gold_tickets: 0, total_won: 0 };
-let recentSpins = [];
+let playerData = { simple_tickets:0, yellow_tickets:0, gold_tickets:0, total_won:0 };
+let ycPrice = 0;
+let ycTokenAddress = '';
+let treasuryWallet = '';
+let treasuryATA = ''; // treasury's $YC token account
 
 const canvas = document.getElementById('wheel-canvas');
 const ctx = canvas.getContext('2d');
+
+// SPL Token constants
+const TOKEN_PROGRAM  = () => new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+const ASSOC_PROGRAM  = () => new solanaWeb3.PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe1bJJ');
+const YC_DECIMALS = 6; // pump.fun standard
+
+// ============================================================
+// LOAD CONFIG + PRICE
+// ============================================================
+async function loadConfig() {
+  try {
+    const config = await api('getConfig', {});
+    ycTokenAddress = config.tokenAddress || '';
+    treasuryWallet = config.treasuryWallet || '';
+    ycPrice = config.tokenPrice || 0;
+    
+    if (ycTokenAddress && treasuryWallet) {
+      // Pre-compute treasury ATA
+      try {
+        const mint = new solanaWeb3.PublicKey(ycTokenAddress);
+        const owner = new solanaWeb3.PublicKey(treasuryWallet);
+        const [ata] = solanaWeb3.PublicKey.findProgramAddressSync(
+          [owner.toBuffer(), TOKEN_PROGRAM().toBuffer(), mint.toBuffer()],
+          ASSOC_PROGRAM()
+        );
+        treasuryATA = ata.toString();
+        document.getElementById('treasury-ata-display').textContent = treasuryATA;
+      } catch (e) {
+        treasuryATA = treasuryWallet; // fallback
+        document.getElementById('treasury-ata-display').textContent = treasuryWallet;
+      }
+    }
+
+    updatePriceDisplay();
+    
+    // Refresh price every 2 minutes
+    setInterval(refreshPrice, 120000);
+  } catch (e) {
+    console.error('loadConfig:', e);
+  }
+}
+
+async function refreshPrice() {
+  try {
+    const config = await api('getConfig', {});
+    ycPrice = config.tokenPrice || ycPrice;
+    updatePriceDisplay();
+  } catch {}
+}
+
+function updatePriceDisplay() {
+  const count = parseInt(document.getElementById('ticket-count-input').value) || 1;
+  
+  if (!ycPrice || ycPrice === 0) {
+    document.getElementById('yc-price-line').textContent = '⚠️ Price unavailable — try refreshing';
+    document.getElementById('yc-per-ticket-line').textContent = '';
+    document.getElementById('price-bar-text').textContent = '$YC price loading...';
+    document.getElementById('price-bar-ticket').textContent = '';
+    document.getElementById('total-yc-display').textContent = '';
+    return;
+  }
+
+  const perTicket = Math.ceil(10 / ycPrice);
+  const total = Math.ceil(count * 10 / ycPrice);
+
+  document.getElementById('yc-price-line').textContent =
+    `1 $YC = $${ycPrice < 0.01 ? ycPrice.toFixed(8) : ycPrice.toFixed(6)} USD`;
+  document.getElementById('yc-per-ticket-line').textContent =
+    `→ ${perTicket.toLocaleString()} $YC per ticket (~$10)`;
+  document.getElementById('price-bar-text').textContent =
+    `$YC ≈ $${ycPrice < 0.01 ? ycPrice.toFixed(8) : ycPrice.toFixed(6)}`;
+  document.getElementById('price-bar-ticket').textContent =
+    `1 ticket = ${perTicket.toLocaleString()} $YC`;
+  document.getElementById('total-yc-display').textContent =
+    `Total: ${total.toLocaleString()} $YC for ${count} ticket${count !== 1 ? 's' : ''} (~$${count * 10})`;
+  document.getElementById('manual-amount-display').textContent = total.toLocaleString();
+}
+
+function updateTokenDisplay() { updatePriceDisplay(); }
 
 // ============================================================
 // WALLET CONNECTION
 // ============================================================
 async function connectWallet(provider) {
-  document.getElementById('connect-status').textContent = 'Connecting...';
+  const statusEl = document.getElementById('connect-status');
+  statusEl.textContent = 'Connecting...';
   try {
     if (provider === 'phantom') {
-      if (!window.solana?.isPhantom) {
-        window.open('https://phantom.app/', '_blank');
-        document.getElementById('connect-status').textContent = '👻 Phantom not found — install it first';
-        return;
-      }
-      const resp = await window.solana.connect();
-      connectedWallet = resp.publicKey.toString();
+      if (!window.solana?.isPhantom) { window.open('https://phantom.app/','_blank'); statusEl.textContent='👻 Install Phantom first'; return; }
+      const r = await window.solana.connect();
+      connectedWallet = r.publicKey.toString();
       walletProvider = 'phantom';
-
     } else if (provider === 'solflare') {
-      if (!window.solflare?.isSolflare) {
-        window.open('https://solflare.com/', '_blank');
-        document.getElementById('connect-status').textContent = '🔥 Solflare not found — install it first';
-        return;
-      }
+      if (!window.solflare?.isSolflare) { window.open('https://solflare.com/','_blank'); statusEl.textContent='🔥 Install Solflare first'; return; }
       await window.solflare.connect();
       connectedWallet = window.solflare.publicKey.toString();
       walletProvider = 'solflare';
-
     } else {
-      const addr = prompt('Enter your Solana wallet address (read-only mode — no transactions):');
-      if (!addr || addr.length < 32) {
-        document.getElementById('connect-status').textContent = 'Invalid address';
-        return;
-      }
+      const addr = prompt('Enter your Solana wallet address:');
+      if (!addr || addr.length < 32) { statusEl.textContent='Invalid address'; return; }
       connectedWallet = addr.trim();
       walletProvider = 'manual';
     }
-
-    document.getElementById('wallet-display').textContent = connectedWallet.slice(0, 4) + '...' + connectedWallet.slice(-4);
+    document.getElementById('wallet-display').textContent = connectedWallet.slice(0,4)+'...'+connectedWallet.slice(-4);
     await checkWallet();
-
   } catch (e) {
-    console.error('connectWallet:', e);
-    document.getElementById('connect-status').textContent = '❌ ' + (e.message || 'Connection failed');
+    statusEl.textContent = '❌ ' + (e.message || 'Connection failed');
   }
 }
 
@@ -730,39 +519,22 @@ async function connectWallet(provider) {
 async function checkWallet() {
   showScreen('s-loading');
   document.getElementById('loading-msg').textContent = 'Checking $YELLOWCATZ balance...';
-
   try {
-    // Fetch SOL price
-    fetchSolPrice();
-
     const data = await api('checkWallet', { wallet: connectedWallet });
-
     if (!data.eligible) {
-      document.getElementById('inelig-msg').textContent = data.message || 'You need to hold $YELLOWCATZ tokens.';
+      document.getElementById('inelig-msg').textContent = data.message || 'You need $YELLOWCATZ tokens.';
       showScreen('s-ineligible');
       return;
     }
-
     playerData = data;
     showScreen('s-main');
     selectWheel('simple');
     updateTicketDisplay();
     drawWheel();
-
   } catch (e) {
-    console.error('checkWallet:', e);
     document.getElementById('inelig-msg').textContent = 'Connection error. Please try again.';
     showScreen('s-ineligible');
   }
-}
-
-async function fetchSolPrice() {
-  try {
-    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
-    const d = await r.json();
-    solPrice = d?.solana?.usd || 150;
-    updatePriceDisplay();
-  } catch { solPrice = 150; }
 }
 
 // ============================================================
@@ -771,69 +543,39 @@ async function fetchSolPrice() {
 function selectWheel(type) {
   currentWheel = type;
   currentRotation = 0;
-
-  // Update tabs
-  ['simple', 'yellow', 'gold'].forEach(t => {
-    document.getElementById(`tab-${t}`).classList.toggle('active', t === type);
-  });
-
-  // Update theme
+  ['simple','yellow','gold'].forEach(t => document.getElementById(`tab-${t}`).classList.toggle('active', t===type));
   document.body.className = `theme-${type}`;
-
-  // Update spin button state
   updateSpinButton();
   updateTicketDisplay();
+  updatePriceDisplay();
   drawWheel();
-
-  // Show/hide buy section (only for simple)
-  document.querySelector('.buy-section').style.opacity = type === 'simple' ? '1' : '0.4';
-  document.querySelector('.buy-section').style.pointerEvents = type === 'simple' ? '' : 'none';
-  const buyNote = document.querySelector('.buy-section');
-  if (type !== 'simple') {
-    buyNote.title = 'Buy tickets on the Simple wheel, then earn Yellow/Gold tickets by spinning.';
-  }
+  const buySection = document.querySelector('.buy-section');
+  buySection.style.opacity = type === 'simple' ? '1' : '0.4';
+  buySection.style.pointerEvents = type === 'simple' ? '' : 'none';
 }
 
 // ============================================================
 // UPDATE UI
 // ============================================================
 function updateTicketDisplay() {
-  const tickets = {
-    simple: playerData.simple_tickets || 0,
-    yellow: playerData.yellow_tickets || 0,
-    gold: playerData.gold_tickets || 0,
-  };
-
-  // Badges on tabs
+  const tickets = { simple:playerData.simple_tickets||0, yellow:playerData.yellow_tickets||0, gold:playerData.gold_tickets||0 };
   Object.keys(tickets).forEach(t => {
-    const badge = document.getElementById(`badge-${t}`);
-    badge.textContent = tickets[t];
-    badge.className = `tab-ticket-badge${tickets[t] === 0 ? ' empty' : ''}`;
+    const b = document.getElementById(`badge-${t}`);
+    b.textContent = tickets[t];
+    b.className = `tab-badge ${tickets[t]>0 ? 'has' : 'empty'}`;
   });
-
-  // Current ticket chip
   const cur = tickets[currentWheel];
-  document.getElementById('chip-current').textContent = `🎫 ${cur} ${currentWheel} ticket${cur !== 1 ? 's' : ''}`;
-  document.getElementById('chip-total-won').textContent = `🏆 $${(playerData.total_won || 0).toFixed(0)} won`;
+  document.getElementById('chip-current').textContent = `🎫 ${cur} ${currentWheel} ticket${cur!==1?'s':''}`;
+  document.getElementById('chip-total-won').textContent = `🏆 $${(playerData.total_won||0).toFixed(0)} won`;
 }
 
 function updateSpinButton() {
   const btn = document.getElementById('spin-btn');
-  const tickets = playerData[`${currentWheel}_tickets`] || 0;
-  btn.disabled = isSpinning || tickets === 0;
-  if (tickets === 0) {
-    btn.textContent = currentWheel === 'simple' ? '🎫 Buy Tickets' : '🔒 No Tickets';
-  } else {
-    btn.textContent = `🎰 SPIN (${tickets})`;
-  }
-}
-
-function updatePriceDisplay() {
-  const count = parseInt(document.getElementById('ticket-count-input').value) || 1;
-  const solPerTicket = 10 / solPrice;
-  const total = solPerTicket * count;
-  document.getElementById('sol-rate-display').textContent = `≈ ${solPerTicket.toFixed(4)} SOL per ticket (~$10)`;
-  document.getElementById('total-sol-display').textContent = `Total: ≈ ${total.toFixed(4)} SOL for ${count} ticket${count !== 1 ? 's' : ''}`;
+  const t = playerData[`${currentWheel}_tickets`]||0;
+  btn.disabled = isSpinning || t===0;
+  if (isSpinning) { btn.textContent='⏳ Spinning...'; }
+  else if (t===0) { btn.textContent = currentWheel==='simple' ? '🎫 Buy Tickets' : '🔒 No Tickets'; }
+  else { btn.textContent = `🎰 SPIN (${t})`; }
 }
 
 // ============================================================
@@ -841,122 +583,73 @@ function updatePriceDisplay() {
 // ============================================================
 function drawWheel() {
   const def = WHEEL_DEFS[currentWheel];
-  const segments = def.segments;
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
-  const radius = Math.min(cx, cy) - 8;
-  const arc = (2 * Math.PI) / segments.length;
+  const segs = def.segments;
+  const cx = canvas.width/2, cy = canvas.height/2;
+  const radius = Math.min(cx,cy)-8;
+  const arc = (2*Math.PI)/segs.length;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Outer ring shadow
+  // Shadow
   ctx.save();
-  ctx.shadowColor = 'rgba(232,160,0,0.3)';
-  ctx.shadowBlur = 20;
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius + 6, 0, 2 * Math.PI);
-  ctx.fillStyle = 'rgba(0,0,0,0.3)';
-  ctx.fill();
+  ctx.shadowColor='rgba(232,160,0,0.25)';
+  ctx.shadowBlur=18;
+  ctx.beginPath(); ctx.arc(cx,cy,radius+5,0,2*Math.PI);
+  ctx.fillStyle='rgba(0,0,0,0.2)'; ctx.fill();
   ctx.restore();
 
-  // Draw segments
-  segments.forEach((seg, i) => {
-    const startAngle = currentRotation + i * arc;
-    const endAngle = startAngle + arc;
-
-    // Fill
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, radius, startAngle, endAngle);
-    ctx.closePath();
-    ctx.fillStyle = seg.color;
-    ctx.fill();
-
-    // Border
-    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // Label
+  // Segments
+  segs.forEach((seg,i) => {
+    const s = currentRotation + i*arc, e = s+arc;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,radius,s,e); ctx.closePath();
+    ctx.fillStyle=seg.color; ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.2)'; ctx.lineWidth=1.5; ctx.stroke();
     ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(startAngle + arc / 2);
-    ctx.textAlign = 'right';
-    ctx.fillStyle = seg.textColor;
-    ctx.font = seg.font;
-    ctx.shadowColor = 'transparent';
-    ctx.fillText(seg.label, radius - 14, 5);
+    ctx.translate(cx,cy); ctx.rotate(s+arc/2);
+    ctx.textAlign='right'; ctx.fillStyle=seg.textColor; ctx.font=seg.font;
+    ctx.shadowColor='transparent';
+    ctx.fillText(seg.label, radius-14, 5);
     ctx.restore();
   });
 
   // Outer ring
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
-  ctx.strokeStyle = currentWheel === 'gold' ? '#8B6914' : '#E8A000';
-  ctx.lineWidth = 4;
-  ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,radius,0,2*Math.PI);
+  ctx.strokeStyle = currentWheel==='gold' ? '#8B6914' : '#E8A000';
+  ctx.lineWidth=4; ctx.stroke();
 
   // Center circle
-  ctx.beginPath();
-  ctx.arc(cx, cy, 22, 0, 2 * Math.PI);
-  const grad = ctx.createRadialGradient(cx - 4, cy - 4, 0, cx, cy, 22);
-  grad.addColorStop(0, '#FFD700');
-  grad.addColorStop(1, '#E8A000');
-  ctx.fillStyle = grad;
-  ctx.fill();
-  ctx.strokeStyle = '#8B5A00';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  // Center emoji
-  ctx.font = '16px Arial';
-  ctx.textAlign = 'center';
-  ctx.fillText('🐱', cx, cy + 5);
+  ctx.beginPath(); ctx.arc(cx,cy,22,0,2*Math.PI);
+  const g = ctx.createRadialGradient(cx-4,cy-4,0,cx,cy,22);
+  g.addColorStop(0,'#FFD700'); g.addColorStop(1,'#E8A000');
+  ctx.fillStyle=g; ctx.fill();
+  ctx.strokeStyle='#8B5A00'; ctx.lineWidth=2; ctx.stroke();
+  ctx.font='16px Arial'; ctx.textAlign='center';
+  ctx.fillText('🐱',cx,cy+5);
 }
 
 // ============================================================
 // SPIN ANIMATION
 // ============================================================
-function animateSpin(targetSegmentIndex, totalSegments, onComplete) {
-  const arc = (2 * Math.PI) / totalSegments;
-  const pointerAngle = -Math.PI / 2; // top
-
-  // Target angle: center of target segment under pointer
-  let targetAngle = pointerAngle - (targetSegmentIndex * arc + arc / 2);
-  targetAngle = ((targetAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-
-  const curNorm = ((currentRotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+function animateSpin(targetIdx, totalSegs, onComplete) {
+  const arc = (2*Math.PI)/totalSegs;
+  let targetAngle = -Math.PI/2 - (targetIdx*arc + arc/2);
+  targetAngle = ((targetAngle%(2*Math.PI))+(2*Math.PI))%(2*Math.PI);
+  const curNorm = ((currentRotation%(2*Math.PI))+(2*Math.PI))%(2*Math.PI);
   let diff = targetAngle - curNorm;
-  if (diff <= 0) diff += 2 * Math.PI;
-
-  const spins = 5 + Math.floor(Math.random() * 4);
-  const totalRotation = spins * 2 * Math.PI + diff;
-  const startRotation = currentRotation;
-  const endRotation = startRotation + totalRotation;
-  const duration = 5000;
-  const startTime = performance.now();
-
-  function easeOut(t) {
-    return 1 - Math.pow(1 - t, 3);
-  }
-
-  function animate(now) {
-    const elapsed = now - startTime;
-    const t = Math.min(elapsed / duration, 1);
-    currentRotation = startRotation + totalRotation * easeOut(t);
+  if (diff<=0) diff += 2*Math.PI;
+  const spins = (5+Math.floor(Math.random()*4))*2*Math.PI;
+  const total = spins+diff;
+  const start = currentRotation;
+  const dur = 5000;
+  const t0 = performance.now();
+  function ease(t) { return 1-Math.pow(1-t,3); }
+  function frame(now) {
+    const t = Math.min((now-t0)/dur,1);
+    currentRotation = start + total*ease(t);
     drawWheel();
-
-    if (t < 1) {
-      animationId = requestAnimationFrame(animate);
-    } else {
-      currentRotation = endRotation;
-      isSpinning = false;
-      updateSpinButton();
-      if (onComplete) onComplete();
-    }
+    if (t<1) requestAnimationFrame(frame);
+    else { currentRotation=start+total; isSpinning=false; updateSpinButton(); if(onComplete) onComplete(); }
   }
-
-  animationId = requestAnimationFrame(animate);
+  requestAnimationFrame(frame);
 }
 
 // ============================================================
@@ -964,48 +657,26 @@ function animateSpin(targetSegmentIndex, totalSegments, onComplete) {
 // ============================================================
 async function handleSpin() {
   if (isSpinning) return;
-  const tickets = playerData[`${currentWheel}_tickets`] || 0;
-
-  if (tickets === 0) {
-    if (currentWheel === 'simple') {
-      document.querySelector('.buy-section').scrollIntoView({ behavior: 'smooth' });
-    } else {
-      showToast(`Spin the ${currentWheel === 'yellow' ? 'Simple' : 'Yellow'} wheel to earn ${currentWheel} tickets!`);
-    }
+  if ((playerData[`${currentWheel}_tickets`]||0)===0) {
+    if (currentWheel==='simple') document.querySelector('.buy-section').scrollIntoView({behavior:'smooth'});
+    else showToast(`Spin Simple → earn ${currentWheel==='yellow'?'Yellow':'Gold'} tickets!`);
     return;
   }
-
-  isSpinning = true;
-  document.getElementById('spin-btn').disabled = true;
-  document.getElementById('spin-btn').textContent = '⏳ Spinning...';
-
+  isSpinning=true;
+  document.getElementById('spin-btn').textContent='⏳ Spinning...';
+  document.getElementById('spin-btn').disabled=true;
   try {
-    const data = await api('spin', { wallet: connectedWallet, wheelType: currentWheel });
-
-    if (!data.success) {
-      isSpinning = false;
-      updateSpinButton();
-      showToast('❌ ' + (data.error || 'Spin failed'));
-      return;
-    }
-
-    // Update local data
-    playerData.simple_tickets = data.simple_tickets;
-    playerData.yellow_tickets = data.yellow_tickets;
-    playerData.gold_tickets = data.gold_tickets;
-    playerData.total_won = data.total_won;
+    const data = await api('spin', { wallet:connectedWallet, wheelType:currentWheel });
+    if (!data.success) { isSpinning=false; updateSpinButton(); showToast('❌ '+(data.error||'Spin failed')); return; }
+    playerData.simple_tickets=data.simple_tickets;
+    playerData.yellow_tickets=data.yellow_tickets;
+    playerData.gold_tickets=data.gold_tickets;
+    playerData.total_won=data.total_won;
     updateTicketDisplay();
-
-    // Animate wheel
-    animateSpin(data.segmentIndex, data.totalSegments, () => {
-      showResult(data);
-    });
-
+    animateSpin(data.segmentIndex, data.totalSegments, ()=>showResult(data));
   } catch (e) {
-    console.error('handleSpin:', e);
-    isSpinning = false;
-    updateSpinButton();
-    showToast('❌ Connection error. Ticket not deducted — try again.');
+    isSpinning=false; updateSpinButton();
+    showToast('❌ Connection error — ticket not deducted, try again.');
   }
 }
 
@@ -1014,55 +685,36 @@ async function handleSpin() {
 // ============================================================
 function showResult(data) {
   const { result, amount, special } = data;
+  let icon, title, amountText, sub;
+  document.getElementById('modal-unlock').style.display='none';
+  document.getElementById('modal-spin-again').textContent='🔄 Spin Again';
+  document.getElementById('modal-spin-again').onclick=()=>{ closeModal(); handleSpin(); };
 
-  let icon, title, amountText, subText;
-
-  if (result === 'LOSE' || amount === 0 && !special) {
-    icon = '💸';
-    title = 'BETTER LUCK\nNEXT TIME';
-    amountText = '';
-    subText = `${playerData[`${currentWheel}_tickets`] || 0} tickets remaining`;
-  } else if (special === 'yellow') {
-    icon = '⭐';
-    title = 'YELLOW WHEEL\nUNLOCKED!';
-    amountText = '';
-    subText = `You earned 1 Yellow Wheel ticket!`;
-    document.getElementById('modal-unlock').style.display = 'block';
-    document.getElementById('modal-unlock').textContent = '⭐ Switch to the Yellow Wheel tab and spin for FREE!';
-    document.getElementById('modal-spin-again').textContent = '⭐ Spin Yellow';
-    document.getElementById('modal-spin-again').onclick = () => { closeModal(); selectWheel('yellow'); handleSpin(); };
-  } else if (special === 'gold') {
-    icon = '👑';
-    title = 'GOLD WHEEL\nUNLOCKED!';
-    amountText = '';
-    subText = `You earned 1 Gold Wheel ticket!`;
-    document.getElementById('modal-unlock').style.display = 'block';
-    document.getElementById('modal-unlock').textContent = '👑 Switch to the Gold Wheel tab and spin for FREE!';
-    document.getElementById('modal-spin-again').textContent = '👑 Spin Gold';
-    document.getElementById('modal-spin-again').onclick = () => { closeModal(); selectWheel('gold'); handleSpin(); };
+  if (special==='yellow') {
+    icon='⭐'; title='YELLOW WHEEL UNLOCKED!'; amountText=''; sub='You earned 1 Yellow Wheel spin!';
+    document.getElementById('modal-unlock').style.display='block';
+    document.getElementById('modal-unlock').textContent='⭐ Go to the Yellow Wheel tab and spin for FREE!';
+    document.getElementById('modal-spin-again').textContent='⭐ Spin Yellow';
+    document.getElementById('modal-spin-again').onclick=()=>{ closeModal(); selectWheel('yellow'); handleSpin(); };
+  } else if (special==='gold') {
+    icon='👑'; title='GOLD WHEEL UNLOCKED!'; amountText=''; sub='You earned 1 Gold Wheel spin!';
+    document.getElementById('modal-unlock').style.display='block';
+    document.getElementById('modal-unlock').textContent='👑 Go to the Gold Wheel tab and spin for FREE!';
+    document.getElementById('modal-spin-again').textContent='👑 Spin Gold';
+    document.getElementById('modal-spin-again').onclick=()=>{ closeModal(); selectWheel('gold'); handleSpin(); };
+  } else if (amount>0) {
+    icon='🎉'; title='YOU WIN!'; amountText=`$${amount}`;
+    sub=`${playerData[`${currentWheel}_tickets`]||0} tickets left · Our team will send your prize!`;
   } else {
-    icon = '🎉';
-    title = 'YOU WIN!';
-    amountText = `$${amount}`;
-    subText = `${playerData[`${currentWheel}_tickets`] || 0} tickets remaining • Our team will send your prize!`;
+    icon='💸'; title='BETTER LUCK'; amountText=''; sub=`${playerData[`${currentWheel}_tickets`]||0} tickets remaining`;
   }
 
-  document.getElementById('modal-icon').textContent = icon;
-  document.getElementById('modal-title').textContent = title.replace('\n', ' ');
-  document.getElementById('modal-amount').textContent = amountText;
-  document.getElementById('modal-sub').textContent = subText;
-
-  if (!special) {
-    document.getElementById('modal-unlock').style.display = 'none';
-    document.getElementById('modal-spin-again').textContent = '🔄 Spin Again';
-    document.getElementById('modal-spin-again').onclick = () => { closeModal(); handleSpin(); };
-  }
-
+  document.getElementById('modal-icon').textContent=icon;
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-amount').textContent=amountText;
+  document.getElementById('modal-sub').textContent=sub;
+  document.getElementById('modal-spin-again').disabled=(playerData[`${currentWheel}_tickets`]||0)===0 && !special;
   document.getElementById('modal-overlay').classList.add('open');
-
-  // Update spin again button availability
-  const remaining = playerData[`${currentWheel}_tickets`] || 0;
-  document.getElementById('modal-spin-again').disabled = remaining === 0 && !special;
 }
 
 function closeModal() {
@@ -1071,186 +723,212 @@ function closeModal() {
 }
 
 // ============================================================
-// BUY TICKETS FLOW
+// BUY TICKETS — $YC TOKEN TRANSFER
 // ============================================================
-async function initiatePayment() {
-  const count = parseInt(document.getElementById('ticket-count-input').value) || 1;
-  const solAmount = (10 / solPrice) * count;
-  const treasuryWallet = 'REPLACE_WITH_TREASURY_WALLET'; // Will be set via config
+function getATA(ownerPK, mintPK) {
+  return solanaWeb3.PublicKey.findProgramAddressSync(
+    [ownerPK.toBuffer(), TOKEN_PROGRAM().toBuffer(), mintPK.toBuffer()],
+    ASSOC_PROGRAM()
+  )[0];
+}
 
-  if (walletProvider === 'manual') {
-    // Manual: just show the address to send to
-    document.getElementById('buy-status').textContent = `📋 Send ${solAmount.toFixed(4)} SOL to: ${treasuryWallet}`;
-    document.getElementById('buy-status').className = 'buy-status loading';
-    document.getElementById('tx-section').style.display = 'block';
+function buildCreateATAIx(payer, ata, owner, mint) {
+  return new solanaWeb3.TransactionInstruction({
+    keys: [
+      { pubkey:payer,  isSigner:true,  isWritable:true  },
+      { pubkey:ata,    isSigner:false, isWritable:true  },
+      { pubkey:owner,  isSigner:false, isWritable:false },
+      { pubkey:mint,   isSigner:false, isWritable:false },
+      { pubkey:solanaWeb3.SystemProgram.programId, isSigner:false, isWritable:false },
+      { pubkey:TOKEN_PROGRAM(), isSigner:false, isWritable:false },
+    ],
+    programId: ASSOC_PROGRAM(),
+    data: new Uint8Array(0)
+  });
+}
+
+function buildTransferIx(source, dest, owner, amountRaw) {
+  const data = new Uint8Array(9);
+  data[0]=3; // Transfer
+  const view = new DataView(data.buffer);
+  const low  = Number(amountRaw & BigInt(0xFFFFFFFF));
+  const high = Number(amountRaw >> BigInt(32));
+  view.setUint32(1, low, true);
+  view.setUint32(5, high, true);
+  return new solanaWeb3.TransactionInstruction({
+    keys: [
+      { pubkey:source, isSigner:false, isWritable:true },
+      { pubkey:dest,   isSigner:false, isWritable:true },
+      { pubkey:owner,  isSigner:true,  isWritable:false },
+    ],
+    programId: TOKEN_PROGRAM(),
+    data
+  });
+}
+
+async function initiatePayment() {
+  if (!ycPrice || ycPrice===0) {
+    setBuyStatus('❌ Cannot fetch $YC price. Please try again.', 'error');
+    return;
+  }
+  if (!ycTokenAddress || !treasuryWallet) {
+    setBuyStatus('❌ Wheel not configured yet. Contact admin.', 'error');
     return;
   }
 
-  // Auto-send via wallet
-  document.getElementById('buy-status').textContent = '⏳ Opening wallet to confirm transaction...';
-  document.getElementById('buy-status').className = 'buy-status loading';
+  const count = parseInt(document.getElementById('ticket-count-input').value)||1;
+  const tokenAmount = Math.ceil(count*10/ycPrice);
 
+  // Manual wallet → show instructions
+  if (walletProvider==='manual') {
+    document.getElementById('manual-send-box').style.display='block';
+    document.getElementById('tx-section').style.display='block';
+    setBuyStatus(`📋 Send ${tokenAmount.toLocaleString()} $YC to the address above, then paste the tx signature below.`, 'loading');
+    return;
+  }
+
+  setBuyStatus('⏳ Opening wallet...', 'loading');
   try {
-    // Fetch config from API (treasury wallet)
-    const config = await fetch('/api/wheel-config').then(r => r.json()).catch(() => null);
-    const treasury = config?.treasury || treasuryWallet;
-    
-    const lamports = Math.round(solAmount * 1e9);
-    const connection = new solanaWeb3.Connection(
-      solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed'
-    );
-    const from = new solanaWeb3.PublicKey(connectedWallet);
-    const to = new solanaWeb3.PublicKey(treasury);
+    const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
+    const mint   = new solanaWeb3.PublicKey(ycTokenAddress);
+    const payer  = new solanaWeb3.PublicKey(connectedWallet);
+    const treasury = new solanaWeb3.PublicKey(treasuryWallet);
 
-    const tx = new solanaWeb3.Transaction().add(
-      solanaWeb3.SystemProgram.transfer({ fromPubkey: from, toPubkey: to, lamports })
-    );
+    const fromATA = getATA(payer, mint);
+    const toATA   = getATA(treasury, mint);
+
+    const amountRaw = BigInt(Math.round(tokenAmount * Math.pow(10, YC_DECIMALS)));
+    const tx = new solanaWeb3.Transaction();
+
+    // Create treasury ATA if needed
+    const toATAInfo = await connection.getAccountInfo(toATA);
+    if (!toATAInfo) tx.add(buildCreateATAIx(payer, toATA, treasury, mint));
+
+    tx.add(buildTransferIx(fromATA, toATA, payer, amountRaw));
+
     const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
-    tx.feePayer = from;
+    tx.feePayer = payer;
 
+    setBuyStatus('⏳ Confirm in your wallet...', 'loading');
     let sig;
-    if (walletProvider === 'phantom') {
-      const res = await window.solana.signAndSendTransaction(tx);
-      sig = res.signature;
+    if (walletProvider==='phantom') {
+      const r = await window.solana.signAndSendTransaction(tx); sig=r.signature;
     } else {
-      const res = await window.solflare.signAndSendTransaction(tx);
-      sig = res.signature;
+      const r = await window.solflare.signAndSendTransaction(tx); sig=r.signature;
     }
 
-    document.getElementById('buy-status').textContent = `⏳ Transaction sent! Waiting for confirmation... (${sig.slice(0,8)}...)`;
-    
-    // Wait for confirmation
-    await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight });
-    
-    // Verify with backend
+    setBuyStatus(`⏳ Transaction sent! Waiting for confirmation... (${sig.slice(0,8)}...)`, 'loading');
+    await connection.confirmTransaction({ signature:sig, blockhash, lastValidBlockHeight });
+
+    // Auto-verify
     document.getElementById('tx-sig-input').value = sig;
     await verifyAndAddTickets();
 
   } catch (e) {
-    console.error('payment:', e);
-    if (e.message?.includes('rejected') || e.code === 4001) {
-      document.getElementById('buy-status').textContent = '❌ Transaction rejected by user';
+    console.error('initiatePayment:', e);
+    if (e.message?.includes('rejected') || e.code===4001) {
+      setBuyStatus('❌ Transaction cancelled by user.', 'error');
     } else {
-      document.getElementById('buy-status').textContent = '❌ Error: ' + (e.message || 'Unknown error');
-      document.getElementById('tx-section').style.display = 'block';
-      document.getElementById('buy-status').textContent += ' — paste the signature manually if you already sent SOL';
+      setBuyStatus(`❌ Error: ${e.message||'unknown'}`, 'error');
+      // Show manual fallback
+      document.getElementById('manual-send-box').style.display='block';
+      document.getElementById('tx-section').style.display='block';
     }
-    document.getElementById('buy-status').className = 'buy-status error';
   }
 }
 
 async function verifyAndAddTickets() {
   const sig = document.getElementById('tx-sig-input').value.trim();
-  if (!sig || sig.length < 40) {
-    document.getElementById('buy-status').textContent = '❌ Please enter a valid transaction signature';
-    document.getElementById('buy-status').className = 'buy-status error';
-    return;
-  }
-
-  document.getElementById('buy-status').textContent = '⏳ Verifying transaction...';
-  document.getElementById('buy-status').className = 'buy-status loading';
-
+  if (!sig || sig.length<40) { setBuyStatus('❌ Invalid transaction signature.', 'error'); return; }
+  setBuyStatus('⏳ Verifying transaction...', 'loading');
   try {
-    const data = await api('buyTickets', { wallet: connectedWallet, txSignature: sig });
-
-    if (data.error) {
-      document.getElementById('buy-status').textContent = '❌ ' + data.error;
-      document.getElementById('buy-status').className = 'buy-status error';
-      return;
-    }
-
-    playerData.simple_tickets = data.simple_tickets;
-    playerData.yellow_tickets = data.yellow_tickets;
-    playerData.gold_tickets = data.gold_tickets;
-    updateTicketDisplay();
-    updateSpinButton();
-
-    document.getElementById('buy-status').textContent = `✅ ${data.tickets_added} ticket${data.tickets_added !== 1 ? 's' : ''} added! ($${data.usd_amount} received)`;
-    document.getElementById('buy-status').className = 'buy-status success';
-    document.getElementById('tx-section').style.display = 'none';
-    document.getElementById('tx-sig-input').value = '';
-
+    const data = await api('buyTickets', { wallet:connectedWallet, txSignature:sig });
+    if (data.error) { setBuyStatus('❌ '+data.error, 'error'); return; }
+    playerData.simple_tickets=data.simple_tickets;
+    playerData.yellow_tickets=data.yellow_tickets;
+    playerData.gold_tickets=data.gold_tickets;
+    updateTicketDisplay(); updateSpinButton();
+    setBuyStatus(`✅ ${data.tickets_added} ticket${data.tickets_added!==1?'s':''} added! (${data.tokens_sent} $YC ≈ $${data.usd_amount})`, 'success');
+    document.getElementById('tx-section').style.display='none';
+    document.getElementById('manual-send-box').style.display='none';
+    document.getElementById('tx-sig-input').value='';
   } catch (e) {
-    document.getElementById('buy-status').textContent = '❌ Verification failed. Try again in a few seconds.';
-    document.getElementById('buy-status').className = 'buy-status error';
+    setBuyStatus('❌ Verification failed. Wait a few seconds and try again.', 'error');
   }
 }
 
+function setBuyStatus(msg, type) {
+  const el = document.getElementById('buy-status');
+  el.textContent=msg;
+  el.className=`buy-status ${type}`;
+}
+
+function copyATA() {
+  const addr = document.getElementById('treasury-ata-display').textContent;
+  navigator.clipboard.writeText(addr).then(()=>showToast('📋 Address copied!'));
+}
+
 // ============================================================
-// API HELPER
+// HELPERS
 // ============================================================
-async function api(action, data = {}) {
-  const res = await fetch('/api/wheel', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+async function api(action, data={}) {
+  const r = await fetch('/api/wheel', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ action, ...data })
   });
-  return res.json();
+  return r.json();
 }
 
-// ============================================================
-// SCREEN MANAGEMENT
-// ============================================================
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('s-main').classList.remove('active');
-
-  if (id === 's-main') {
-    document.getElementById('s-main').classList.add('active');
-  } else {
-    const el = document.getElementById(id);
-    if (el) el.classList.add('active');
-  }
+  if (id==='s-main') document.getElementById('s-main').classList.add('active');
+  else { const el=document.getElementById(id); if(el) el.classList.add('active'); }
 }
 
 function disconnect() {
   if (!confirm('Disconnect wallet?')) return;
-  connectedWallet = null;
-  walletProvider = null;
-  playerData = { simple_tickets: 0, yellow_tickets: 0, gold_tickets: 0, total_won: 0 };
-  document.body.className = 'theme-simple';
-  document.getElementById('connect-status').textContent = '';
+  connectedWallet=null; walletProvider=null;
+  playerData={ simple_tickets:0, yellow_tickets:0, gold_tickets:0, total_won:0 };
+  document.body.className='theme-simple';
   showScreen('s-connect');
 }
 
 function showToast(msg) {
-  const toast = document.createElement('div');
-  toast.style.cssText = `position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#E8A000;padding:12px 20px;border-radius:10px;font-size:14px;z-index:9999;border:1px solid #E8A000;`;
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  const t=document.createElement('div');
+  t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#E8A000;padding:12px 20px;border-radius:10px;font-size:14px;z-index:9999;border:1px solid #E8A000;';
+  t.textContent=msg; document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3000);
 }
 
 // ============================================================
 // INIT
 // ============================================================
-fetchSolPrice();
-updatePriceDisplay();
-drawWheel(); // Draw empty wheel on load
+loadConfig();
+drawWheel();
 
-// Auto-connect if Phantom already connected
-window.addEventListener('load', async () => {
+// Auto-connect Phantom if already connected
+window.addEventListener('load', async ()=>{
   try {
     if (window.solana?.isPhantom && window.solana.isConnected) {
       connectedWallet = window.solana.publicKey?.toString();
       if (connectedWallet) {
-        walletProvider = 'phantom';
-        document.getElementById('wallet-display').textContent = connectedWallet.slice(0,4) + '...' + connectedWallet.slice(-4);
+        walletProvider='phantom';
+        document.getElementById('wallet-display').textContent=connectedWallet.slice(0,4)+'...'+connectedWallet.slice(-4);
         await checkWallet();
       }
     }
-  } catch (e) {}
+  } catch {}
 });
 
-// Keyboard: press SPACE to spin
-document.addEventListener('keydown', e => {
-  if (e.code === 'Space' && document.getElementById('s-main').classList.contains('active')) {
-    e.preventDefault();
-    handleSpin();
+// SPACE to spin
+document.addEventListener('keydown', e=>{
+  if (e.code==='Space' && document.getElementById('s-main').classList.contains('active')) {
+    e.preventDefault(); handleSpin();
   }
 });
-
 </script>
 </body>
 </html>

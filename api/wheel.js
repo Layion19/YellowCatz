@@ -6,61 +6,60 @@ const db = createClient({
 });
 
 // ============================================================
-// WHEEL SEGMENT DEFINITIONS
-// MUST match wheel.html exactly (same order, same count)
+// WHEEL CONFIGS — same order as wheel.html
 // ============================================================
 const WHEEL_CONFIGS = {
   simple: {
     segments: [
-      { label: '$10',      amount: 10,  special: null },    // 0
-      { label: 'LOSE',     amount: 0,   special: null },    // 1
-      { label: '$20',      amount: 20,  special: null },    // 2
-      { label: 'LOSE',     amount: 0,   special: null },    // 3
-      { label: '$10',      amount: 10,  special: null },    // 4
-      { label: 'LOSE',     amount: 0,   special: null },    // 5
-      { label: '$50',      amount: 50,  special: null },    // 6
-      { label: 'LOSE',     amount: 0,   special: null },    // 7
-      { label: '$10',      amount: 10,  special: null },    // 8
-      { label: 'LOSE',     amount: 0,   special: null },    // 9
-      { label: '$20',      amount: 20,  special: null },    // 10
-      { label: 'LOSE',     amount: 0,   special: null },    // 11
-      { label: 'YELLOW',   amount: 0,   special: 'yellow'}, // 12
-      { label: 'LOSE',     amount: 0,   special: null },    // 13
-      { label: '$10',      amount: 10,  special: null },    // 14
-      { label: 'LOSE',     amount: 0,   special: null },    // 15
-      { label: '$100',     amount: 100, special: null },    // 16
-      { label: '$20',      amount: 20,  special: null },    // 17
+      { label: '$10',    amount: 10,  special: null },
+      { label: 'LOSE',   amount: 0,   special: null },
+      { label: '$20',    amount: 20,  special: null },
+      { label: 'LOSE',   amount: 0,   special: null },
+      { label: '$10',    amount: 10,  special: null },
+      { label: 'LOSE',   amount: 0,   special: null },
+      { label: '$50',    amount: 50,  special: null },
+      { label: 'LOSE',   amount: 0,   special: null },
+      { label: '$10',    amount: 10,  special: null },
+      { label: 'LOSE',   amount: 0,   special: null },
+      { label: '$20',    amount: 20,  special: null },
+      { label: 'LOSE',   amount: 0,   special: null },
+      { label: 'YELLOW', amount: 0,   special: 'yellow' },
+      { label: 'LOSE',   amount: 0,   special: null },
+      { label: '$10',    amount: 10,  special: null },
+      { label: 'LOSE',   amount: 0,   special: null },
+      { label: '$100',   amount: 100, special: null },
+      { label: '$20',    amount: 20,  special: null },
     ]
   },
   yellow: {
     segments: [
-      { label: 'LOSE',   amount: 0,   special: null },    // 0
-      { label: '$50',    amount: 50,  special: null },    // 1
-      { label: 'LOSE',   amount: 0,   special: null },    // 2
-      { label: '$100',   amount: 100, special: null },    // 3
-      { label: 'LOSE',   amount: 0,   special: null },    // 4
-      { label: '$50',    amount: 50,  special: null },    // 5
-      { label: 'LOSE',   amount: 0,   special: null },    // 6
-      { label: 'GOLD',   amount: 0,   special: 'gold' }, // 7
-      { label: 'LOSE',   amount: 0,   special: null },    // 8
-      { label: 'LOSE',   amount: 0,   special: null },    // 9
-      { label: 'LOSE',   amount: 0,   special: null },    // 10
+      { label: 'LOSE',  amount: 0,   special: null },
+      { label: '$50',   amount: 50,  special: null },
+      { label: 'LOSE',  amount: 0,   special: null },
+      { label: '$100',  amount: 100, special: null },
+      { label: 'LOSE',  amount: 0,   special: null },
+      { label: '$50',   amount: 50,  special: null },
+      { label: 'LOSE',  amount: 0,   special: null },
+      { label: 'GOLD',  amount: 0,   special: 'gold' },
+      { label: 'LOSE',  amount: 0,   special: null },
+      { label: 'LOSE',  amount: 0,   special: null },
+      { label: 'LOSE',  amount: 0,   special: null },
     ]
   },
   gold: {
     segments: [
-      { label: '$50',   amount: 50,  special: null },    // 0
-      { label: 'LOSE',  amount: 0,   special: null },    // 1
-      { label: '$50',   amount: 50,  special: null },    // 2
-      { label: 'LOSE',  amount: 0,   special: null },    // 3
-      { label: '$200',  amount: 200, special: null },    // 4
-      { label: 'LOSE',  amount: 0,   special: null },    // 5
-      { label: '$50',   amount: 50,  special: null },    // 6
-      { label: 'LOSE',  amount: 0,   special: null },    // 7
-      { label: '$50',   amount: 50,  special: null },    // 8
-      { label: 'LOSE',  amount: 0,   special: null },    // 9
-      { label: '$50',   amount: 50,  special: null },    // 10
-      { label: 'LOSE',  amount: 0,   special: null },    // 11
+      { label: '$50',  amount: 50,  special: null },
+      { label: 'LOSE', amount: 0,   special: null },
+      { label: '$50',  amount: 50,  special: null },
+      { label: 'LOSE', amount: 0,   special: null },
+      { label: '$200', amount: 200, special: null },
+      { label: 'LOSE', amount: 0,   special: null },
+      { label: '$50',  amount: 50,  special: null },
+      { label: 'LOSE', amount: 0,   special: null },
+      { label: '$50',  amount: 50,  special: null },
+      { label: 'LOSE', amount: 0,   special: null },
+      { label: '$50',  amount: 50,  special: null },
+      { label: 'LOSE', amount: 0,   special: null },
     ]
   }
 };
@@ -98,7 +97,8 @@ async function initDB() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       wallet TEXT NOT NULL,
       tx_signature TEXT UNIQUE NOT NULL,
-      sol_amount REAL NOT NULL,
+      tokens_received REAL NOT NULL,
+      token_price REAL NOT NULL,
       usd_amount REAL NOT NULL,
       tickets_added INTEGER NOT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -107,11 +107,115 @@ async function initDB() {
 }
 
 // ============================================================
+// FETCH $YC TOKEN PRICE
+// ============================================================
+async function fetchTokenPrice() {
+  const tokenAddress = process.env.WHEEL_TOKEN_ADDRESS;
+  if (!tokenAddress) return 0;
+
+  // 1. Try DexScreener
+  try {
+    const r = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${tokenAddress}`, {
+      headers: { Accept: 'application/json' }
+    });
+    const d = await r.json();
+    const pairs = (d.pairs || []).filter(p => p.chainId === 'solana' && parseFloat(p.priceUsd) > 0);
+    if (pairs.length > 0) {
+      const best = pairs.sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0))[0];
+      const price = parseFloat(best.priceUsd);
+      if (price > 0) return price;
+    }
+  } catch (e) { console.log('DexScreener failed:', e.message); }
+
+  // 2. Try Jupiter Price API
+  try {
+    const r = await fetch(`https://price.jup.ag/v6/price?ids=${tokenAddress}`);
+    const d = await r.json();
+    const price = parseFloat(d.data?.[tokenAddress]?.price || 0);
+    if (price > 0) return price;
+  } catch (e) { console.log('Jupiter failed:', e.message); }
+
+  // 3. Try pump.fun API
+  try {
+    const r = await fetch(`https://frontend-api.pump.fun/coins/${tokenAddress}`);
+    const d = await r.json();
+    if (d.usd_market_cap && d.total_supply) {
+      const price = d.usd_market_cap / d.total_supply;
+      if (price > 0) return price;
+    }
+  } catch (e) { console.log('PumpFun failed:', e.message); }
+
+  return 0;
+}
+
+// ============================================================
+// VERIFY $YC TOKEN TRANSACTION
+// ============================================================
+async function verifyTokenTransaction(signature, fromWallet) {
+  const tokenAddress = process.env.WHEEL_TOKEN_ADDRESS;
+  const treasury = process.env.WHEEL_TREASURY_WALLET;
+  if (!tokenAddress || !treasury) return null;
+
+  try {
+    const rpc = process.env.SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
+    const r = await fetch(rpc, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0', id: 1,
+        method: 'getTransaction',
+        params: [signature, {
+          encoding: 'jsonParsed',
+          commitment: 'confirmed',
+          maxSupportedTransactionVersion: 0
+        }]
+      })
+    });
+    const d = await r.json();
+    const tx = d.result;
+    if (!tx || tx.meta?.err) return null;
+
+    // Date check
+    const startDate = process.env.WHEEL_START_DATE
+      ? new Date(process.env.WHEEL_START_DATE)
+      : new Date('2026-01-01');
+    if (tx.blockTime && new Date(tx.blockTime * 1000) < startDate) return null;
+
+    // Find token balance increase for treasury
+    const pre = tx.meta?.preTokenBalances || [];
+    const post = tx.meta?.postTokenBalances || [];
+
+    let tokensReceived = 0;
+    post.forEach(p => {
+      if (p.mint !== tokenAddress) return;
+      if (p.owner !== treasury) return;
+      const preEntry = pre.find(pr => pr.accountIndex === p.accountIndex);
+      const preAmt = preEntry?.uiTokenAmount?.uiAmount || 0;
+      const postAmt = p.uiTokenAmount?.uiAmount || 0;
+      const diff = postAmt - preAmt;
+      if (diff > 0) tokensReceived += diff;
+    });
+
+    if (tokensReceived === 0) return null;
+
+    // Get price
+    const tokenPrice = await fetchTokenPrice();
+    const usdValue = tokenPrice > 0 ? tokensReceived * tokenPrice : 0;
+
+    return { tokensReceived, tokenPrice, usdValue };
+
+  } catch (e) {
+    console.error('verifyTokenTransaction:', e);
+    return null;
+  }
+}
+
+// ============================================================
 // CHECK TOKEN BALANCE (eligibility)
 // ============================================================
 async function checkTokenBalance(wallet) {
   const tokenAddress = process.env.WHEEL_TOKEN_ADDRESS;
-  if (!tokenAddress) return true; // no token configured = open access
+  if (!tokenAddress) return true;
   try {
     const rpc = process.env.SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
     const r = await fetch(rpc, {
@@ -135,57 +239,16 @@ async function checkTokenBalance(wallet) {
 }
 
 // ============================================================
-// VERIFY SOL TRANSACTION
-// ============================================================
-async function verifySOLTransaction(signature, fromWallet) {
-  const treasury = process.env.WHEEL_TREASURY_WALLET;
-  if (!treasury) return null;
-  try {
-    const rpc = process.env.SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
-    const r = await fetch(rpc, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0', id: 1,
-        method: 'getTransaction',
-        params: [signature, { encoding: 'jsonParsed', commitment: 'confirmed', maxSupportedTransactionVersion: 0 }]
-      })
-    });
-    const d = await r.json();
-    const tx = d.result;
-    if (!tx || tx.meta?.err) return null;
-
-    const keys = tx.transaction.message.accountKeys.map(k => typeof k === 'string' ? k : k.pubkey);
-    const treasuryIdx = keys.indexOf(treasury);
-    const fromIdx = keys.indexOf(fromWallet);
-    if (treasuryIdx === -1 || fromIdx === -1) return null;
-
-    const solReceived = (tx.meta.postBalances[treasuryIdx] - tx.meta.preBalances[treasuryIdx]) / 1e9;
-    if (solReceived <= 0) return null;
-
-    // Check date
-    const startDate = process.env.WHEEL_START_DATE ? new Date(process.env.WHEEL_START_DATE) : new Date('2026-01-01');
-    if (tx.blockTime && new Date(tx.blockTime * 1000) < startDate) return null;
-
-    return solReceived;
-  } catch (e) {
-    console.error('verifySOLTransaction:', e);
-    return null;
-  }
-}
-
-// ============================================================
 // SPIN RESULT — server-side RNG
 // ============================================================
 function getSpinResult(wheelType) {
   const config = WHEEL_CONFIGS[wheelType];
   if (!config) return null;
-  const segments = config.segments;
-  const idx = Math.floor(Math.random() * segments.length);
-  const seg = segments[idx];
+  const idx = Math.floor(Math.random() * config.segments.length);
+  const seg = config.segments[idx];
   return {
     segmentIndex: idx,
-    totalSegments: segments.length,
+    totalSegments: config.segments.length,
     result: seg.label,
     amount: seg.amount,
     special: seg.special
@@ -213,22 +276,32 @@ export default async function handler(req, res) {
   try {
     await initDB();
 
+    // ── GET CONFIG (public) ───────────────────────────────────
+    if (action === 'getConfig') {
+      const tokenPrice = await fetchTokenPrice();
+      return res.status(200).json({
+        tokenAddress: process.env.WHEEL_TOKEN_ADDRESS || '',
+        treasuryWallet: process.env.WHEEL_TREASURY_WALLET || '',
+        tokenPrice,
+        ticketPriceUsd: 10,
+        tokensPerTicket: tokenPrice > 0 ? Math.ceil(10 / tokenPrice) : 0
+      });
+    }
+
     // ── CHECK WALLET ──────────────────────────────────────────
     if (action === 'checkWallet') {
       if (!wallet) return res.status(400).json({ error: 'Missing wallet' });
 
       let player = await db.execute({ sql: 'SELECT * FROM wheel_players WHERE wallet = ?', args: [wallet] });
-
       if (player.rows.length > 0) {
         await db.execute({ sql: 'UPDATE wheel_players SET last_seen = CURRENT_TIMESTAMP WHERE wallet = ?', args: [wallet] });
       }
 
       const eligible = await checkTokenBalance(wallet);
-
       if (!eligible && !(player.rows[0]?.is_eligible)) {
         return res.status(200).json({
           eligible: false,
-          message: 'You need to hold $YELLOWCATZ tokens to participate',
+          message: 'You need to hold $YELLOWCATZ tokens to access the wheel.',
           simple_tickets: 0, yellow_tickets: 0, gold_tickets: 0
         });
       }
@@ -250,30 +323,46 @@ export default async function handler(req, res) {
       });
     }
 
-    // ── BUY TICKETS ───────────────────────────────────────────
+    // ── BUY TICKETS (via $YC token transfer) ─────────────────
     if (action === 'buyTickets') {
       const { txSignature } = body;
       if (!wallet || !txSignature) return res.status(400).json({ error: 'Missing params' });
 
-      const existing = await db.execute({ sql: 'SELECT id FROM wheel_transactions WHERE tx_signature = ?', args: [txSignature] });
+      // Check duplicate
+      const existing = await db.execute({
+        sql: 'SELECT id FROM wheel_transactions WHERE tx_signature = ?',
+        args: [txSignature]
+      });
       if (existing.rows.length > 0) return res.status(400).json({ error: 'Transaction already used' });
 
-      const solAmount = await verifySOLTransaction(txSignature, wallet);
-      if (solAmount === null) return res.status(400).json({ error: 'Transaction not valid or not confirmed yet. Wait a few seconds and try again.' });
+      // Verify token transaction
+      const result = await verifyTokenTransaction(txSignature, wallet);
+      if (!result) {
+        return res.status(400).json({
+          error: 'Transaction not valid or not confirmed yet. Wait a few seconds and try again.'
+        });
+      }
 
-      const solPrice = parseFloat(process.env.SOL_PRICE_USD || '150');
-      const usdAmount = solAmount * solPrice;
-      const tickets = Math.floor(usdAmount / 10);
+      if (result.usdValue === 0 || result.tokenPrice === 0) {
+        return res.status(400).json({
+          error: 'Cannot verify token price right now. Try again in a moment.'
+        });
+      }
 
-      if (tickets === 0) return res.status(400).json({
-        error: `Amount too small: $${usdAmount.toFixed(2)} received. Minimum $10 per ticket.`
-      });
+      const tickets = Math.floor(result.usdValue / 10);
+      if (tickets === 0) {
+        return res.status(400).json({
+          error: `Amount too small: ${result.tokensReceived.toFixed(0)} $YC ≈ $${result.usdValue.toFixed(2)}. Minimum $10 per ticket.`
+        });
+      }
 
+      // Record transaction
       await db.execute({
-        sql: 'INSERT INTO wheel_transactions (wallet, tx_signature, sol_amount, usd_amount, tickets_added) VALUES (?, ?, ?, ?, ?)',
-        args: [wallet, txSignature, solAmount, usdAmount, tickets]
+        sql: 'INSERT INTO wheel_transactions (wallet, tx_signature, tokens_received, token_price, usd_amount, tickets_added) VALUES (?, ?, ?, ?, ?, ?)',
+        args: [wallet, txSignature, result.tokensReceived, result.tokenPrice, result.usdValue, tickets]
       });
 
+      // Add tickets
       await db.execute({
         sql: `INSERT INTO wheel_players (wallet, simple_tickets, is_eligible) VALUES (?, ?, 1)
               ON CONFLICT(wallet) DO UPDATE SET simple_tickets = simple_tickets + ?, is_eligible = 1`,
@@ -285,7 +374,9 @@ export default async function handler(req, res) {
       return res.status(200).json({
         success: true,
         tickets_added: tickets,
-        usd_amount: usdAmount.toFixed(2),
+        tokens_sent: result.tokensReceived.toFixed(0),
+        token_price: result.tokenPrice,
+        usd_amount: result.usdValue.toFixed(2),
         simple_tickets: pl.simple_tickets || 0,
         yellow_tickets: pl.yellow_tickets || 0,
         gold_tickets: pl.gold_tickets || 0
@@ -296,9 +387,7 @@ export default async function handler(req, res) {
     if (action === 'spin') {
       const { wheelType } = body;
       if (!wallet || !wheelType) return res.status(400).json({ error: 'Missing params' });
-
-      const validTypes = ['simple', 'yellow', 'gold'];
-      if (!validTypes.includes(wheelType)) return res.status(400).json({ error: 'Invalid wheel type' });
+      if (!['simple', 'yellow', 'gold'].includes(wheelType)) return res.status(400).json({ error: 'Invalid wheel type' });
 
       const ticketField = `${wheelType}_tickets`;
       const p = await db.execute({ sql: 'SELECT * FROM wheel_players WHERE wallet = ?', args: [wallet] });
@@ -313,7 +402,6 @@ export default async function handler(req, res) {
         args: [spin.amount, wallet]
       });
 
-      // Special prizes unlock next wheel
       if (spin.special === 'yellow') {
         await db.execute({ sql: 'UPDATE wheel_players SET yellow_tickets = yellow_tickets + 1 WHERE wallet = ?', args: [wallet] });
       } else if (spin.special === 'gold') {
@@ -344,15 +432,19 @@ export default async function handler(req, res) {
     // ── ADMIN STATS ───────────────────────────────────────────
     if (action === 'adminStats') {
       if (body.password !== process.env.ADMIN_PASSWORD) return res.status(401).json({ error: 'Invalid password' });
+      const currentPrice = await fetchTokenPrice();
       const players = await db.execute('SELECT COUNT(*) as c FROM wheel_players WHERE is_eligible = 1');
       const spins = await db.execute('SELECT COUNT(*) as c FROM wheel_spins');
       const won = await db.execute('SELECT COALESCE(SUM(amount),0) as t FROM wheel_spins WHERE amount > 0');
+      const txs = await db.execute('SELECT COALESCE(SUM(tokens_received),0) as t FROM wheel_transactions');
       const wins = await db.execute('SELECT wallet, wheel_type, result, amount, created_at FROM wheel_spins WHERE amount > 0 ORDER BY created_at DESC LIMIT 50');
       const top = await db.execute('SELECT wallet, simple_tickets, yellow_tickets, gold_tickets, total_won FROM wheel_players ORDER BY total_won DESC LIMIT 50');
       return res.status(200).json({
+        current_yc_price: currentPrice,
         players: players.rows[0]?.c || 0,
         total_spins: spins.rows[0]?.c || 0,
-        total_won: won.rows[0]?.t || 0,
+        total_won_usd: won.rows[0]?.t || 0,
+        total_yc_received: txs.rows[0]?.t || 0,
         wins: wins.rows,
         top_players: top.rows
       });
@@ -362,8 +454,7 @@ export default async function handler(req, res) {
     if (action === 'adminAddTickets') {
       if (body.password !== process.env.ADMIN_PASSWORD) return res.status(401).json({ error: 'Invalid password' });
       const { targetWallet, ticketType, amount } = body;
-      const validFields = ['simple', 'yellow', 'gold'];
-      if (!validFields.includes(ticketType)) return res.status(400).json({ error: 'Invalid type' });
+      if (!['simple', 'yellow', 'gold'].includes(ticketType)) return res.status(400).json({ error: 'Invalid type' });
       const field = `${ticketType}_tickets`;
       await db.execute({
         sql: `INSERT INTO wheel_players (wallet, ${field}, is_eligible) VALUES (?, ?, 1)
