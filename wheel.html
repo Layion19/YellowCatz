@@ -277,7 +277,7 @@ body.theme-gold .modal-unlock { background:rgba(255,215,0,0.06); color:var(--yel
     <div class="buy-title">🪙 Buy Tickets with $YELLOWCATZ</div>
 
     <div class="token-price-info" id="token-price-info">
-      <strong>1 ticket = $10 worth of $YELLOWCATZ</strong><br>
+      <strong>1 ticket = $10 worth of $YC</strong><br>
       <span id="yc-price-line">🔄 Fetching live $YC price...</span><br>
       <span id="yc-per-ticket-line" style="opacity:0.7;">...</span>
     </div>
@@ -794,7 +794,7 @@ async function initiatePayment() {
 
   setBuyStatus('⏳ Opening wallet...', 'loading');
   try {
-    const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
+    const connection = new solanaWeb3.Connection('https://mainnet.helius-rpc.com/?api-key=0d7de6f7-029f-4df8-a555-855b6cad7da4', 'confirmed');
     const mint   = new solanaWeb3.PublicKey(ycTokenAddress);
     const payer  = new solanaWeb3.PublicKey(connectedWallet);
     const treasury = new solanaWeb3.PublicKey(treasuryWallet);
