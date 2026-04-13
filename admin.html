@@ -551,6 +551,7 @@
     <button class="main-tab active" onclick="switchMainTab('badges')">🏅 Badges & Users</button>
     <button class="main-tab" onclick="switchMainTab('yellowjack')">🃏 YellowJack</button>
     <button class="main-tab" onclick="switchMainTab('yellowcards')">🎴 Yellow Cards</button>
+    <button class="main-tab" onclick="switchMainTab('wheel')">🎡 Wheel</button>
   </div>
 
   <!-- BADGES TAB -->
@@ -920,6 +921,76 @@
   </div>
 </div>
 
+
+<!-- WHEEL TAB -->
+<div class="tab-content" id="tab-wheel">
+
+  <!-- STATS -->
+  <div class="stats-grid" id="wheelStatsGrid">
+    <div class="stat-card">
+      <div class="number" id="wTotalRevenue">-</div>
+      <div class="label">Revenue ($USD)</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" id="wTotalPaid">-</div>
+      <div class="label">Prizes Paid ($USD)</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" id="wMargin">-</div>
+      <div class="label">House Margin</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" id="wTotalSpins">-</div>
+      <div class="label">Total Spins</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" id="wPlayers">-</div>
+      <div class="label">Players</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" id="wYCPrice">-</div>
+      <div class="label">$YC Price</div>
+    </div>
+  </div>
+
+  <!-- PENDING PRIZES -->
+  <div class="section">
+    <h2>🏆 Wins — Prizes to Send</h2>
+    <div style="margin-bottom:12px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-success" onclick="loadWheelStats()">🔄 Refresh</button>
+      <select id="wFilter" onchange="renderWheelWins()">
+        <option value="pending">⏳ Pending</option>
+        <option value="paid">✅ Paid</option>
+        <option value="all">All</option>
+      </select>
+    </div>
+    <div id="wheelWinsList"></div>
+  </div>
+
+  <!-- ADD TICKETS -->
+  <div class="section">
+    <h2>🎫 Add Tickets Manually</h2>
+    <div class="search-box" style="flex-wrap:wrap;gap:8px;">
+      <input type="text" id="wWallet" placeholder="Wallet address..." style="flex:2;">
+      <select id="wTicketType">
+        <option value="simple">Simple</option>
+        <option value="yellow">Yellow</option>
+        <option value="gold">Gold</option>
+      </select>
+      <input type="number" id="wAmount" value="1" min="1" style="width:80px;">
+      <button class="btn btn-warning" onclick="adminAddWheelTickets()">Add Tickets</button>
+    </div>
+    <div id="wTicketMsg" style="margin-top:8px;font-size:13px;"></div>
+  </div>
+
+  <!-- TOP PLAYERS -->
+  <div class="section">
+    <h2>🥇 Top Players</h2>
+    <div id="wheelTopPlayers"></div>
+  </div>
+
+</div>
+
 <script>
 let adminPassword = '';
 let currentUserId = null;
@@ -944,6 +1015,9 @@ function switchMainTab(tab) {
   if (tab === 'yellowcards') {
     loadYellowCardsStats();
     loadAllYCEntries();
+  }
+  if (tab === 'wheel') {
+    loadWheelStats();
   }
 }
 
@@ -1813,6 +1887,140 @@ async function badge10Action(submissionId, userId, action) {
     alert('Erreur : ' + (data.error || 'Unknown error'));
   }
 }
+
+// ============================================================
+// WHEEL ADMIN
+// ============================================================
+let _wData = null;
+
+async function loadWheelStats() {
+  try {
+    const res = await fetch('/api/wheel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'adminStats', password: adminPassword })
+    });
+    _wData = await res.json();
+    if (_wData.error) { alert('Wheel error: ' + _wData.error); return; }
+
+    const margin = (_wData.total_revenue_usd - _wData.total_won_usd);
+    const marginPct = _wData.total_revenue_usd > 0
+      ? ((margin / _wData.total_revenue_usd) * 100).toFixed(1)
+      : '0';
+
+    document.getElementById('wTotalRevenue').textContent = '$' + (_wData.total_revenue_usd || 0).toFixed(2);
+    document.getElementById('wTotalPaid').textContent    = '$' + (_wData.total_won_usd || 0).toFixed(2);
+    document.getElementById('wMargin').textContent       = marginPct + '%';
+    document.getElementById('wTotalSpins').textContent   = _wData.total_spins || 0;
+    document.getElementById('wPlayers').textContent      = _wData.players || 0;
+    document.getElementById('wYCPrice').textContent      = _wData.current_yc_price
+      ? '$' + parseFloat(_wData.current_yc_price).toFixed(8)
+      : '-';
+
+    renderWheelWins();
+    renderWheelTop();
+  } catch(e) {
+    console.error('loadWheelStats:', e);
+  }
+}
+
+function renderWheelWins() {
+  if (!_wData?.wins) return;
+  const filter = document.getElementById('wFilter').value;
+  const wins = _wData.wins.filter(w => {
+    if (filter === 'pending') return !w.paid_at;
+    if (filter === 'paid')    return !!w.paid_at;
+    return true;
+  });
+
+  if (wins.length === 0) {
+    document.getElementById('wheelWinsList').innerHTML = '<p style="opacity:0.5;font-size:13px;">No wins found.</p>';
+    return;
+  }
+
+  const rows = wins.map(w => `
+    <div style="border:1px solid #333;border-radius:10px;padding:14px 16px;margin-bottom:10px;background:#111;display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:12px;opacity:0.5;margin-bottom:4px;">${new Date(w.created_at).toLocaleString()}</div>
+        <div style="font-family:monospace;font-size:12px;word-break:break-all;color:#E8A000;">${w.wallet}</div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+        <span style="background:#E8A000;color:#000;padding:4px 12px;border-radius:20px;font-weight:700;font-size:13px;">$${w.amount} ${w.wheel_type}</span>
+        ${w.paid_at
+          ? `<span style="color:#00c853;font-size:12px;">✅ Paid ${new Date(w.paid_at).toLocaleDateString()}</span>`
+          : `<button class="btn btn-success" style="font-size:12px;padding:6px 14px;" onclick="wheelMarkPaid(${w.id}, this)">✓ Mark Paid</button>`
+        }
+        <button onclick="navigator.clipboard.writeText('${w.wallet}').then(()=>showToast('Copied!'))" 
+          style="background:#222;border:1px solid #444;border-radius:8px;color:#aaa;padding:5px 10px;cursor:pointer;font-size:11px;">
+          📋 Copy Wallet
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('wheelWinsList').innerHTML = rows;
+}
+
+async function wheelMarkPaid(spinId, btn) {
+  btn.disabled = true;
+  btn.textContent = '⏳';
+  try {
+    const res = await fetch('/api/wheel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'adminMarkPaid', password: adminPassword, spinId })
+    });
+    const d = await res.json();
+    if (d.success) {
+      btn.textContent = '✅ Paid';
+      btn.style.background = '#00c853';
+      await loadWheelStats();
+    } else {
+      btn.textContent = '❌ Error';
+      btn.disabled = false;
+    }
+  } catch {
+    btn.textContent = '❌';
+    btn.disabled = false;
+  }
+}
+
+async function adminAddWheelTickets() {
+  const wallet = document.getElementById('wWallet').value.trim();
+  const ticketType = document.getElementById('wTicketType').value;
+  const amount = parseInt(document.getElementById('wAmount').value) || 1;
+  if (!wallet || wallet.length < 32) {
+    document.getElementById('wTicketMsg').innerHTML = '<span style="color:#ff4444;">❌ Invalid wallet</span>';
+    return;
+  }
+  try {
+    const res = await fetch('/api/wheel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'adminAddTickets', password: adminPassword, targetWallet: wallet, ticketType, amount })
+    });
+    const d = await res.json();
+    document.getElementById('wTicketMsg').innerHTML = d.success
+      ? `<span style="color:#00c853;">✅ Added ${amount} ${ticketType} ticket(s) to ${wallet.slice(0,8)}...</span>`
+      : `<span style="color:#ff4444;">❌ ${d.error}</span>`;
+  } catch(e) {
+    document.getElementById('wTicketMsg').innerHTML = '<span style="color:#ff4444;">❌ Error</span>';
+  }
+}
+
+function renderWheelTop() {
+  if (!_wData?.top_players) return;
+  const rows = _wData.top_players.map((p, i) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #222;font-size:13px;">
+      <span style="opacity:0.5;width:24px;">${i+1}</span>
+      <span style="font-family:monospace;flex:1;opacity:0.8;">${p.wallet.slice(0,8)}...${p.wallet.slice(-6)}</span>
+      <span style="color:#E8A000;font-weight:700;">$${(p.total_won||0).toFixed(0)} won</span>
+      <span style="opacity:0.5;margin-left:12px;font-size:11px;">S:${p.simple_tickets} Y:${p.yellow_tickets} G:${p.gold_tickets}</span>
+    </div>
+  `).join('');
+  document.getElementById('wheelTopPlayers').innerHTML = rows || '<p style="opacity:0.5;font-size:13px;">No data.</p>';
+}
+
 </script>
 </body>
 </html>
