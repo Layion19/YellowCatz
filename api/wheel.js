@@ -284,7 +284,8 @@ export default async function handler(req, res) {
         treasuryWallet: process.env.WHEEL_TREASURY_WALLET || '',
         tokenPrice,
         ticketPriceUsd: 10,
-        tokensPerTicket: tokenPrice > 0 ? Math.ceil(10 / tokenPrice) : 0
+        tokensPerTicket: tokenPrice > 0 ? Math.ceil(10 / tokenPrice) : 0,
+        rpcUrl: process.env.SOLANA_RPC || ''
       });
     }
 

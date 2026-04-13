@@ -16,7 +16,6 @@ body.theme-gold { background:#030303; color:#D4A000; }
 .screen { display:none; }
 .screen.active { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
 
-/* CONNECT */
 .connect-card { background:#000; border:2px solid var(--gold); border-radius:24px; padding:50px 40px; text-align:center; max-width:440px; width:100%; }
 .connect-logo { font-size:64px; margin-bottom:15px; }
 .connect-title { font-family:'Bebas Neue',sans-serif; font-size:42px; color:var(--gold); letter-spacing:4px; margin-bottom:8px; }
@@ -24,22 +23,18 @@ body.theme-gold { background:#030303; color:#D4A000; }
 .wallet-btn { width:100%; padding:16px; border-radius:14px; border:2px solid var(--gold); background:transparent; color:var(--gold); font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:12px; justify-content:center; transition:all 0.2s; margin-bottom:12px; }
 .wallet-btn:hover { background:var(--gold); color:#000; }
 
-/* LOADING */
 .spinner { width:50px; height:50px; border:4px solid rgba(232,160,0,0.2); border-top-color:var(--gold); border-radius:50%; animation:spin 1s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
 .loading-msg { margin-top:20px; font-size:16px; color:var(--gold); }
 
-/* INELIGIBLE */
 .inelig-card { background:#111; border:2px solid #333; border-radius:20px; padding:40px; text-align:center; max-width:400px; }
 .inelig-icon { font-size:60px; margin-bottom:15px; }
 .inelig-title { font-family:'Bebas Neue',sans-serif; font-size:32px; color:var(--gold); margin-bottom:10px; }
 .inelig-sub { font-size:13px; color:#888; margin-bottom:25px; line-height:1.6; }
 
-/* MAIN */
 #s-main { min-height:100vh; width:100%; display:none; flex-direction:column; align-items:center; padding:20px 15px 40px; }
 #s-main.active { display:flex; }
 
-/* Header */
 .wheel-header { width:100%; max-width:520px; display:flex; justify-content:space-between; align-items:center; padding:12px 20px; border-radius:14px; margin-bottom:20px; }
 body.theme-simple .wheel-header { background:rgba(0,0,0,0.08); }
 body.theme-yellow .wheel-header { background:rgba(232,160,0,0.08); border:1px solid rgba(232,160,0,0.2); }
@@ -50,7 +45,6 @@ body.theme-gold .wheel-header { background:rgba(212,160,0,0.06); border:1px soli
 .disconnect-btn { background:none; border:1px solid #555; border-radius:20px; padding:4px 12px; font-size:11px; color:#888; cursor:pointer; margin-left:8px; }
 .disconnect-btn:hover { border-color:#ff4444; color:#ff4444; }
 
-/* Price bar */
 .price-bar { width:100%; max-width:520px; display:flex; align-items:center; justify-content:center; gap:16px; padding:8px 16px; border-radius:10px; margin-bottom:14px; font-size:12px; }
 body.theme-simple .price-bar { background:rgba(0,0,0,0.06); color:#8B5A00; }
 body.theme-yellow .price-bar { background:rgba(232,160,0,0.06); color:#E8A000; border:1px solid rgba(232,160,0,0.12); }
@@ -58,7 +52,6 @@ body.theme-gold .price-bar { background:rgba(212,160,0,0.05); color:#D4A000; bor
 .price-pulse { width:6px; height:6px; border-radius:50%; background:#00c853; animation:pulse-dot 2s infinite; }
 @keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
-/* Tabs */
 .wheel-tabs { display:flex; gap:8px; margin-bottom:16px; width:100%; max-width:520px; }
 .wheel-tab { flex:1; padding:12px 8px; border-radius:12px; border:2px solid #333; background:transparent; font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; position:relative; }
 body.theme-simple .wheel-tab { color:#8B5A00; border-color:#c8a87a; }
@@ -71,13 +64,11 @@ body.theme-gold .wheel-tab.active { background:#8B6914; color:var(--yellow); bor
 .tab-badge.has { background:#00c853; color:#000; }
 .tab-badge.empty { background:#555; color:#999; }
 
-/* Wheel */
 .wheel-wrap { position:relative; width:380px; height:380px; margin:0 auto 16px; }
 @media (max-width:420px) { .wheel-wrap { width:300px; height:300px; } }
 .pointer-top { position:absolute; top:-24px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:18px solid transparent; border-right:18px solid transparent; border-top:36px solid var(--gold); filter:drop-shadow(0 2px 6px rgba(232,160,0,0.5)); z-index:10; }
 #wheel-canvas { width:100%; height:100%; border-radius:50%; display:block; }
 
-/* Tickets */
 .tickets-display { display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap; justify-content:center; }
 .ticket-chip { padding:6px 14px; border-radius:20px; font-size:13px; font-weight:700; display:flex; align-items:center; gap:5px; }
 body.theme-simple .ticket-chip { background:rgba(0,0,0,0.08); color:#3a2800; }
@@ -85,7 +76,6 @@ body.theme-yellow .ticket-chip { background:rgba(232,160,0,0.1); color:#E8A000; 
 body.theme-gold .ticket-chip { background:rgba(212,160,0,0.08); color:#D4A000; border:1px solid rgba(212,160,0,0.15); }
 .ticket-chip.active-wheel { background:var(--gold); color:#000; }
 
-/* Spin Button */
 .spin-btn { width:100%; max-width:300px; padding:20px; border-radius:16px; border:none; font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:3px; cursor:pointer; transition:all 0.2s; margin-bottom:6px; }
 body.theme-simple .spin-btn { background:#3a2800; color:var(--gold); }
 body.theme-simple .spin-btn:hover:not(:disabled) { background:#5a4000; }
@@ -96,13 +86,11 @@ body.theme-gold .spin-btn:hover:not(:disabled) { filter:brightness(1.1); }
 .spin-btn:disabled { opacity:0.4; cursor:not-allowed; }
 .spin-sub { font-size:12px; opacity:0.5; margin-bottom:20px; }
 
-/* Divider */
 .divider { width:100%; max-width:520px; height:1px; margin:20px 0; }
 body.theme-simple .divider { background:rgba(0,0,0,0.1); }
 body.theme-yellow .divider { background:rgba(232,160,0,0.15); }
 body.theme-gold .divider { background:rgba(212,160,0,0.1); }
 
-/* Buy section */
 .buy-section { width:100%; max-width:520px; }
 .buy-title { font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:2px; margin-bottom:12px; }
 body.theme-simple .buy-title { color:#3a2800; }
@@ -149,7 +137,6 @@ body.theme-gold .tx-input { background:#0a0a0a; border:2px solid #222; color:#D4
 .buy-status.success { color:#00c853; }
 .buy-status.loading { color:var(--gold); }
 
-/* Modal */
 #modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000; justify-content:center; align-items:center; padding:20px; }
 #modal-overlay.open { display:flex; }
 .modal-box { border-radius:24px; padding:40px 30px; text-align:center; max-width:380px; width:100%; animation:popIn 0.3s ease; }
@@ -179,6 +166,26 @@ body.theme-gold .modal-unlock { background:rgba(255,215,0,0.06); color:var(--yel
 .btn-outline:hover { background:var(--gold); color:#000; }
 .btn-dark { background:#222; color:#E8A000; }
 .btn-dark:hover { background:#333; }
+
+/* WALLET MODAL */
+#wallet-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:2000; justify-content:center; align-items:center; padding:20px; }
+#wallet-modal-overlay.open { display:flex; }
+.wallet-modal { background:#0a0a0a; border:2px solid var(--gold); border-radius:24px; padding:32px 28px; max-width:400px; width:100%; text-align:center; }
+.wallet-modal-title { font-family:'Bebas Neue',sans-serif; font-size:28px; color:var(--gold); letter-spacing:3px; margin-bottom:6px; }
+.wallet-modal-sub { font-size:13px; color:#666; margin-bottom:28px; }
+.wallet-option { width:100%; padding:16px 20px; border-radius:14px; border:2px solid #222; background:#111; color:#fff; font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:14px; transition:all 0.2s; margin-bottom:10px; }
+.wallet-option:hover { border-color:var(--gold); background:#1a1a1a; }
+.wallet-option img { width:36px; height:36px; border-radius:8px; }
+.wallet-option .wallet-name { flex:1; text-align:left; }
+.wallet-option .wallet-badge { font-size:11px; color:#00c853; border:1px solid #00c853; border-radius:10px; padding:2px 8px; }
+.wallet-option .wallet-badge.detected { display:inline-block; }
+.wallet-option .wallet-badge.not-detected { color:#555; border-color:#333; }
+.wallet-modal-divider { display:flex; align-items:center; gap:10px; margin:16px 0; color:#444; font-size:12px; }
+.wallet-modal-divider::before, .wallet-modal-divider::after { content:''; flex:1; height:1px; background:#222; }
+.wallet-option-manual { background:transparent; border-color:#333; color:#666; }
+.wallet-option-manual:hover { border-color:#555; color:#999; background:transparent; }
+.wallet-modal-close { margin-top:16px; background:none; border:none; color:#555; font-size:13px; cursor:pointer; }
+.wallet-modal-close:hover { color:#888; }
 </style>
 </head>
 <body class="theme-simple">
@@ -188,10 +195,10 @@ body.theme-gold .modal-unlock { background:rgba(255,215,0,0.06); color:var(--yel
   <div class="connect-card">
     <div class="connect-logo">🎡</div>
     <h1 class="connect-title">YellowCatz Wheel</h1>
-    <p class="connect-sub">Connect your Solana wallet.<br>Hold $YELLOWCATZ to participate.</p>
-    <button class="wallet-btn" onclick="connectWallet('phantom')">🟣 Connect Phantom</button>
-    <button class="wallet-btn" onclick="connectWallet('solflare')">🔥 Connect Solflare</button>
-    <button class="wallet-btn" onclick="connectWallet('manual')" style="border-color:#555;color:#888;">🔑 Enter Address</button>
+    <p class="connect-sub">Connect your Solana wallet.<br>Hold $YC to participate.</p>
+    <button class="wallet-btn" onclick="openWalletModal()" style="font-size:17px;padding:20px;">
+      🔗 Connect Wallet
+    </button>
     <div id="connect-status" style="margin-top:14px;font-size:13px;color:#888;min-height:20px;"></div>
   </div>
 </section>
@@ -220,7 +227,6 @@ body.theme-gold .modal-unlock { background:rgba(255,215,0,0.06); color:var(--yel
 <!-- MAIN WHEEL INTERFACE -->
 <section id="s-main">
 
-  <!-- Header -->
   <div class="wheel-header">
     <div class="header-logo">🎡 YELLOWCATZ WHEEL</div>
     <div class="header-wallet">
@@ -230,7 +236,6 @@ body.theme-gold .modal-unlock { background:rgba(255,215,0,0.06); color:var(--yel
     </div>
   </div>
 
-  <!-- Live $YC Price Bar -->
   <div class="price-bar">
     <div class="price-pulse"></div>
     <span id="price-bar-text">Loading $YC price...</span>
@@ -238,7 +243,6 @@ body.theme-gold .modal-unlock { background:rgba(255,215,0,0.06); color:var(--yel
     <span id="price-bar-ticket">1 ticket = ... $YC</span>
   </div>
 
-  <!-- Wheel Tabs -->
   <div class="wheel-tabs">
     <button class="wheel-tab active" id="tab-simple" onclick="selectWheel('simple')">
       🎡 Simple
@@ -254,27 +258,23 @@ body.theme-gold .modal-unlock { background:rgba(255,215,0,0.06); color:var(--yel
     </button>
   </div>
 
-  <!-- Wheel Canvas -->
   <div class="wheel-wrap">
     <div class="pointer-top"></div>
     <canvas id="wheel-canvas" width="380" height="380"></canvas>
   </div>
 
-  <!-- Ticket chips -->
   <div class="tickets-display">
     <div class="ticket-chip active-wheel" id="chip-current">🎫 0 tickets</div>
     <div class="ticket-chip" id="chip-total-won">🏆 $0 won</div>
   </div>
 
-  <!-- Spin Button -->
   <button class="spin-btn" id="spin-btn" onclick="handleSpin()">🎰 SPIN</button>
   <p class="spin-sub">1 ticket per spin · SPACE to spin</p>
 
   <div class="divider"></div>
 
-  <!-- Buy Tickets -->
   <div class="buy-section">
-    <div class="buy-title">🪙 Buy Tickets with $YELLOWCATZ</div>
+    <div class="buy-title">🪙 Buy Tickets with $YC</div>
 
     <div class="token-price-info" id="token-price-info">
       <strong>1 ticket = $10 worth of $YC</strong><br>
@@ -290,7 +290,6 @@ body.theme-gold .modal-unlock { background:rgba(255,215,0,0.06); color:var(--yel
 
     <p id="total-yc-display" style="font-size:13px;opacity:0.65;margin-bottom:10px;">...</p>
 
-    <!-- Manual send box (shown when wallet is read-only or auto fails) -->
     <div class="manual-send-box" id="manual-send-box">
       <strong>Send $YC tokens to this address:</strong><br>
       <code id="treasury-ata-display" style="word-break:break-all;opacity:0.8;">...</code>
@@ -298,7 +297,6 @@ body.theme-gold .modal-unlock { background:rgba(255,215,0,0.06); color:var(--yel
       <span style="opacity:0.6;">Amount: <strong id="manual-amount-display">...</strong> $YC</span>
     </div>
 
-    <!-- TX verification -->
     <div class="tx-section" id="tx-section">
       <p style="font-size:12px;opacity:0.6;margin-bottom:8px;">
         After sending, paste your transaction signature:
@@ -310,6 +308,31 @@ body.theme-gold .modal-unlock { background:rgba(255,215,0,0.06); color:var(--yel
   </div>
 
 </section>
+
+<!-- WALLET SELECTION MODAL -->
+<div id="wallet-modal-overlay">
+  <div class="wallet-modal">
+    <div class="wallet-modal-title">🔗 Connect Wallet</div>
+    <p class="wallet-modal-sub">Choose your Solana wallet to continue</p>
+    <button class="wallet-option" id="phantom-btn" onclick="connectWallet('phantom')">
+      <img src="https://raw.githubusercontent.com/solana-labs/wallet-adapter/master/packages/wallets/icons/phantom.png" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 36 36%22><rect width=%2236%22 height=%2236%22 rx=%228%22 fill=%22%23551BF9%22/><text y=%2226%22 font-size=%2224%22 x=%226%22>👻</text></svg>'" alt="Phantom">
+      <span class="wallet-name">Phantom</span>
+      <span class="wallet-badge detected" id="phantom-detected">Detected</span>
+    </button>
+    <button class="wallet-option" id="solflare-btn" onclick="connectWallet('solflare')">
+      <img src="https://raw.githubusercontent.com/solana-labs/wallet-adapter/master/packages/wallets/icons/solflare.png" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 36 36%22><rect width=%2236%22 height=%2236%22 rx=%228%22 fill=%22%23FC8F00%22/><text y=%2226%22 font-size=%2224%22 x=%226%22>🔥</text></svg>'" alt="Solflare">
+      <span class="wallet-name">Solflare</span>
+      <span class="wallet-badge detected" id="solflare-detected">Detected</span>
+    </button>
+    <div class="wallet-modal-divider">or</div>
+    <button class="wallet-option wallet-option-manual" onclick="connectWallet('manual')">
+      <span style="font-size:22px;">🔑</span>
+      <span class="wallet-name">Enter address manually</span>
+      <span class="wallet-badge not-detected">Read-only</span>
+    </button>
+    <button class="wallet-modal-close" onclick="closeWalletModal()">✕ Cancel</button>
+  </div>
+</div>
 
 <!-- RESULT MODAL -->
 <div id="modal-overlay">
@@ -327,10 +350,12 @@ body.theme-gold .modal-unlock { background:rgba(255,215,0,0.06); color:var(--yel
 </div>
 
 <script src="https://unpkg.com/@solana/web3.js@1.95.3/lib/index.iife.min.js"></script>
+<!-- Wallet Adapter standard detection -->
 <script>
-// ============================================================
-// WHEEL SEGMENT DEFINITIONS — matches api/wheel.js exactly
-// ============================================================
+// Wallet Standard API shim for vanilla JS
+window.__walletAdapterReady = false;
+</script>
+<script>
 const WHEEL_DEFS = {
   simple: {
     segments: [
@@ -387,9 +412,6 @@ const WHEEL_DEFS = {
   }
 };
 
-// ============================================================
-// STATE
-// ============================================================
 let connectedWallet = null;
 let walletProvider = null;
 let currentWheel = 'simple';
@@ -399,46 +421,25 @@ let playerData = { simple_tickets:0, yellow_tickets:0, gold_tickets:0, total_won
 let ycPrice = 0;
 let ycTokenAddress = '';
 let treasuryWallet = '';
-let treasuryATA = ''; // treasury's $YC token account
+let treasuryATA = '';
 
 const canvas = document.getElementById('wheel-canvas');
 const ctx = canvas.getContext('2d');
 
-// SPL Token constants
 const TOKEN_PROGRAM  = () => new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 const ASSOC_PROGRAM  = () => new solanaWeb3.PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe1bJJ');
-const YC_DECIMALS = 6; // pump.fun standard
+const YC_DECIMALS = 6;
 
-// ============================================================
-// LOAD CONFIG + PRICE
-// ============================================================
 async function loadConfig() {
   try {
     const config = await api('getConfig', {});
     ycTokenAddress = config.tokenAddress || '';
     treasuryWallet = config.treasuryWallet || '';
     ycPrice = config.tokenPrice || 0;
-    
-    if (ycTokenAddress && treasuryWallet) {
-      // Pre-compute treasury ATA
-      try {
-        const mint = new solanaWeb3.PublicKey(ycTokenAddress);
-        const owner = new solanaWeb3.PublicKey(treasuryWallet);
-        const [ata] = solanaWeb3.PublicKey.findProgramAddressSync(
-          [owner.toBuffer(), TOKEN_PROGRAM().toBuffer(), mint.toBuffer()],
-          ASSOC_PROGRAM()
-        );
-        treasuryATA = ata.toString();
-        document.getElementById('treasury-ata-display').textContent = treasuryATA;
-      } catch (e) {
-        treasuryATA = treasuryWallet; // fallback
-        document.getElementById('treasury-ata-display').textContent = treasuryWallet;
-      }
-    }
-
+    document.getElementById('treasury-ata-display').textContent = treasuryWallet || 'Not configured';
     updatePriceDisplay();
-    
-    // Refresh price every 2 minutes
+    // Store RPC URL for transactions
+    if (config.rpcUrl) window.__HELIUS_KEY__ = config.rpcUrl.split('api-key=')[1] || '';
     setInterval(refreshPrice, 120000);
   } catch (e) {
     console.error('loadConfig:', e);
@@ -455,7 +456,6 @@ async function refreshPrice() {
 
 function updatePriceDisplay() {
   const count = parseInt(document.getElementById('ticket-count-input').value) || 1;
-  
   if (!ycPrice || ycPrice === 0) {
     document.getElementById('yc-price-line').textContent = '⚠️ Price unavailable — try refreshing';
     document.getElementById('yc-per-ticket-line').textContent = '';
@@ -464,10 +464,8 @@ function updatePriceDisplay() {
     document.getElementById('total-yc-display').textContent = '';
     return;
   }
-
   const perTicket = Math.ceil(10 / ycPrice);
   const total = Math.ceil(count * 10 / ycPrice);
-
   document.getElementById('yc-price-line').textContent =
     `1 $YC = $${ycPrice < 0.01 ? ycPrice.toFixed(8) : ycPrice.toFixed(6)} USD`;
   document.getElementById('yc-per-ticket-line').textContent =
@@ -483,10 +481,21 @@ function updatePriceDisplay() {
 
 function updateTokenDisplay() { updatePriceDisplay(); }
 
-// ============================================================
-// WALLET CONNECTION
-// ============================================================
+function openWalletModal() {
+  // Detect installed wallets
+  document.getElementById('phantom-detected').textContent = window.solana?.isPhantom ? 'Detected' : 'Install';
+  document.getElementById('phantom-detected').className = window.solana?.isPhantom ? 'wallet-badge detected' : 'wallet-badge not-detected';
+  document.getElementById('solflare-detected').textContent = window.solflare?.isSolflare ? 'Detected' : 'Install';
+  document.getElementById('solflare-detected').className = window.solflare?.isSolflare ? 'wallet-badge detected' : 'wallet-badge not-detected';
+  document.getElementById('wallet-modal-overlay').classList.add('open');
+}
+
+function closeWalletModal() {
+  document.getElementById('wallet-modal-overlay').classList.remove('open');
+}
+
 async function connectWallet(provider) {
+  closeWalletModal();
   const statusEl = document.getElementById('connect-status');
   statusEl.textContent = 'Connecting...';
   try {
@@ -513,16 +522,13 @@ async function connectWallet(provider) {
   }
 }
 
-// ============================================================
-// CHECK ELIGIBILITY
-// ============================================================
 async function checkWallet() {
   showScreen('s-loading');
-  document.getElementById('loading-msg').textContent = 'Checking $YELLOWCATZ balance...';
+  document.getElementById('loading-msg').textContent = 'Checking $YC balance...';
   try {
     const data = await api('checkWallet', { wallet: connectedWallet });
     if (!data.eligible) {
-      document.getElementById('inelig-msg').textContent = data.message || 'You need $YELLOWCATZ tokens.';
+      document.getElementById('inelig-msg').textContent = data.message || 'You need $YC tokens.';
       showScreen('s-ineligible');
       return;
     }
@@ -537,9 +543,6 @@ async function checkWallet() {
   }
 }
 
-// ============================================================
-// WHEEL SELECTION
-// ============================================================
 function selectWheel(type) {
   currentWheel = type;
   currentRotation = 0;
@@ -554,9 +557,6 @@ function selectWheel(type) {
   buySection.style.pointerEvents = type === 'simple' ? '' : 'none';
 }
 
-// ============================================================
-// UPDATE UI
-// ============================================================
 function updateTicketDisplay() {
   const tickets = { simple:playerData.simple_tickets||0, yellow:playerData.yellow_tickets||0, gold:playerData.gold_tickets||0 };
   Object.keys(tickets).forEach(t => {
@@ -578,9 +578,6 @@ function updateSpinButton() {
   else { btn.textContent = `🎰 SPIN (${t})`; }
 }
 
-// ============================================================
-// DRAW WHEEL
-// ============================================================
 function drawWheel() {
   const def = WHEEL_DEFS[currentWheel];
   const segs = def.segments;
@@ -588,16 +585,12 @@ function drawWheel() {
   const radius = Math.min(cx,cy)-8;
   const arc = (2*Math.PI)/segs.length;
   ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // Shadow
   ctx.save();
   ctx.shadowColor='rgba(232,160,0,0.25)';
   ctx.shadowBlur=18;
   ctx.beginPath(); ctx.arc(cx,cy,radius+5,0,2*Math.PI);
   ctx.fillStyle='rgba(0,0,0,0.2)'; ctx.fill();
   ctx.restore();
-
-  // Segments
   segs.forEach((seg,i) => {
     const s = currentRotation + i*arc, e = s+arc;
     ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,radius,s,e); ctx.closePath();
@@ -610,13 +603,9 @@ function drawWheel() {
     ctx.fillText(seg.label, radius-14, 5);
     ctx.restore();
   });
-
-  // Outer ring
   ctx.beginPath(); ctx.arc(cx,cy,radius,0,2*Math.PI);
   ctx.strokeStyle = currentWheel==='gold' ? '#8B6914' : '#E8A000';
   ctx.lineWidth=4; ctx.stroke();
-
-  // Center circle
   ctx.beginPath(); ctx.arc(cx,cy,22,0,2*Math.PI);
   const g = ctx.createRadialGradient(cx-4,cy-4,0,cx,cy,22);
   g.addColorStop(0,'#FFD700'); g.addColorStop(1,'#E8A000');
@@ -626,15 +615,14 @@ function drawWheel() {
   ctx.fillText('🐱',cx,cy+5);
 }
 
-// ============================================================
-// SPIN ANIMATION
-// ============================================================
-  function animateSpin(targetIdx, totalSegs, onComplete) {
+function animateSpin(targetIdx, totalSegs, onComplete) {
   // Play wheel sound
-  const sound = new Audio('images/wheel-song.mp3');
-  sound.volume = 0.6;
-  sound.play().catch(()=>{});
-  setTimeout(() => { sound.pause(); sound.currentTime = 0; }, 5200);
+  try {
+    const sound = new Audio('images/wheel-song.mp3');
+    sound.volume = 0.7;
+    sound.play().catch(()=>{});
+    setTimeout(() => { try { sound.pause(); sound.currentTime=0; } catch(e){} }, 5500);
+  } catch(e){}
   const arc = (2*Math.PI)/totalSegs;
   let targetAngle = -Math.PI/2 - (targetIdx*arc + arc/2);
   targetAngle = ((targetAngle%(2*Math.PI))+(2*Math.PI))%(2*Math.PI);
@@ -657,9 +645,6 @@ function drawWheel() {
   requestAnimationFrame(frame);
 }
 
-// ============================================================
-// HANDLE SPIN
-// ============================================================
 async function handleSpin() {
   if (isSpinning) return;
   if ((playerData[`${currentWheel}_tickets`]||0)===0) {
@@ -685,16 +670,12 @@ async function handleSpin() {
   }
 }
 
-// ============================================================
-// SHOW RESULT
-// ============================================================
 function showResult(data) {
   const { result, amount, special } = data;
   let icon, title, amountText, sub;
   document.getElementById('modal-unlock').style.display='none';
   document.getElementById('modal-spin-again').textContent='🔄 Spin Again';
   document.getElementById('modal-spin-again').onclick=()=>{ closeModal(); handleSpin(); };
-
   if (special==='yellow') {
     icon='⭐'; title='YELLOW WHEEL UNLOCKED!'; amountText=''; sub='You earned 1 Yellow Wheel spin!';
     document.getElementById('modal-unlock').style.display='block';
@@ -713,7 +694,6 @@ function showResult(data) {
   } else {
     icon='💸'; title='BETTER LUCK'; amountText=''; sub=`${playerData[`${currentWheel}_tickets`]||0} tickets remaining`;
   }
-
   document.getElementById('modal-icon').textContent=icon;
   document.getElementById('modal-title').textContent=title;
   document.getElementById('modal-amount').textContent=amountText;
@@ -727,9 +707,6 @@ function closeModal() {
   updateSpinButton();
 }
 
-// ============================================================
-// BUY TICKETS — $YC TOKEN TRANSFER
-// ============================================================
 function getATA(ownerPK, mintPK) {
   return solanaWeb3.PublicKey.findProgramAddressSync(
     [ownerPK.toBuffer(), TOKEN_PROGRAM().toBuffer(), mintPK.toBuffer()],
@@ -754,7 +731,7 @@ function buildCreateATAIx(payer, ata, owner, mint) {
 
 function buildTransferIx(source, dest, owner, amountRaw) {
   const data = new Uint8Array(9);
-  data[0]=3; // Transfer
+  data[0]=3;
   const view = new DataView(data.buffer);
   const low  = Number(amountRaw & BigInt(0xFFFFFFFF));
   const high = Number(amountRaw >> BigInt(32));
@@ -780,41 +757,31 @@ async function initiatePayment() {
     setBuyStatus('❌ Wheel not configured yet. Contact admin.', 'error');
     return;
   }
-
   const count = parseInt(document.getElementById('ticket-count-input').value)||1;
   const tokenAmount = Math.ceil(count*10/ycPrice);
-
-  // Manual wallet → show instructions
   if (walletProvider==='manual') {
     document.getElementById('manual-send-box').style.display='block';
     document.getElementById('tx-section').style.display='block';
     setBuyStatus(`📋 Send ${tokenAmount.toLocaleString()} $YC to the address above, then paste the tx signature below.`, 'loading');
     return;
   }
-
   setBuyStatus('⏳ Opening wallet...', 'loading');
   try {
-    const connection = new solanaWeb3.Connection('https://mainnet.helius-rpc.com/?api-key=0d7de6f7-029f-4df8-a555-855b6cad7da4', 'confirmed');
+    const rpcUrl = 'https://mainnet.helius-rpc.com/?api-key=' + (window.__HELIUS_KEY__ || '');
+    const connection = new solanaWeb3.Connection(rpcUrl || solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
     const mint   = new solanaWeb3.PublicKey(ycTokenAddress);
     const payer  = new solanaWeb3.PublicKey(connectedWallet);
     const treasury = new solanaWeb3.PublicKey(treasuryWallet);
-
     const fromATA = getATA(payer, mint);
     const toATA   = getATA(treasury, mint);
-
     const amountRaw = BigInt(Math.round(tokenAmount * Math.pow(10, YC_DECIMALS)));
     const tx = new solanaWeb3.Transaction();
-
-    // Create treasury ATA if needed
     const toATAInfo = await connection.getAccountInfo(toATA);
     if (!toATAInfo) tx.add(buildCreateATAIx(payer, toATA, treasury, mint));
-
     tx.add(buildTransferIx(fromATA, toATA, payer, amountRaw));
-
     const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
     tx.feePayer = payer;
-
     setBuyStatus('⏳ Confirm in your wallet...', 'loading');
     let sig;
     if (walletProvider==='phantom') {
@@ -822,21 +789,16 @@ async function initiatePayment() {
     } else {
       const r = await window.solflare.signAndSendTransaction(tx); sig=r.signature;
     }
-
     setBuyStatus(`⏳ Transaction sent! Waiting for confirmation... (${sig.slice(0,8)}...)`, 'loading');
     await connection.confirmTransaction({ signature:sig, blockhash, lastValidBlockHeight });
-
-    // Auto-verify
     document.getElementById('tx-sig-input').value = sig;
     await verifyAndAddTickets();
-
   } catch (e) {
     console.error('initiatePayment:', e);
     if (e.message?.includes('rejected') || e.code===4001) {
       setBuyStatus('❌ Transaction cancelled by user.', 'error');
     } else {
       setBuyStatus(`❌ Error: ${e.message||'unknown'}`, 'error');
-      // Show manual fallback
       document.getElementById('manual-send-box').style.display='block';
       document.getElementById('tx-section').style.display='block';
     }
@@ -854,7 +816,7 @@ async function verifyAndAddTickets() {
     playerData.yellow_tickets=data.yellow_tickets;
     playerData.gold_tickets=data.gold_tickets;
     updateTicketDisplay(); updateSpinButton();
-    setBuyStatus(`✅ ${data.tickets_added} ticket${data.tickets_added!==1?'s':''} added! (${data.tokens_sent} $YC ≈ $${data.usd_amount})`, 'success');
+    setBuyStatus(`✅ ${data.tickets_added} ticket${data.tickets_added!==1?'s':'' } added! (${data.tokens_sent} $YC ≈ $${data.usd_amount})`, 'success');
     document.getElementById('tx-section').style.display='none';
     document.getElementById('manual-send-box').style.display='none';
     document.getElementById('tx-sig-input').value='';
@@ -869,14 +831,11 @@ function setBuyStatus(msg, type) {
   el.className=`buy-status ${type}`;
 }
 
+// PATCH: copy treasuryWallet directly (not ATA text)
 function copyATA() {
-  const addr = document.getElementById('treasury-ata-display').textContent;
-  navigator.clipboard.writeText(addr).then(()=>showToast('📋 Address copied!'));
+  navigator.clipboard.writeText(treasuryWallet).then(()=>showToast('📋 Address copied!'));
 }
 
-// ============================================================
-// HELPERS
-// ============================================================
 async function api(action, data={}) {
   const r = await fetch('/api/wheel', {
     method:'POST',
@@ -908,13 +867,9 @@ function showToast(msg) {
   setTimeout(()=>t.remove(),3000);
 }
 
-// ============================================================
-// INIT
-// ============================================================
 loadConfig();
 drawWheel();
 
-// Auto-connect Phantom if already connected
 window.addEventListener('load', async ()=>{
   try {
     if (window.solana?.isPhantom && window.solana.isConnected) {
@@ -928,7 +883,10 @@ window.addEventListener('load', async ()=>{
   } catch {}
 });
 
-// SPACE to spin
+document.getElementById('wallet-modal-overlay').addEventListener('click', e=>{
+  if (e.target.id==='wallet-modal-overlay') closeWalletModal();
+});
+
 document.addEventListener('keydown', e=>{
   if (e.code==='Space' && document.getElementById('s-main').classList.contains('active')) {
     e.preventDefault(); handleSpin();
