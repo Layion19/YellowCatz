@@ -285,19 +285,19 @@ body.theme-gold .modal-unlock { background:rgba(255,215,0,0.06); color:var(--yel
     <div class="buy-row">
       <input type="number" class="ticket-input" id="ticket-count-input" value="1" min="1" max="100"
              placeholder="# tickets" oninput="updateTokenDisplay()">
-      <button class="buy-btn" onclick="initiatePayment()">💸 Buy</button>
     </div>
 
     <p id="total-yc-display" style="font-size:13px;opacity:0.65;margin-bottom:10px;">...</p>
 
-    <div class="manual-send-box" id="manual-send-box">
-      <strong>Send $YC tokens to this address:</strong><br>
+    <!-- Always visible send instructions -->
+    <div class="manual-send-box" id="manual-send-box" style="display:block;">
+      <strong>📤 Send $YC tokens to this address:</strong><br>
       <code id="treasury-ata-display" style="word-break:break-all;opacity:0.8;">...</code>
       <button class="copy-addr" onclick="copyATA()" style="margin-left:6px;">📋 Copy</button><br>
       <span style="opacity:0.6;">Amount: <strong id="manual-amount-display">...</strong> $YC</span>
     </div>
 
-    <div class="tx-section" id="tx-section">
+    <div class="tx-section" id="tx-section" style="display:block;margin-top:10px;">
       <p style="font-size:12px;opacity:0.6;margin-bottom:8px;">
         After sending, paste your transaction signature:
       </p>
@@ -749,62 +749,7 @@ function buildTransferIx(source, dest, owner, amountRaw) {
   });
 }
 
-async function initiatePayment() {
-  if (!ycPrice || ycPrice===0) {
-    setBuyStatus('❌ Cannot fetch $YC price. Please try again.', 'error');
-    return;
-  }
-  if (!ycTokenAddress || !treasuryWallet) {
-    setBuyStatus('❌ Wheel not configured yet. Contact admin.', 'error');
-    return;
-  }
-  const count = parseInt(document.getElementById('ticket-count-input').value)||1;
-  const tokenAmount = Math.ceil(count*10/ycPrice);
-  if (walletProvider==='manual') {
-    document.getElementById('manual-send-box').style.display='block';
-    document.getElementById('tx-section').style.display='block';
-    setBuyStatus(`📋 Send ${tokenAmount.toLocaleString()} $YC to the address above, then paste the tx signature below.`, 'loading');
-    return;
-  }
-  setBuyStatus('⏳ Opening wallet...', 'loading');
-  try {
-    const rpcUrl = 'https://mainnet.helius-rpc.com/?api-key=' + (window.__HELIUS_KEY__ || '');
-    const connection = new solanaWeb3.Connection(rpcUrl || solanaWeb3.clusterApiUrl('mainnet-beta'), 'confirmed');
-    const mint   = new solanaWeb3.PublicKey(ycTokenAddress);
-    const payer  = new solanaWeb3.PublicKey(connectedWallet);
-    const treasury = new solanaWeb3.PublicKey(treasuryWallet);
-    const fromATA = getATA(payer, mint);
-    const toATA   = getATA(treasury, mint);
-    const amountRaw = BigInt(Math.round(tokenAmount * Math.pow(10, YC_DECIMALS)));
-    const tx = new solanaWeb3.Transaction();
-    const toATAInfo = await connection.getAccountInfo(toATA);
-    if (!toATAInfo) tx.add(buildCreateATAIx(payer, toATA, treasury, mint));
-    tx.add(buildTransferIx(fromATA, toATA, payer, amountRaw));
-    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-    tx.recentBlockhash = blockhash;
-    tx.feePayer = payer;
-    setBuyStatus('⏳ Confirm in your wallet...', 'loading');
-    let sig;
-    if (walletProvider==='phantom') {
-      const r = await window.solana.signAndSendTransaction(tx); sig=r.signature;
-    } else {
-      const r = await window.solflare.signAndSendTransaction(tx); sig=r.signature;
-    }
-    setBuyStatus(`⏳ Transaction sent! Waiting for confirmation... (${sig.slice(0,8)}...)`, 'loading');
-    await connection.confirmTransaction({ signature:sig, blockhash, lastValidBlockHeight });
-    document.getElementById('tx-sig-input').value = sig;
-    await verifyAndAddTickets();
-  } catch (e) {
-    console.error('initiatePayment:', e);
-    if (e.message?.includes('rejected') || e.code===4001) {
-      setBuyStatus('❌ Transaction cancelled by user.', 'error');
-    } else {
-      setBuyStatus(`❌ Error: ${e.message||'unknown'}`, 'error');
-      document.getElementById('manual-send-box').style.display='block';
-      document.getElementById('tx-section').style.display='block';
-    }
-  }
-}
+// Payment handled via manual TX signature
 
 async function verifyAndAddTickets() {
   const sig = document.getElementById('tx-sig-input').value.trim();
