@@ -552,6 +552,7 @@
     <button class="main-tab" onclick="switchMainTab('yellowjack')">🃏 YellowJack</button>
     <button class="main-tab" onclick="switchMainTab('yellowcards')">🎴 Yellow Cards</button>
     <button class="main-tab" onclick="switchMainTab('wheel')">🎡 Wheel</button>
+    <button class="main-tab" onclick="switchMainTab('buycontest')">🏆 Buy Contest</button>
   </div>
 
   <!-- BADGES TAB -->
@@ -845,6 +846,72 @@
       <button class="btn btn-danger" onclick="resetYellowCards()" style="background:#e74c3c;">🗑️ Reset All Yellow Cards</button>
     </div>
   </div>
+
+<!-- BUY CONTEST TAB -->
+<div class="tab-content" id="tab-buycontest">
+
+  <!-- ACTIVE CONTEST INFO -->
+  <div class="section" id="bc-active-info" style="border:2px solid #E8A000;background:linear-gradient(135deg,#1a1400,#2a2000);">
+    <h2 style="color:#E8A000;">🏆 Active Contest</h2>
+    <div id="bc-active-content"><p style="color:#666;font-size:13px;">Loading...</p></div>
+  </div>
+
+  <!-- CREATE CONTEST -->
+  <div class="section">
+    <h2>➕ Create New Contest</h2>
+    <p style="color:#888;font-size:13px;margin-bottom:15px;">Creating a contest will close any currently active one.</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+      <div style="flex:1;min-width:200px;">
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:5px;">Start Date/Time (UTC)</label>
+        <input type="datetime-local" id="bc-start" class="input-field" style="margin:0;">
+      </div>
+      <div style="flex:1;min-width:200px;">
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:5px;">End Date/Time (UTC)</label>
+        <input type="datetime-local" id="bc-end" class="input-field" style="margin:0;">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+      <button class="btn btn-warning" onclick="bcSetDuration(8)">+8h from now</button>
+      <button class="btn btn-warning" onclick="bcSetDuration(24)">+24h from now</button>
+      <button class="btn btn-success" onclick="adminCreateContest()">🚀 Launch Contest</button>
+    </div>
+    <div id="bc-create-msg" style="font-size:13px;margin-top:6px;"></div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="number" id="bc-participants">-</div>
+      <div class="label">Participants</div>
+    </div>
+    <div class="stat-card green">
+      <div class="number" id="bc-pot">-</div>
+      <div class="label">Current Pot ($USD)</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" id="bc-prize1">-</div>
+      <div class="label">1st Prize (40%)</div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div class="section">
+    <h2>📊 Current Leaderboard</h2>
+    <div style="display:flex;gap:10px;margin-bottom:12px;">
+      <button class="btn btn-success" onclick="loadBCStats()">🔄 Refresh</button>
+      <button class="btn btn-danger" id="bc-end-btn" onclick="adminEndContest()" style="display:none;">🏁 End Contest & Pick Winners</button>
+    </div>
+    <div id="bc-leaderboard"></div>
+  </div>
+
+  <!-- PAST CONTESTS -->
+  <div class="section">
+    <h2>📅 All Contests</h2>
+    <div id="bc-all-contests"></div>
+  </div>
+
+</div>
+
 </div>
 
 <!-- USER MODAL (Badges) -->
@@ -1018,6 +1085,9 @@ function switchMainTab(tab) {
   }
   if (tab === 'wheel') {
     loadWheelStats();
+  }
+  if (tab === 'buycontest') {
+    loadBCStats();
   }
 }
 
@@ -2019,6 +2089,150 @@ function renderWheelTop() {
     </div>
   `).join('');
   document.getElementById('wheelTopPlayers').innerHTML = rows || '<p style="opacity:0.5;font-size:13px;">No data.</p>';
+}
+
+
+// ============================================================
+// BUY CONTEST ADMIN
+// ============================================================
+let _bcData = null;
+let _bcActiveId = null;
+
+function bcSetDuration(hours) {
+  const now = new Date();
+  const end = new Date(now.getTime() + hours * 3600000);
+  const fmt = d => d.toISOString().slice(0,16);
+  document.getElementById('bc-start').value = fmt(now);
+  document.getElementById('bc-end').value = fmt(end);
+}
+
+async function loadBCStats() {
+  try {
+    const res = await fetch('/api/buycontest', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'adminBCStats', password:adminPassword })
+    });
+    _bcData = await res.json();
+    if (_bcData.error) { alert('BC error: '+_bcData.error); return; }
+
+    const { activeContest, leaderboard, stats, contests } = _bcData;
+    _bcActiveId = activeContest?.id || null;
+
+    // Active contest info
+    const infoEl = document.getElementById('bc-active-content');
+    if (!activeContest) {
+      infoEl.innerHTML = '<p style="color:#888;font-size:13px;">No active contest. Create one below.</p>';
+      document.getElementById('bc-end-btn').style.display = 'none';
+    } else {
+      const phase = activeContest.phase;
+      const statusColor = phase==='active'?'#00c853':phase==='upcoming'?'#E8A000':'#ff4444';
+      infoEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:12px;">
+          <div><span style="color:#888;font-size:11px;">STATUS</span><br><strong style="color:${statusColor};">${phase.toUpperCase()}</strong></div>
+          <div><span style="color:#888;font-size:11px;">START</span><br><strong>${new Date(activeContest.start_at).toLocaleString()}</strong></div>
+          <div><span style="color:#888;font-size:11px;">END</span><br><strong>${new Date(activeContest.end_at).toLocaleString()}</strong></div>
+          <div><span style="color:#888;font-size:11px;">PARTICIPANTS</span><br><strong style="color:#E8A000;">${stats?.p||0}</strong></div>
+          <div><span style="color:#888;font-size:11px;">POT</span><br><strong style="color:#2ecc71;">$${parseFloat(stats?.pot||0).toFixed(2)}</strong></div>
+        </div>
+      `;
+      document.getElementById('bc-end-btn').style.display = phase !== 'upcoming' ? 'block' : 'none';
+    }
+
+    // Stats cards
+    const pot = parseFloat(stats?.pot||0);
+    document.getElementById('bc-participants').textContent = stats?.p||0;
+    document.getElementById('bc-pot').textContent = '$'+pot.toFixed(2);
+    document.getElementById('bc-prize1').textContent = '$'+(pot*0.40).toFixed(2);
+
+    // Leaderboard
+    const lbEl = document.getElementById('bc-leaderboard');
+    if (!leaderboard || leaderboard.length === 0) {
+      lbEl.innerHTML = '<p style="color:#666;padding:10px;font-size:13px;">No entries yet.</p>';
+    } else {
+      const rankEmojis = ['🥇','🥈','🥉'];
+      lbEl.innerHTML = leaderboard.map((e,i) => `
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #333;font-size:13px;">
+          <span style="font-size:18px;width:28px;">${rankEmojis[i]||'#'+(i+1)}</span>
+          <span style="font-family:monospace;flex:1;opacity:0.8;">${e.wallet.slice(0,8)}...${e.wallet.slice(-6)}</span>
+          <span style="color:#E8A000;font-weight:700;">${e.tickets} 🎟️</span>
+          <span style="color:#888;margin-left:12px;">$${parseFloat(e.total_usd).toFixed(2)}</span>
+          <button onclick="navigator.clipboard.writeText('${e.wallet}').then(()=>alert('Copied!'))"
+            style="background:#222;border:1px solid #444;border-radius:6px;color:#aaa;padding:4px 8px;cursor:pointer;font-size:11px;">📋</button>
+        </div>
+      `).join('');
+    }
+
+    // All contests
+    const allEl = document.getElementById('bc-all-contests');
+    if (!contests || contests.length === 0) {
+      allEl.innerHTML = '<p style="color:#666;font-size:13px;padding:10px;">No contests yet.</p>';
+    } else {
+      allEl.innerHTML = contests.map(c => `
+        <div style="padding:14px;border:1px solid #333;border-radius:10px;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;color:#888;">
+            <span>ID #${c.id} · ${c.status.toUpperCase()}</span>
+            <span>${new Date(c.start_at).toLocaleDateString()} → ${new Date(c.end_at).toLocaleDateString()}</span>
+          </div>
+          <div style="font-size:13px;">Pot: <strong style="color:#2ecc71;">$${parseFloat(c.pot_usd||0).toFixed(2)}</strong></div>
+          ${c.winner1_wallet ? `
+            <div style="margin-top:8px;font-size:12px;color:#888;">
+              🥇 ${c.winner1_wallet.slice(0,8)}... → $${parseFloat(c.prize1_usd||0).toFixed(2)}<br>
+              ${c.winner2_wallet ? `🥈 ${c.winner2_wallet.slice(0,8)}... → $${parseFloat(c.prize2_usd||0).toFixed(2)}<br>` : ''}
+              ${c.winner3_wallet ? `🥉 ${c.winner3_wallet.slice(0,8)}... → $${parseFloat(c.prize3_usd||0).toFixed(2)}` : ''}
+            </div>
+          ` : ''}
+          ${c.status === 'active' ? `<button class="btn btn-danger" style="margin-top:10px;font-size:12px;padding:6px 12px;" onclick="adminEndContest(${c.id})">🏁 End This Contest</button>` : ''}
+        </div>
+      `).join('');
+    }
+
+  } catch(e) { console.error('loadBCStats:', e); }
+}
+
+async function adminCreateContest() {
+  const startVal = document.getElementById('bc-start').value;
+  const endVal = document.getElementById('bc-end').value;
+  if (!startVal || !endVal) { alert('Please set start and end dates.'); return; }
+  if (!confirm('Launch new Buy Contest? Any active contest will be closed.')) return;
+
+  const startAt = new Date(startVal).toISOString();
+  const endAt = new Date(endVal).toISOString();
+
+  try {
+    const res = await fetch('/api/buycontest', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'adminCreateContest', password:adminPassword, startAt, endAt })
+    });
+    const d = await res.json();
+    const msgEl = document.getElementById('bc-create-msg');
+    if (d.success) {
+      msgEl.innerHTML = '<span style="color:#00c853;">✅ Contest launched!</span>';
+      setTimeout(loadBCStats, 1000);
+    } else {
+      msgEl.innerHTML = `<span style="color:#ff4444;">❌ ${d.error}</span>`;
+    }
+  } catch(e) { alert('Error: '+e.message); }
+}
+
+async function adminEndContest(contestId) {
+  const id = contestId || _bcActiveId;
+  if (!id) { alert('No active contest to end.'); return; }
+  if (!confirm('End this contest and compute winners?')) return;
+
+  try {
+    const res = await fetch('/api/buycontest', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'adminEndContest', password:adminPassword, contestId:id })
+    });
+    const d = await res.json();
+    if (d.success) {
+      const msg = d.winners.map((w,i) => `${['🥇','🥈','🥉'][i]} ${w.wallet.slice(0,8)}... (${w.tickets} tickets)`).join('\n');
+      alert(`✅ Contest ended!\nPot: $${d.pot.toFixed(2)}\n\nWinners:\n${msg}`);
+      loadBCStats();
+    } else {
+      alert('❌ '+d.error);
+    }
+  } catch(e) { alert('Error: '+e.message); }
 }
 
 </script>
