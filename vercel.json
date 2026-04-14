@@ -1,4 +1,3 @@
-
 {
   "version": 2,
   "buildCommand": "",
@@ -11,7 +10,14 @@
     {
       "src": "/status",
       "dest": "/status.html"
+    },
+    {
+      "src": "/wheel",
+      "dest": "/wheel.html"
+    },
+    {
+      "src": "/buycontest",
+      "dest": "/buycontest.html"
     }
   ]
 }
-
