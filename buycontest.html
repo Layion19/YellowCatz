@@ -999,6 +999,24 @@ function showToast(msg) {
 }
 
 // ── INIT ──────────────────────────────────────────────────────
+// Fetch price independently so it shows even before contest loads
+async function fetchPrice() {
+  try {
+    const d = await api('getContest', {});
+    if (d.tokenPrice && d.tokenPrice > 0) {
+      tokenPrice = d.tokenPrice;
+      treasuryWallet = d.treasuryWallet || treasuryWallet;
+      document.getElementById('treasury-addr').textContent = treasuryWallet || 'Not configured';
+      const perTicket = Math.ceil(20 / tokenPrice);
+      document.getElementById('price-info').textContent =
+        `$YC ≈ $${tokenPrice < 0.01 ? tokenPrice.toFixed(8) : tokenPrice.toFixed(6)} · 1 ticket = ${perTicket.toLocaleString()} $YC (~$20)`;
+      updateTicketCalc();
+    }
+  } catch {}
+}
+
+fetchPrice();
+setInterval(fetchPrice, 30000);
 loadContest();
 refreshInterval = setInterval(loadContest, 30000); // refresh every 30s
 
