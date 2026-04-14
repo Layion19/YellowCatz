@@ -441,7 +441,7 @@ async function loadConfig() {
     updatePriceDisplay();
     // Store RPC URL for transactions
     if (config.rpcUrl) window.__HELIUS_KEY__ = config.rpcUrl.split('api-key=')[1] || '';
-    setInterval(refreshPrice, 120000);
+    setInterval(refreshPrice, 30000);
   } catch (e) {
     console.error('loadConfig:', e);
   }
