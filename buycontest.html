@@ -740,11 +740,9 @@ async function loadContest() {
     // Countdown
     startCountdown(contest.start_at, contest.end_at, contest.phase);
 
-    // If ended — disable form, show results banner
+    // If ended — show winners or drawing pending
     if (contest.phase === 'ended') {
       const submitCard = document.getElementById('submit-card');
-      submitCard.style.opacity = '0.4';
-      submitCard.style.pointerEvents = 'none';
       submitCard.innerHTML = `
         <div style="text-align:center;padding:20px;">
           <div style="font-size:32px;margin-bottom:10px;">🏁</div>
@@ -753,8 +751,41 @@ async function loadContest() {
           <a href="/wheel" style="display:inline-block;background:var(--gold);color:#000;border-radius:12px;padding:12px 24px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;text-decoration:none;">🎡 Go Spin the Wheel</a>
         </div>
       `;
-      submitCard.style.opacity = '1';
-      submitCard.style.pointerEvents = '';
+    }
+
+    // Replace leaderboard with winners if contest is completed
+    if (contest.phase === 'ended' && data.lastContest?.winner1_wallet) {
+      const lc = data.lastContest;
+      const pot = parseFloat(lc.pot_usd || 0);
+      const winners = [
+        { wallet: lc.winner1_wallet, tickets: lc.winner1_tickets, prize: lc.prize1_usd, rank: '🥇' },
+        { wallet: lc.winner2_wallet, tickets: lc.winner2_tickets, prize: lc.prize2_usd, rank: '🥈' },
+        { wallet: lc.winner3_wallet, tickets: lc.winner3_tickets, prize: lc.prize3_usd, rank: '🥉' },
+      ].filter(w => w.wallet);
+
+      const lb = document.getElementById('leaderboard');
+      document.querySelector('.card-title').innerHTML = '🏆 Winners';
+      lb.innerHTML = `
+        <div style="text-align:center;padding:12px 0 16px;">
+          <div style="font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Total pot</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--gold);letter-spacing:2px;">$${pot.toFixed(2)}</div>
+        </div>
+        ${winners.map(w => `
+          <div class="lb-row" style="padding:14px 16px;margin-bottom:8px;background:rgba(232,160,0,0.06);border:1px solid rgba(232,160,0,0.2);border-radius:12px;">
+            <div style="font-size:22px;width:32px;">${w.rank}</div>
+            <div style="flex:1;">
+              <div class="lb-wallet" style="color:var(--gold);font-size:13px;">${w.wallet.slice(0,6)}...${w.wallet.slice(-4)}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px;">${w.tickets} ticket${w.tickets!==1?'s':''} · lucky draw</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold2);">$${parseFloat(w.prize||0).toFixed(2)}</div>
+            </div>
+          </div>
+        `).join('')}
+        <div style="text-align:center;padding:8px 0 0;">
+          <div style="font-size:11px;color:var(--muted);">Prizes distributed in $YC within 24h</div>
+        </div>
+      `;
     }
 
     // Leaderboard
@@ -830,27 +861,18 @@ function renderLeaderboard(lb, myEntry, pot) {
     return;
   }
 
-  const rankClass = i => i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
-  const rankEmoji = i => ['🥇','🥈','🥉'][i] || (i+1);
-  const prizeFor = i => {
-    const pcts = [0.40, 0.20, 0.10];
-    return i < 3 ? `~$${(pot * pcts[i]).toFixed(2)}` : '';
-  };
+  const rankEmoji = i => ['🥇','🥈','🥉'][i] || `#${i+1}`;
 
   container.innerHTML = lb.map((e, i) => {
     const isMe = connectedWallet && e.wallet === connectedWallet;
     const short = e.wallet.slice(0,6)+'...'+e.wallet.slice(-4);
     return `
       <div class="lb-row${isMe?' me':''}">
-        <div class="lb-rank ${rankClass(i)}">${rankEmoji(i)}</div>
-        <div>
+        <div class="lb-rank">${rankEmoji(i)}</div>
+        <div style="flex:1;">
           <div class="lb-wallet">${short}${isMe?' <span style="color:var(--gold)">· you</span>':''}</div>
-          <div class="lb-usd">$${parseFloat(e.total_usd).toFixed(2)} invested</div>
         </div>
-        <div style="text-align:right;">
-          <div class="lb-tickets">${e.tickets} 🎟️</div>
-          ${prizeFor(i) ? `<div class="lb-est">${prizeFor(i)}</div>` : ''}
-        </div>
+        <div class="lb-tickets">${e.tickets} 🎟️</div>
       </div>
     `;
   }).join('');
