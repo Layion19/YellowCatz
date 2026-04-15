@@ -487,7 +487,7 @@ body::before {
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
               <input type="number" id="ticket-count" value="1" min="1" max="10"
                 style="width:80px;background:var(--dark3);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-size:16px;font-weight:700;outline:none;text-align:center;"
-                oninput="updateTicketCalc()">
+                inputmode="numeric" pattern="[0-9]*" oninput="updateTicketCalc()" onclick="this.select()" onfocus="this.select()">
               <div style="flex:1;">
                 <div id="ticket-calc" style="font-size:13px;color:var(--muted);">...</div>
                 <div id="ticket-cap-warn" style="font-size:11px;color:#ff9944;display:none;">⚠️ Max 10 tickets per wallet</div>
