@@ -162,9 +162,24 @@ export default async function handler(req, res) {
       const tokenPrice = await fetchTokenPrice();
 
       if (!contest) {
-        // Get last completed contest
         const last = await db.execute(`SELECT * FROM bc_contests WHERE status = 'completed' ORDER BY end_at DESC LIMIT 1`);
         return res.status(200).json({ contest: null, lastContest: last.rows[0] || null, tokenPrice });
+      }
+
+      // Auto-finalize when 24h window is over
+      if (contest.phase === 'ended' && contest.status === 'active') {
+        try {
+          const _e = await db.execute({ sql:`SELECT wallet,tickets,total_usd FROM bc_entries WHERE contest_id=? ORDER BY tickets DESC,submitted_at ASC`, args:[contest.id] });
+          const _p = await db.execute({ sql:`SELECT COALESCE(SUM(total_usd),0) as p FROM bc_entries WHERE contest_id=?`, args:[contest.id] });
+          const _pot = parseFloat(_p.rows[0]?.p||0);
+          const _top = _e.rows;
+          await db.execute({
+            sql:`UPDATE bc_contests SET status='completed',pot_usd=?,winner1_wallet=?,winner2_wallet=?,winner3_wallet=?,winner1_tickets=?,winner2_tickets=?,winner3_tickets=?,prize1_usd=?,prize2_usd=?,prize3_usd=?,wheel_reserve_usd=? WHERE id=?`,
+            args:[_pot,_top[0]?.wallet||null,_top[1]?.wallet||null,_top[2]?.wallet||null,_top[0]?.tickets||0,_top[1]?.tickets||0,_top[2]?.tickets||0,_pot*0.40,_pot*0.20,_pot*0.10,_pot*0.30,contest.id]
+          });
+        } catch(e) { console.error('finalize:',e); }
+        const last = await db.execute(`SELECT * FROM bc_contests WHERE status = 'completed' ORDER BY end_at DESC LIMIT 1`);
+        return res.status(200).json({ contest: null, lastContest: last.rows[0] || null, tokenPrice, autoFinalized: true });
       }
 
       // Leaderboard

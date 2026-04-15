@@ -871,7 +871,6 @@
       </div>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-      <button class="btn btn-warning" onclick="bcSetDuration(8)">+8h from now</button>
       <button class="btn btn-warning" onclick="bcSetDuration(24)">+24h from now</button>
       <button class="btn btn-success" onclick="adminCreateContest()">🚀 Launch Contest</button>
     </div>
@@ -1978,7 +1977,7 @@ async function loadWheelStats() {
       ? ((margin / _wData.total_revenue_usd) * 100).toFixed(1)
       : '0';
 
-    document.getElementById('wTotalRevenue').textContent = '$' + (_wData.total_revenue_usd || 0).toFixed(2);
+    document.getElementById('wTotalRevenue').textContent = '$' + (_wData.total_collected || 0).toFixed(2);
     document.getElementById('wTotalPaid').textContent    = '$' + (_wData.total_won_usd || 0).toFixed(2);
     document.getElementById('wMargin').textContent       = marginPct + '%';
     document.getElementById('wTotalSpins').textContent   = _wData.total_spins || 0;
@@ -2101,7 +2100,11 @@ let _bcActiveId = null;
 function bcSetDuration(hours) {
   const now = new Date();
   const end = new Date(now.getTime() + hours * 3600000);
-  const fmt = d => d.toISOString().slice(0,16);
+  // Use local time for display (browser converts to UTC on submit)
+  const fmt = d => {
+    const offset = d.getTimezoneOffset() * 60000;
+    return new Date(d - offset).toISOString().slice(0,16);
+  };
   document.getElementById('bc-start').value = fmt(now);
   document.getElementById('bc-end').value = fmt(end);
 }
@@ -2195,8 +2198,10 @@ async function adminCreateContest() {
   if (!startVal || !endVal) { alert('Please set start and end dates.'); return; }
   if (!confirm('Launch new Buy Contest? Any active contest will be closed.')) return;
 
+  // datetime-local gives local time — convert to UTC ISO
   const startAt = new Date(startVal).toISOString();
   const endAt = new Date(endVal).toISOString();
+  console.log('Contest window (UTC):', startAt, '→', endAt);
 
   try {
     const res = await fetch('/api/buycontest', {
