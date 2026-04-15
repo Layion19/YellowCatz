@@ -137,6 +137,29 @@ async function getActiveContest() {
   return null;
 }
 
+
+// Weighted lottery draw — each ticket = 1 entry, drawn without replacement
+function _drawWinners(entries) {
+  if (!entries || entries.length === 0) return [];
+  // Build ticket pool
+  let pool = [];
+  entries.forEach(e => {
+    for (let i = 0; i < (e.tickets || 1); i++) pool.push(e.wallet);
+  });
+  const winners = [];
+  const used = new Set();
+  while (winners.length < 3 && pool.length > 0) {
+    const idx = Math.floor(Math.random() * pool.length);
+    const wallet = pool[idx];
+    if (!used.has(wallet)) {
+      used.add(wallet);
+      winners.push(entries.find(e => e.wallet === wallet));
+    }
+    pool.splice(idx, 1);
+  }
+  return winners;
+}
+
 // ── HANDLER ──────────────────────────────────────────────────
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -169,10 +192,10 @@ export default async function handler(req, res) {
       // Auto-finalize when 24h window is over
       if (contest.phase === 'ended' && contest.status === 'active') {
         try {
-          const _e = await db.execute({ sql:`SELECT wallet,tickets,total_usd FROM bc_entries WHERE contest_id=? ORDER BY tickets DESC,submitted_at ASC`, args:[contest.id] });
+          const _e = await db.execute({ sql:`SELECT wallet,tickets,total_usd FROM bc_entries WHERE contest_id=?`, args:[contest.id] });
           const _p = await db.execute({ sql:`SELECT COALESCE(SUM(total_usd),0) as p FROM bc_entries WHERE contest_id=?`, args:[contest.id] });
           const _pot = parseFloat(_p.rows[0]?.p||0);
-          const _top = _e.rows;
+          const _top = _drawWinners(_e.rows);
           await db.execute({
             sql:`UPDATE bc_contests SET status='completed',pot_usd=?,winner1_wallet=?,winner2_wallet=?,winner3_wallet=?,winner1_tickets=?,winner2_tickets=?,winner3_tickets=?,prize1_usd=?,prize2_usd=?,prize3_usd=?,wheel_reserve_usd=? WHERE id=?`,
             args:[_pot,_top[0]?.wallet||null,_top[1]?.wallet||null,_top[2]?.wallet||null,_top[0]?.tickets||0,_top[1]?.tickets||0,_top[2]?.tickets||0,_pot*0.40,_pot*0.20,_pot*0.10,_pot*0.30,contest.id]
@@ -344,7 +367,7 @@ export default async function handler(req, res) {
 
       const stats = await db.execute({ sql: `SELECT COALESCE(SUM(total_usd),0) as pot FROM bc_entries WHERE contest_id = ?`, args: [contestId] });
       const pot = parseFloat(stats.rows[0]?.pot || 0);
-      const top = entries.rows;
+      const top = _drawWinners(entries.rows);
 
       await db.execute({
         sql: `UPDATE bc_contests SET status='completed', pot_usd=?,
