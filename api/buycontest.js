@@ -186,7 +186,24 @@ export default async function handler(req, res) {
 
       if (!contest) {
         const last = await db.execute(`SELECT * FROM bc_contests WHERE status = 'completed' ORDER BY end_at DESC LIMIT 1`);
-        return res.status(200).json({ contest: null, lastContest: last.rows[0] || null, tokenPrice });
+        const lastContest = last.rows[0] || null;
+        let lastEntries = [];
+        if (lastContest) {
+          const le = await db.execute({ sql:`SELECT wallet,tickets,total_usd FROM bc_entries WHERE contest_id=? ORDER BY tickets DESC,submitted_at ASC`, args:[lastContest.id] });
+          lastEntries = le.rows;
+          // If winners not set but entries exist, run draw now
+          if (!lastContest.winner1_wallet && lastEntries.length > 0) {
+            const _pot = parseFloat(lastContest.pot_usd||0) || lastEntries.reduce((s,e)=>s+parseFloat(e.total_usd||0),0);
+            const _top = _drawWinners(lastEntries);
+            await db.execute({
+              sql:`UPDATE bc_contests SET pot_usd=?,winner1_wallet=?,winner2_wallet=?,winner3_wallet=?,winner1_tickets=?,winner2_tickets=?,winner3_tickets=?,prize1_usd=?,prize2_usd=?,prize3_usd=?,wheel_reserve_usd=? WHERE id=?`,
+              args:[_pot,_top[0]?.wallet||null,_top[1]?.wallet||null,_top[2]?.wallet||null,_top[0]?.tickets||0,_top[1]?.tickets||0,_top[2]?.tickets||0,_pot*0.40,_pot*0.20,_pot*0.10,_pot*0.30,lastContest.id]
+            });
+            const updated = await db.execute({ sql:`SELECT * FROM bc_contests WHERE id=?`, args:[lastContest.id] });
+            Object.assign(lastContest, updated.rows[0]);
+          }
+        }
+        return res.status(200).json({ contest: null, lastContest, lastEntries, tokenPrice });
       }
 
       // Auto-finalize when 24h window is over

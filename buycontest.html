@@ -692,7 +692,7 @@ function copyAmount() {
 }
 
 // ── SHOW COMPLETED CONTEST ────────────────────────────────────
-function showCompletedContest(lc, price) {
+function showCompletedContest(lc, price, entries) {
   const pot = parseFloat(lc.pot_usd || 0);
 
   // Hide no-contest, show contest-ui
@@ -741,24 +741,40 @@ function showCompletedContest(lc, price) {
   lbCard.querySelector('.card-title').innerHTML = '🏆 Winners — Lucky Draw';
   document.getElementById('lb-count').textContent = '';
 
+  // Build winners HTML (from lc fields or from entries fallback)
+  const winnersHtml = winners.length > 0 ? winners.map(w => `
+    <div style="display:flex;align-items:center;gap:14px;padding:16px;margin-bottom:10px;background:rgba(232,160,0,0.06);border:1px solid rgba(232,160,0,0.2);border-radius:14px;">
+      <div style="font-size:28px;width:36px;text-align:center;">${w.rank}</div>
+      <div style="flex:1;">
+        <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);word-break:break-all;margin-bottom:4px;">${w.wallet}
+          <button onclick="navigator.clipboard.writeText('${w.wallet}').then(()=>showToast('📋 Copied!'))" style="background:none;border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:10px;color:var(--muted);cursor:pointer;margin-left:4px;">📋</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);">${w.tickets} ticket${w.tickets!==1?'s':''} · ${w.pct} of pot · lucky draw</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gold2);letter-spacing:1px;">$${parseFloat(w.prize||0).toFixed(2)}</div>
+        <div style="font-size:10px;color:var(--muted);">prize</div>
+      </div>
+    </div>
+  `).join('') : (entries||[]).map((e,i) => `
+    <div style="display:flex;align-items:center;gap:14px;padding:14px;margin-bottom:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:12px;">
+      <div style="font-size:20px;width:32px;text-align:center;">${['🥇','🥈','🥉'][i]||'#'+(i+1)}</div>
+      <div style="flex:1;">
+        <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);word-break:break-all;margin-bottom:3px;">${e.wallet}
+          <button onclick="navigator.clipboard.writeText('${e.wallet}').then(()=>showToast('📋 Copied!'))" style="background:none;border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:10px;color:var(--muted);cursor:pointer;margin-left:4px;">📋</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);">${e.tickets} ticket${e.tickets!==1?'s':''} · $${parseFloat(e.total_usd||0).toFixed(2)} invested</div>
+      </div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--muted);">${e.tickets} 🎟️</div>
+    </div>
+  `).join('');
+
   document.getElementById('leaderboard').innerHTML = `
     <div style="text-align:center;padding:8px 0 20px;">
       <div style="font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">Total pot distributed</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--gold);letter-spacing:3px;line-height:1;">$${pot.toFixed(2)}</div>
     </div>
-    ${winners.map(w => `
-      <div style="display:flex;align-items:center;gap:14px;padding:16px;margin-bottom:10px;background:rgba(232,160,0,0.06);border:1px solid rgba(232,160,0,0.2);border-radius:14px;">
-        <div style="font-size:28px;width:36px;text-align:center;">${w.rank}</div>
-        <div style="flex:1;">
-          <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--gold);word-break:break-all;">${w.wallet.slice(0,8)}...${w.wallet.slice(-6)}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:3px;">${w.tickets} ticket${w.tickets!==1?'s':''} · ${w.pct} of pot · lucky draw</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gold2);letter-spacing:1px;">$${parseFloat(w.prize||0).toFixed(2)}</div>
-          <div style="font-size:10px;color:var(--muted);">prize</div>
-        </div>
-      </div>
-    `).join('')}
+    ${winnersHtml}
     <div style="text-align:center;padding:12px 0 4px;font-size:12px;color:var(--muted);">
       Prizes distributed in $YC within 24h · <a href="/wheel" style="color:var(--gold);text-decoration:none;">Spin the Wheel →</a>
     </div>
@@ -782,9 +798,8 @@ async function loadContest() {
     }
 
     if (!data.contest) {
-      // Check if there's a recently completed contest with winners to display
-      if (data.lastContest && data.lastContest.winner1_wallet) {
-        showCompletedContest(data.lastContest, data.tokenPrice);
+      if (data.lastContest) {
+        showCompletedContest(data.lastContest, data.tokenPrice, data.lastEntries || []);
         loadPastContests();
         return;
       }
