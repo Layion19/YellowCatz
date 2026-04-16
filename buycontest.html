@@ -798,14 +798,26 @@ async function loadContest() {
     }
 
     if (!data.contest) {
-      if (data.lastContest) {
-        showCompletedContest(data.lastContest, data.tokenPrice, data.lastEntries || []);
-        loadPastContests();
-        return;
-      }
-      document.getElementById('no-contest-msg').style.display = 'block';
-      document.getElementById('contest-ui').style.display = 'none';
-      setCountdownStatus('No active contest', '');
+      // Hardcoded winners for contest #2
+      const hardcodedContest = {
+        id: 2,
+        status: 'completed',
+        start_at: '2026-04-15T12:00:00.000Z',
+        end_at: '2026-04-16T12:00:00.000Z',
+        pot_usd: 701.13167827,
+        winner1_wallet: 'EtFfT5vRBwCpVtyBg91Ge5jZRVDmtriidea6yFvoYgcu',
+        winner2_wallet: 'DndNTsZ8CUFxEim6AUaXnuLxQwwyeTvvy17mQBNSVk98',
+        winner3_wallet: '4jM22xkg6BYbvKF243uzyUheix7c5WbEdMonStsTmrdq',
+        winner1_tickets: 10,
+        winner2_tickets: 2,
+        winner3_tickets: 1,
+        prize1_usd: 280.452671308,
+        prize2_usd: 140.226335654,
+        prize3_usd: 70.113167827,
+        wheel_reserve_usd: 210.339503481,
+      };
+      const lc = (data.lastContest && data.lastContest.winner1_wallet) ? data.lastContest : hardcodedContest;
+      showCompletedContest(lc, data.tokenPrice, data.lastEntries || []);
       loadPastContests();
       return;
     }
