@@ -313,6 +313,7 @@
             max-width: 500px;
             width: 90vw;
             height: auto;
+            opacity: 0;
             transition: opacity 0.5s ease;
         }
 
@@ -824,9 +825,14 @@
 
                 if (!hasStarted) {
                     hasStarted = true;
+                    // Step 1: remove bars, supply-lock stays visible
                     barsOverlay.classList.add('hidden');
-                    supplyLockImg.classList.add('hidden');
-                    startRotation();
+                    // Step 2: after 2s, fade out supply-lock and show cat
+                    setTimeout(() => {
+                        supplyLockImg.classList.add('hidden');
+                        catImage.style.opacity = '1';
+                        startRotation();
+                    }, 2000);
                 }
             } else {
                 bgMusic.pause();
