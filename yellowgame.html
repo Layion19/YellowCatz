@@ -392,85 +392,83 @@
                 bottom: 8%;
             }
         }
-    
-    /* ===================== */
-/* PHASE 3 MENU STYLES   */
-/* ===================== */
 
-.menu-btn {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 40px;
-    height: 40px;
-    cursor: pointer;
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 6px;
-}
+        /* ===================== */
+        /* PHASE 3 MENU STYLES   */
+        /* ===================== */
 
-.menu-btn span {
-    width: 30px;
-    height: 3px;
-    background-color: #E8A000;
-    border-radius: 3px;
-    transition: all 0.3s ease;
-}
+        .menu-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+        }
 
-.menu-btn.active span:nth-child(1) {
-    transform: rotate(45deg) translate(6px, 6px);
-}
-.menu-btn.active span:nth-child(2) {
-    opacity: 0;
-}
-.menu-btn.active span:nth-child(3) {
-    transform: rotate(-45deg) translate(7px, -7px);
-}
+        .menu-btn span {
+            width: 30px;
+            height: 3px;
+            background-color: #E8A000;
+            border-radius: 3px;
+            transition: all 0.3s ease;
+        }
 
-.sidebar {
-    position: fixed;
-    top: 0;
-    right: -300px;
-    width: 300px;
-    height: 100vh;
-    background: #000;
-    padding: 80px 30px;
-    z-index: 999;
-    transition: right 0.3s ease;
-    display: flex;
-    flex-direction: column;
-}
+        .menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(6px, 6px);
+        }
 
-.sidebar.active {
-    right: 0;
-}
+        .menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
 
-.sidebar a {
-    color: #E8A000;
-    text-decoration: none;
-    font-size: 24px;
-    padding: 15px 0;
-    border-bottom: 1px solid #333;
-}
+        .menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
 
-.sidebar a:hover {
-    color: #fff;
-}
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100vh;
+            background: #000;
+            padding: 80px 30px;
+            z-index: 999;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
 
-.overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 998;
-}
+        .sidebar.active {
+            right: 0;
+        }
 
-.hidden {
-    display: none !important;
-}
-    
+        .sidebar a {
+            color: #E8A000;
+            text-decoration: none;
+            font-size: 24px;
+            padding: 15px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .sidebar a:hover {
+            color: #fff;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 998;
+        }
+
     </style>
 </head>
 <body>
@@ -526,37 +524,36 @@
     <!-- MOON CAT (appears in phase 3) -->
     <img src="/images/yellowcatz-space.png" alt="" class="moon-cat" id="moonCat">
 
-    
     <!-- ===================== -->
-<!-- PHASE 3 HAMBURGER MENU -->
-<!-- ===================== -->
+    <!-- PHASE 3 HAMBURGER MENU -->
+    <!-- ===================== -->
 
-<!-- Hamburger Button -->
-<div class="menu-btn hidden" id="menuBtn">
-    <span></span>
-    <span></span>
-    <span></span>
-</div>
+    <!-- Hamburger Button -->
+    <div class="menu-btn hidden" id="menuBtn">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
 
-<!-- Sidebar -->
-<nav class="sidebar hidden" id="sidebar">
-    <a href="index.html">Home</a>
-    <a href="yellow-matrix.html">Origins</a>
-    <a href="about.html">About</a>
-    <a href="yellowmap.html">YellowMap</a>
-    <a href="yellowgame.html">YellowGame</a>
-    <a href="gallery.html">Gallery</a>
-</nav>
+    <!-- Sidebar -->
+    <nav class="sidebar hidden" id="sidebar">
+        <a href="index.html">Home</a>
+        <a href="yellow-matrix.html">Origins</a>
+        <a href="about.html">About</a>
+        <a href="yellowmap.html">YellowMap</a>
+        <a href="yellowgame.html">YellowGame</a>
+        <a href="gallery.html">Gallery</a>
+    </nav>
 
-<!-- Overlay -->
-<div class="overlay hidden" id="overlay"></div>
-    
+    <!-- Overlay -->
+    <div class="overlay hidden" id="overlay"></div>
+
     <script>
         // ============================================================
         // CONFIG
         // ============================================================
         const SECRET_CODE = '48532';
-        const DEXTOOLS_URL = 'https://dexscreener.com/solana/So11111111111111111111111111111111111111112?embed=1&theme=dark';
+        const DEXTOOLS_URL = 'https://www.dextools.io/app/token/yellowcatz';
         let gameStarted = false;
         let isAuthenticated = false;
         let hasBadge4 = false;
@@ -571,10 +568,10 @@
                     credentials: 'include'
                 });
                 const data = await response.json();
-                
+
                 isAuthenticated = data.authenticated === true;
                 userData = data;
-                
+
                 if (isAuthenticated && data.badges) {
                     // Check if user has badge_4
                     const badge4 = data.badges.find(b => b.id === 'badge_4');
@@ -687,7 +684,7 @@
 
         function checkCode() {
             const enteredCode = Array.from(codeInputs).map(i => i.value).join('');
-            
+
             if (enteredCode.length === 5) {
                 if (enteredCode === SECRET_CODE) {
                     codeInputs.forEach(i => i.classList.add('success'));
@@ -744,16 +741,17 @@
 
         document.getElementById('btnGreen').addEventListener('click', async () => {
             // Green = Reach the Moon!
-            
+
             // Award badge_4
             await claimBadge('badge_4');
-            
+
             // Transition to phase 3
             document.getElementById('phase2Container').classList.add('hidden');
             document.getElementById('spaceCat').classList.add('hidden');
             document.body.classList.remove('phase2');
             document.body.classList.add('phase3');
-            
+
+            enableMenuForPhase3();
             showPhase3();
         });
 
@@ -794,33 +792,31 @@
             }, 1500);
         }
 
-// ============================================================
-// PHASE 3 MENU LOGIC
-// ============================================================
+        // ============================================================
+        // PHASE 3 MENU LOGIC
+        // ============================================================
+        function enableMenuForPhase3() {
+            const menuBtn = document.getElementById('menuBtn');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
 
-function enableMenuForPhase3() {
-    const menuBtn = document.getElementById('menuBtn');
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
+            menuBtn.classList.remove('hidden');
+            sidebar.classList.remove('hidden');
+            overlay.classList.add('hidden');
 
-    menuBtn.classList.remove('hidden');
-    sidebar.classList.remove('hidden');
-    overlay.classList.add('hidden');
+            menuBtn.addEventListener('click', () => {
+                menuBtn.classList.toggle('active');
+                sidebar.classList.toggle('active');
+                overlay.classList.toggle('hidden');
+            });
 
-    menuBtn.addEventListener('click', () => {
-        menuBtn.classList.toggle('active');
-        sidebar.classList.toggle('active');
-        overlay.classList.toggle('hidden');
-    });
+            overlay.addEventListener('click', () => {
+                menuBtn.classList.remove('active');
+                sidebar.classList.remove('active');
+                overlay.classList.add('hidden');
+            });
+        }
 
-    overlay.addEventListener('click', () => {
-        menuBtn.classList.remove('active');
-        sidebar.classList.remove('active');
-        overlay.classList.add('hidden');
-    });
-}
-
-
-   </script>
+    </script>
 </body>
 </html>

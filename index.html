@@ -316,6 +316,23 @@
             transition: opacity 0.5s ease;
         }
 
+        /* Supply Lock Image — behind bars */
+        .supply-lock-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 5;
+            pointer-events: none;
+            transition: opacity 1s ease;
+        }
+
+        .supply-lock-img.hidden {
+            opacity: 0;
+        }
+
         /* Bars Overlay */
         .bars-overlay {
             position: absolute;
@@ -336,6 +353,84 @@
 
         .bars-overlay.hidden {
             opacity: 0;
+        }
+
+        /* CA Bar */
+        .ca-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .ca-label {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 14px;
+            color: #8B5A00;
+            letter-spacing: 2px;
+        }
+
+        .ca-addr {
+            font-family: monospace;
+            font-size: 12px;
+            color: #5a3600;
+            background: rgba(139, 90, 0, 0.12);
+            padding: 5px 10px;
+            border-radius: 6px;
+            word-break: break-all;
+            max-width: 280px;
+        }
+
+        .ca-copy {
+            background: #8B5A00;
+            border: none;
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-size: 11px;
+            color: #E8A000;
+            cursor: pointer;
+            font-weight: bold;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .ca-copy:hover {
+            background: #5a3600;
+        }
+
+        /* StreamFlow Lock Bar */
+        .lock-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .lock-bar a {
+            font-size: 11px;
+            color: #8B5A00;
+            text-decoration: none;
+            background: rgba(139, 90, 0, 0.12);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .lock-bar a:hover {
+            background: rgba(139, 90, 0, 0.25);
+        }
+
+        .lock-bar span {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 14px;
+            color: #8B5A00;
+            letter-spacing: 1px;
         }
 
         /* Twitter/X Link */
@@ -420,6 +515,10 @@
                 font-size: 20px;
                 padding: 12px 0;
             }
+            .ca-addr {
+                font-size: 10px;
+                max-width: 180px;
+            }
         }
     </style>
 </head>
@@ -479,11 +578,32 @@
             </div>
             <div class="line-right"></div>
         </div>
+
         <div class="cat-container">
             <img src="images/Catz0.png" alt="Yellow Cat" class="cat-image" id="catImage">
+            <!-- Supply lock image — behind bars (z-index 5) -->
+            <img src="images/supply-lock.png" alt="" class="supply-lock-img" id="supplyLockImg">
+            <!-- Bars overlay — on top (z-index 10) -->
             <div class="bars-overlay" id="barsOverlay">
                 <img src="images/bar.png" alt="Bars">
             </div>
+        </div>
+
+        <!-- CA address -->
+        <div class="ca-bar">
+            <span class="ca-label">CA:</span>
+            <span class="ca-addr">9zcYAff5kaZfVDkEv3DzD2ojvocYyoRL2pFEko53pump</span>
+            <button class="ca-copy" id="caCopyBtn" onclick="copyCA()">📋 Copy</button>
+        </div>
+
+        <!-- StreamFlow Supply Lock -->
+        <div class="lock-bar">
+            <span>🔒</span>
+            <span>50% Supply Locked on StreamFlow</span>
+            <a href="https://app.streamflow.finance/contract/solana/mainnet/7jinPF29Pq1ycfgcLP2nwUijnR47r12o2unzqGDLYw9f"
+               target="_blank">
+               🔗 View Contract
+            </a>
         </div>
     </div>
 
@@ -504,6 +624,18 @@
     <img id="secretImageM" src="images/YellowCatzM.png" style="display: none;">
 
     <script>
+        // ============================================================
+        // CA COPY
+        // ============================================================
+        function copyCA() {
+            const CA = '9zcYAff5kaZfVDkEv3DzD2ojvocYyoRL2pFEko53pump';
+            navigator.clipboard.writeText(CA).then(() => {
+                const btn = document.getElementById('caCopyBtn');
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => btn.textContent = '📋 Copy', 2000);
+            });
+        }
+
         // ============================================================
         // SESSION PERSISTENCE
         // ============================================================
@@ -555,7 +687,7 @@
                     credentials: 'include'
                 });
                 const data = await response.json();
-                
+
                 if (data.authenticated) {
                     saveSession(data);
                     showAuthenticatedUI();
@@ -587,7 +719,7 @@
                     const notification = document.getElementById('badgeNotification');
                     notification.textContent = `🎉 Badge "${badgeId === 'badge_5' ? 'X Hunter' : 'M Hunter'}" unlocked!`;
                     notification.classList.add('show');
-                    
+
                     setTimeout(() => {
                         notification.classList.remove('show');
                     }, 3000);
@@ -611,7 +743,7 @@
             canvas.height = secretImageX.naturalHeight;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(secretImageX, 0, 0);
-            
+
             const link = document.createElement('a');
             link.download = 'YellowCatzX.png';
             link.href = canvas.toDataURL('image/png');
@@ -634,7 +766,7 @@
             canvas.height = secretImageM.naturalHeight;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(secretImageM, 0, 0);
-            
+
             const link = document.createElement('a');
             link.download = 'YellowCatzM.png';
             link.href = canvas.toDataURL('image/png');
@@ -656,6 +788,7 @@
         const bgMusic = document.getElementById('bgMusic');
         const musicBtn = document.getElementById('musicBtn');
         const barsOverlay = document.getElementById('barsOverlay');
+        const supplyLockImg = document.getElementById('supplyLockImg');
         const catImage = document.getElementById('catImage');
 
         const images = [
@@ -675,7 +808,7 @@
             rotationInterval = setInterval(() => {
                 currentIndex = (currentIndex + 1) % images.length;
                 catImage.style.opacity = 0;
-                
+
                 setTimeout(() => {
                     catImage.src = images[currentIndex];
                     catImage.style.opacity = 1;
@@ -688,10 +821,11 @@
                 bgMusic.volume = 0.5;
                 bgMusic.play();
                 musicBtn.textContent = '❚❚';
-                
+
                 if (!hasStarted) {
                     hasStarted = true;
                     barsOverlay.classList.add('hidden');
+                    supplyLockImg.classList.add('hidden');
                     startRotation();
                 }
             } else {
