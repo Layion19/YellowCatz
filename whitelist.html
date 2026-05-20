@@ -221,16 +221,18 @@
 
     .gif-wrap {
       width: 100%;
+      aspect-ratio: 1 / 1;
       border-radius: 22px;
       border: 3px solid var(--k);
       overflow: hidden;
       background: var(--k);
       position: relative;
-      /* aspect ratio — adapt to your GIF */
-      aspect-ratio: 16/9;
     }
 
-    .gif-wrap img {
+    .gif-wrap img,
+    .gif-wrap video {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
@@ -772,7 +774,8 @@
         Example: src="/yellowcatz-reveal.gif"
         Recommended ratio: 16:9 or 4:3
     -->
-    <video src="images/yc-wl.mp4" autoplay loop muted playsinline></video>
+    <img src="YOUR_GIF_HERE.gif" alt="YellowCatz"
+         onerror="this.style.display='none'">
 
     <!-- shown only when image fails to load -->
     <div class="gif-placeholder">
