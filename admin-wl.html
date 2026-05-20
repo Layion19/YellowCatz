@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YellowCatz — Whitelist Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:      #0D0D0D;
+      --s1:      #141414;
+      --s2:      #1A1A1A;
+      --s3:      #222;
+      --border:  rgba(255,255,255,0.07);
+      --y:       #F5C200;
+      --ydim:    rgba(245,194,0,0.1);
+      --yborder: rgba(245,194,0,0.2);
+      --text:    #F0F0F0;
+      --muted:   rgba(240,240,240,0.38);
+      --green:   #22c55e;
+      --red:     #ef4444;
+      --orange:  #f97316;
+
+      /* sheet colors */
+      --sh-head:   #1a1a1a;
+      --sh-row:    #131313;
+      --sh-rowalt: #161616;
+      --sh-border: rgba(255,255,255,0.06);
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ══════ LOGIN ══════ */
+    #loginScreen {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; padding: 20px;
+    }
+
+    .login-box {
+      background: var(--s1);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px 32px;
+      width: 100%; max-width: 340px;
+      text-align: center;
+    }
+
+    .login-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px; letter-spacing: .15em;
+      color: var(--y); margin-bottom: 4px;
+    }
+
+    .login-sub {
+      font-size: 11px; color: var(--muted);
+      letter-spacing: .1em; text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    .login-input {
+      width: 100%; padding: 13px 16px;
+      background: var(--s2); border: 1.5px solid var(--border);
+      border-radius: 10px; color: var(--text);
+      font-family: 'Outfit', sans-serif; font-size: 14px;
+      outline: none; text-align: center; letter-spacing: .08em;
+      margin-bottom: 10px;
+      transition: border-color .2s;
+    }
+
+    .login-input:focus { border-color: var(--yborder); }
+
+    .login-btn {
+      width: 100%; padding: 13px;
+      background: var(--y); color: var(--bg);
+      border: none; border-radius: 10px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px; letter-spacing: .1em;
+      cursor: pointer; transition: opacity .2s;
+    }
+
+    .login-btn:hover { opacity: .85; }
+
+    .login-err {
+      color: var(--red); font-size: 12px;
+      margin-top: 10px; display: none;
+    }
+
+    /* ══════ APP LAYOUT ══════ */
+    #app { display: none; }
+
+    /* topbar */
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px; height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .topbar-left { display: flex; align-items: center; gap: 14px; }
+
+    .topbar-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px; letter-spacing: .15em; color: var(--y);
+    }
+
+    .topbar-tag {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: .15em; text-transform: uppercase;
+      background: var(--ydim); color: var(--y);
+      border: 1px solid var(--yborder);
+      padding: 4px 10px; border-radius: 100px;
+    }
+
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+
+    /* live dot */
+    .live-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    .live-label {
+      font-size: 11px; font-weight: 600;
+      color: var(--green); letter-spacing: .05em;
+    }
+
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: .35; }
+    }
+
+    .topbar-btn {
+      padding: 7px 14px; border-radius: 8px;
+      border: 1px solid var(--border);
+      background: none; color: var(--muted);
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: color .2s, border-color .2s;
+    }
+
+    .topbar-btn:hover { color: var(--text); border-color: rgba(255,255,255,.15); }
+
+    .topbar-btn.export {
+      background: var(--y); color: var(--bg);
+      border-color: var(--y); font-weight: 700;
+    }
+
+    .topbar-btn.export:hover { opacity: .85; }
+
+    /* ══════ PAGE CONTENT ══════ */
+    .page { padding: 24px; max-width: 1200px; margin: 0 auto; }
+
+    /* stats row */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px; margin-bottom: 22px;
+    }
+
+    .scard {
+      background: var(--s1);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px 18px;
+    }
+
+    .scard-label {
+      font-size: 9px; font-weight: 700;
+      letter-spacing: .2em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 5px;
+    }
+
+    .scard-val {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 34px; letter-spacing: .04em; line-height: 1;
+    }
+
+    .scard-val.yellow { color: var(--y); }
+    .scard-val.green  { color: var(--green); }
+    .scard-val.orange { color: var(--orange); }
+    .scard-val.red    { color: var(--red); }
+
+    /* ══════ SHEET ══════ */
+    .sheet-wrap {
+      background: var(--s1);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 28px;
+    }
+
+    .sheet-header-row {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sheet-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px; letter-spacing: .08em; color: var(--y);
+    }
+
+    .sheet-count {
+      font-size: 12px; color: var(--muted);
+    }
+
+    /* the actual sheet table */
+    .sheet-scroll { overflow-x: auto; }
+
+    table {
+      width: 100%; border-collapse: collapse;
+      min-width: 700px;
+    }
+
+    thead th {
+      padding: 10px 14px;
+      background: var(--sh-head);
+      text-align: left;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: .15em; text-transform: uppercase;
+      color: var(--y);
+      border-bottom: 2px solid var(--yborder);
+      border-right: 1px solid var(--sh-border);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      transition: background .15s;
+    }
+
+    thead th:hover { background: #222; }
+    thead th:last-child { border-right: none; }
+
+    /* row number col */
+    thead th:first-child,
+    tbody td:first-child {
+      width: 44px; text-align: center;
+      color: var(--muted); font-size: 11px;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid var(--sh-border);
+      transition: background .12s;
+    }
+
+    tbody tr:last-child { border-bottom: none; }
+
+    tbody tr:nth-child(odd)  { background: var(--sh-row); }
+    tbody tr:nth-child(even) { background: var(--sh-rowalt); }
+    tbody tr:hover { background: rgba(245,194,0,0.04) !important; }
+
+    tbody td {
+      padding: 10px 14px;
+      border-right: 1px solid var(--sh-border);
+      font-size: 13px; vertical-align: middle;
+    }
+
+    tbody td:last-child { border-right: none; }
+
+    /* ETH address — monospace */
+    .cell-eth {
+      font-family: 'Courier New', monospace;
+      font-size: 12px; color: var(--text);
+      letter-spacing: .02em;
+    }
+
+    .eth-short { display: block; }
+    .eth-full  { display: none; }
+
+    /* X handle */
+    .cell-x {
+      color: var(--y); font-weight: 600; font-size: 13px;
+    }
+
+    /* community */
+    .cell-community {
+      font-size: 12px; color: var(--muted);
+      max-width: 180px; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* date */
+    .cell-date { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+    /* status badge */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 100px;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+      white-space: nowrap; cursor: pointer;
+      transition: opacity .2s;
+    }
+
+    .badge:hover { opacity: .75; }
+    .badge::before { content:'●'; font-size: 7px; }
+
+    .badge.pending  { background:rgba(249,115,22,.1); color:var(--orange); border:1px solid rgba(249,115,22,.2); }
+    .badge.approved { background:rgba(34,197,94,.1);  color:var(--green);  border:1px solid rgba(34,197,94,.2); }
+    .badge.rejected { background:rgba(239,68,68,.1);  color:var(--red);    border:1px solid rgba(239,68,68,.2); }
+
+    /* empty / loading */
+    .empty-row td {
+      text-align: center; padding: 40px;
+      color: var(--muted); font-size: 13px;
+      border: none !important;
+    }
+
+    /* ══════ WARNINGS SECTION ══════ */
+    .warnings-section {
+      background: rgba(239,68,68,0.05);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 28px;
+    }
+
+    .warnings-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(239,68,68,.15);
+      background: rgba(239,68,68,.06);
+    }
+
+    .warn-icon { font-size: 18px; }
+
+    .warnings-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 18px; letter-spacing: .08em; color: var(--red);
+    }
+
+    .warnings-desc {
+      font-size: 11px; color: rgba(239,68,68,.6);
+      margin-left: auto;
+    }
+
+    .warn-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+
+    .warn-table thead th {
+      background: rgba(239,68,68,.08);
+      color: var(--red); border-color: rgba(239,68,68,.12);
+      border-bottom: 1px solid rgba(239,68,68,.15);
+    }
+
+    .warn-table thead th:hover { background: rgba(239,68,68,.12); }
+
+    .warn-table tbody tr { border-bottom: 1px solid rgba(239,68,68,.08); }
+    .warn-table tbody tr:nth-child(odd)  { background: rgba(239,68,68,.02); }
+    .warn-table tbody tr:nth-child(even) { background: transparent; }
+    .warn-table tbody tr:hover { background: rgba(239,68,68,.05) !important; }
+
+    .warn-reason {
+      font-size: 11px; color: var(--red);
+      background: rgba(239,68,68,.1);
+      padding: 3px 8px; border-radius: 4px;
+      display: inline-block;
+    }
+
+    /* ══════ STATUS CYCLING (click badge) ══════ */
+
+    /* ══════ TOAST ══════ */
+    #toast {
+      position: fixed; bottom: 20px; left: 50%;
+      transform: translateX(-50%) translateY(50px);
+      background: var(--s2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 20px; border-radius: 100px;
+      font-size: 13px; font-weight: 600;
+      z-index: 200; transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+      white-space: nowrap;
+    }
+
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ══════ RESPONSIVE ══════ */
+    @media (max-width: 768px) {
+      .stats-row { grid-template-columns: repeat(2,1fr); }
+      .page { padding: 14px; }
+      .topbar { padding: 0 14px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════ LOGIN ══════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">YELLOWCATZ</div>
+    <div class="login-sub">Whitelist Admin</div>
+    <input type="password" id="tokenInput" class="login-input"
+           placeholder="••••••••••••"
+           onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="login-btn" onclick="doLogin()">UNLOCK →</button>
+    <div class="login-err" id="loginErr">❌ Token invalide.</div>
+  </div>
+</div>
+
+<!-- ══════ APP ══════ -->
+<div id="app">
+
+  <!-- topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-logo">YELLOWCATZ</span>
+      <span class="topbar-tag">Whitelist</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <div class="live-dot"></div>
+        <span class="live-label">LIVE</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span style="font-size:11px;color:var(--muted)" id="lastSync">—</span>
+      <button class="topbar-btn" onclick="loadData()">↻ Refresh</button>
+      <button class="topbar-btn export" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="topbar-btn" onclick="logout()" style="margin-left:4px;">Logout</button>
+    </div>
+  </div>
+
+  <div class="page">
+
+    <!-- stats -->
+    <div class="stats-row">
+      <div class="scard">
+        <div class="scard-label">Total inscrits</div>
+        <div class="scard-val yellow" id="stTotal">—</div>
+      </div>
+      <div class="scard">
+        <div class="scard-label">Approuvés</div>
+        <div class="scard-val green" id="stApproved">—</div>
+      </div>
+      <div class="scard">
+        <div class="scard-label">En attente</div>
+        <div class="scard-val orange" id="stPending">—</div>
+      </div>
+      <div class="scard">
+        <div class="scard-label">⚠ Doublons bloqués</div>
+        <div class="scard-val red" id="stWarnings">—</div>
+      </div>
+    </div>
+
+    <!-- ══ MAIN SHEET ══ -->
+    <div class="sheet-wrap">
+      <div class="sheet-header-row">
+        <span class="sheet-title">WHITELIST ENTRIES</span>
+        <span class="sheet-count" id="sheetCount">Chargement…</span>
+      </div>
+      <div class="sheet-scroll">
+        <table id="mainTable">
+          <thead>
+            <tr>
+              <th onclick="sortBy('id')">#</th>
+              <th onclick="sortBy('eth_address')">ETH ADDRESS ↕</th>
+              <th onclick="sortBy('x_handle')">X HANDLE ↕</th>
+              <th onclick="sortBy('community')">COMMUNITY</th>
+              <th onclick="sortBy('created_at')">DATE ↕</th>
+              <th onclick="sortBy('status')">STATUS ↕</th>
+            </tr>
+          </thead>
+          <tbody id="mainBody">
+            <tr class="empty-row"><td colspan="6">Chargement…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ WARNINGS SECTION ══ -->
+    <div class="warnings-section" id="warningsSection" style="display:none;">
+      <div class="warnings-header">
+        <span class="warn-icon">⚠️</span>
+        <span class="warnings-title">TENTATIVES BLOQUÉES</span>
+        <span class="warnings-desc">Adresses ETH déjà utilisées avec un X handle différent</span>
+      </div>
+      <div class="sheet-scroll">
+        <table class="warn-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>ETH ADDRESS</th>
+              <th>X HANDLE (tenté)</th>
+              <th>RAISON</th>
+              <th>DATE</th>
+            </tr>
+          </thead>
+          <tbody id="warnBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /page -->
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<script>
+  let token   = '';
+  let entries = [];     // approved/pending WL entries
+  let warnings = [];    // blocked duplicates
+  let sortField = 'created_at';
+  let sortDir   = -1;   // -1 = desc, 1 = asc
+
+  /* ══════ AUTH ══════ */
+  function doLogin() {
+    token = document.getElementById('tokenInput').value.trim();
+    if (!token) return;
+    loadData(true);
+  }
+
+  function logout() {
+    token = ''; entries = []; warnings = [];
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('tokenInput').value = '';
+  }
+
+  /* ══════ LOAD DATA ══════ */
+  async function loadData(isLogin = false) {
+    try {
+      const res = await fetch('/api/wl-list', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+
+      if (res.status === 401) {
+        if (isLogin) {
+          document.getElementById('loginErr').style.display = 'block';
+        }
+        return;
+      }
+
+      const data = await res.json();
+      entries  = data.entries   || [];
+      warnings = data.warnings  || [];
+
+      if (isLogin) {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        document.getElementById('loginErr').style.display = 'none';
+        startAutoRefresh();
+      }
+
+      updateStats();
+      renderSheet();
+      renderWarnings();
+      document.getElementById('lastSync').textContent =
+        'Sync ' + new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+
+    } catch(e) {
+      if (isLogin) {
+        document.getElementById('loginErr').textContent = '❌ Erreur de connexion.';
+        document.getElementById('loginErr').style.display = 'block';
+      }
+    }
+  }
+
+  /* auto-refresh every 30s */
+  function startAutoRefresh() {
+    setInterval(() => loadData(), 30000);
+  }
+
+  /* ══════ STATS ══════ */
+  function updateStats() {
+    document.getElementById('stTotal').textContent    = entries.length;
+    document.getElementById('stApproved').textContent = entries.filter(e => e.status === 'approved').length;
+    document.getElementById('stPending').textContent  = entries.filter(e => e.status === 'pending').length;
+    document.getElementById('stWarnings').textContent = warnings.length;
+  }
+
+  /* ══════ RENDER SHEET ══════ */
+  function renderSheet() {
+    const sorted = [...entries].sort((a,b) => {
+      let va = a[sortField] ?? '', vb = b[sortField] ?? '';
+      if (typeof va === 'string') va = va.toLowerCase();
+      if (typeof vb === 'string') vb = vb.toLowerCase();
+      return va < vb ? -sortDir : va > vb ? sortDir : 0;
+    });
+
+    document.getElementById('sheetCount').textContent = sorted.length + ' entrée' + (sorted.length !== 1 ? 's' : '');
+
+    if (sorted.length === 0) {
+      document.getElementById('mainBody').innerHTML =
+        '<tr class="empty-row"><td colspan="6">Aucune inscription pour l\'instant.</td></tr>';
+      return;
+    }
+
+    document.getElementById('mainBody').innerHTML = sorted.map((e, i) => {
+      const eth   = e.eth_address || '';
+      const short = eth.slice(0,6) + '…' + eth.slice(-4);
+      const date  = new Date(e.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
+      const comm  = e.community || '—';
+
+      return `
+        <tr>
+          <td style="color:var(--muted);font-size:11px;">${i+1}</td>
+          <td class="cell-eth" title="${eth}">${short}</td>
+          <td class="cell-x">${esc(e.x_handle)}</td>
+          <td class="cell-community" title="${esc(comm)}">${esc(comm)}</td>
+          <td class="cell-date">${date}</td>
+          <td>
+            <span class="badge ${e.status}" onclick="cycleStatus(${e.id}, '${e.status}')">
+              ${e.status}
+            </span>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+
+  /* ══════ RENDER WARNINGS ══════ */
+  function renderWarnings() {
+    const sec = document.getElementById('warningsSection');
+    if (warnings.length === 0) { sec.style.display = 'none'; return; }
+
+    sec.style.display = 'block';
+    document.getElementById('warnBody').innerHTML = warnings.map((w, i) => {
+      const eth   = w.eth_address || '';
+      const short = eth.slice(0,6) + '…' + eth.slice(-4);
+      const date  = new Date(w.created_at).toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
+      return `
+        <tr>
+          <td style="color:rgba(239,68,68,.4);font-size:11px;">${i+1}</td>
+          <td class="cell-eth" style="color:rgba(240,240,240,.5);" title="${eth}">${short}</td>
+          <td class="cell-x" style="color:rgba(239,68,68,.7);">${esc(w.x_handle)}</td>
+          <td><span class="warn-reason">${esc(w.reason)}</span></td>
+          <td class="cell-date">${date}</td>
+        </tr>`;
+    }).join('');
+  }
+
+  /* ══════ SORT ══════ */
+  function sortBy(field) {
+    if (sortField === field) sortDir *= -1;
+    else { sortField = field; sortDir = -1; }
+    renderSheet();
+  }
+
+  /* ══════ STATUS CYCLE ══════ */
+  const statusCycle = { pending: 'approved', approved: 'rejected', rejected: 'pending' };
+
+  async function cycleStatus(id, current) {
+    const next = statusCycle[current];
+    try {
+      const res = await fetch('/api/wl-list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ id, status: next })
+      });
+      if (!res.ok) throw new Error();
+
+      const entry = entries.find(e => e.id === id);
+      if (entry) entry.status = next;
+      updateStats();
+      renderSheet();
+      toast('✅ Statut mis à jour → ' + next);
+    } catch {
+      toast('❌ Erreur lors de la mise à jour.');
+    }
+  }
+
+  /* ══════ EXPORT CSV ══════ */
+  function exportCSV() {
+    if (entries.length === 0) { toast('Aucune donnée à exporter.'); return; }
+
+    const cols = ['ETH Address', 'X Handle', 'Community', 'Date', 'Status'];
+    const rows = entries.map(e => [
+      e.eth_address,
+      e.x_handle,
+      e.community || '',
+      new Date(e.created_at).toLocaleDateString('fr-FR'),
+      e.status
+    ]);
+
+    const csv = [cols, ...rows]
+      .map(r => r.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `yellowcatz-whitelist-${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('📥 Export CSV téléchargé !');
+  }
+
+  /* ══════ HELPERS ══════ */
+  function esc(s) {
+    return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>yellowcatz — 777 NFTs on Ethereum</title>
+  <meta name="description" content="777 hand-crafted cats placed into iconic scenes. The yellow cat was always there.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ══════════════════════════════════════
+       TOKENS
+    ══════════════════════════════════════ */
+    :root {
+      --y:     #F5C200;   /* yellow */
+      --yd:    #D4A800;   /* yellow dark */
+      --k:     #0D0D0D;   /* black */
+      --k2:    #161616;   /* card bg */
+      --k3:    #1E1E1E;   /* task bg */
+      --w:     #FEFEFE;   /* white */
+      --wdim:  rgba(254,254,254,0.55);
+    }
+
+    /* ══════════════════════════════════════
+       RESET
+    ══════════════════════════════════════ */
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      color: var(--k);
+      background: var(--y);
+      /* paper grain */
+      background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    a { text-decoration:none; color:inherit; }
+    img { display:block; }
+
+    .wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* ══════════════════════════════════════
+       HEADER
+    ══════════════════════════════════════ */
+    header {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 22px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .logo-mark {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .dot-black { width:11px; height:11px; border-radius:50%; background:var(--k); }
+    .dot-white { width:11px; height:11px; border-radius:50%; border:2px solid var(--k); }
+    .cat-icon  { font-size:14px; line-height:1; }
+
+    .logo-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 0.08em;
+      color: var(--k);
+    }
+
+    /* follow pill */
+    .follow-btn {
+      border: 2px solid var(--k);
+      border-radius: 100px;
+      padding: 0 16px;
+      height: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 1px;
+      cursor: pointer;
+      transition: background .18s, color .18s;
+      line-height: 1.2;
+    }
+
+    .follow-btn span:first-child {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      opacity: .45;
+    }
+
+    .follow-btn span:last-child {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .follow-btn:hover {
+      background: var(--k);
+      color: var(--y);
+    }
+
+    /* ══════════════════════════════════════
+       HERO
+    ══════════════════════════════════════ */
+    .hero { padding: 24px 0 44px; }
+
+    .hero-eyebrow {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .25em;
+      text-transform: uppercase;
+      opacity: .45;
+      margin-bottom: 16px;
+    }
+
+    .hero-h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(56px, 15vw, 96px);
+      line-height: .92;
+      letter-spacing: .02em;
+      color: var(--k);
+      margin-bottom: 20px;
+    }
+
+    /* "YELLOW CATZ" line — white text on black strip */
+    .h1-accent {
+      display: inline-block;
+      background: var(--k);
+      color: var(--y);
+      padding: 0 12px 4px;
+      border-radius: 8px;
+      line-height: 1;
+    }
+
+    /* "WEB3" chip */
+    .h1-chip {
+      display: inline-block;
+      background: var(--k);
+      color: var(--w);
+      padding: 2px 14px 4px;
+      border-radius: 8px;
+      font-size: .55em;
+      vertical-align: middle;
+      letter-spacing: .06em;
+    }
+
+    .hero-desc {
+      font-size: 15px;
+      line-height: 1.75;
+      max-width: 440px;
+      opacity: .7;
+      margin-bottom: 28px;
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-black {
+      background: var(--k);
+      color: var(--y);
+      padding: 14px 28px;
+      border-radius: 100px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      border: 2px solid var(--k);
+      cursor: pointer;
+      display: inline-block;
+      transition: opacity .2s;
+    }
+
+    .btn-black:hover { opacity: .8; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--k);
+      padding: 14px 28px;
+      border-radius: 100px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      border: 2px solid var(--k);
+      cursor: pointer;
+      display: inline-block;
+      transition: background .18s, color .18s;
+    }
+
+    .btn-ghost:hover { background: var(--k); color: var(--y); }
+
+    /* ══════════════════════════════════════
+       GIF SECTION
+    ══════════════════════════════════════ */
+    .gif-section {
+      padding: 0 20px 52px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+
+    .gif-wrap {
+      width: 100%;
+      border-radius: 22px;
+      border: 3px solid var(--k);
+      overflow: hidden;
+      background: var(--k);
+      position: relative;
+      /* aspect ratio — adapt to your GIF */
+      aspect-ratio: 16/9;
+    }
+
+    .gif-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* placeholder shown when no GIF is loaded */
+    .gif-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .gif-placeholder-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      letter-spacing: .15em;
+      color: rgba(245,194,0,.25);
+    }
+
+    /* ══════════════════════════════════════
+       STATS 2×2
+    ══════════════════════════════════════ */
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 48px;
+    }
+
+    .stat-card {
+      border-radius: 18px;
+      border: 2.5px solid var(--k);
+      padding: 22px 22px 18px;
+    }
+
+    /* alternating fills */
+    .stat-card.dark     { background: var(--k); }
+    .stat-card.dark-alt { background: #1A1A1A; }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .stat-card.dark     .stat-label { color: rgba(245,194,0,.5); }
+    .stat-card.dark-alt .stat-label { color: rgba(254,254,254,.35); }
+
+    .stat-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 52px;
+      line-height: 1;
+      letter-spacing: .02em;
+    }
+
+    /* first card — yellow value */
+    .stat-card:nth-child(1) .stat-value { color: var(--y); }
+    /* second card — white value */
+    .stat-card:nth-child(2) .stat-value { color: var(--w); }
+    /* third  card — yellow */
+    .stat-card:nth-child(3) .stat-value { color: var(--y); }
+    /* fourth card — white */
+    .stat-card:nth-child(4) .stat-value { color: var(--w); }
+
+    /* ══════════════════════════════════════
+       WHITELIST SECTION
+    ══════════════════════════════════════ */
+    .wl-section {
+      background: var(--k);
+      border-radius: 24px;
+      padding: 36px 26px 44px;
+      margin-bottom: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* decorative blobs — YellowCatz palette */
+    .blob-y {
+      position: absolute;
+      top: -60px;
+      right: -60px;
+      width: 240px;
+      height: 240px;
+      background: var(--y);
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: .9;
+    }
+
+    .blob-yd {
+      position: absolute;
+      bottom: 40px;
+      left: -80px;
+      width: 200px;
+      height: 200px;
+      background: #C49800;   /* dark amber */
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: .6;
+    }
+
+    .wl-inner { position: relative; z-index: 1; }
+
+    /* badge */
+    .wl-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--y);
+      color: var(--k);
+      padding: 8px 16px;
+      border-radius: 100px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .wl-badge::before {
+      content: '';
+      width: 7px; height: 7px;
+      background: var(--k);
+      border-radius: 50%;
+    }
+
+    /* title */
+    .wl-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(46px, 12vw, 72px);
+      line-height: .9;
+      letter-spacing: .02em;
+      color: var(--w);
+      margin-bottom: 10px;
+    }
+
+    .wl-title .accent { color: var(--y); }
+
+    .wl-sub {
+      font-size: 13px;
+      color: var(--wdim);
+      margin-bottom: 30px;
+      max-width: 380px;
+      line-height: 1.6;
+    }
+
+    /* ─── task cards ─── */
+    .task-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 20px 20px 16px;
+      margin-bottom: 10px;
+      transition: background .18s;
+    }
+
+    .task-card:hover { background: rgba(255,255,255,0.08); }
+
+    .task-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    /* checkbox */
+    .task-check {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      border: 2px solid rgba(245,194,0,.35);
+      background: transparent;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      flex-shrink: 0;
+      margin-top: 3px;
+      transition: all .2s;
+    }
+
+    .task-check:checked {
+      background: var(--y);
+      border-color: var(--y);
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 8.5l3 3 7-7' stroke='%230D0D0D' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 68%;
+    }
+
+    .task-body { flex: 1; }
+
+    .task-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 17px;
+      color: var(--y);
+      letter-spacing: .05em;
+      line-height: 1;
+      margin-bottom: 3px;
+    }
+
+    .task-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--w);
+      margin-bottom: 3px;
+    }
+
+    .task-desc {
+      font-size: 12px;
+      color: var(--wdim);
+      line-height: 1.5;
+    }
+
+    .open-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      width: 100%;
+      padding: 13px;
+      background: rgba(245,194,0,.1);
+      border: 1.5px solid rgba(245,194,0,.25);
+      color: var(--y);
+      border-radius: 100px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background .2s, border-color .2s;
+    }
+
+    .open-btn:hover {
+      background: rgba(245,194,0,.18);
+      border-color: rgba(245,194,0,.5);
+    }
+
+    /* input inside task cards (paste link / handle confirm) */
+    .task-input {
+      width: 100%;
+      padding: 12px 14px;
+      margin-top: 10px;
+      background: rgba(255,255,255,0.05);
+      border: 1.5px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      color: var(--w);
+      outline: none;
+      transition: border-color .2s;
+      caret-color: var(--y);
+    }
+    .task-input::placeholder { color: rgba(254,254,254,.2); }
+    .task-input:focus { border-color: rgba(245,194,0,.4); background: rgba(255,255,255,.08); }
+
+    /* ─── form ─── */
+    .wl-form { margin-top: 30px; }
+
+    .f-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: rgba(245,194,0,.6);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .f-label small {
+      font-size: 10px;
+      opacity: .6;
+      text-transform: none;
+      letter-spacing: 0;
+      font-weight: 400;
+    }
+
+    .f-input,
+    .f-textarea {
+      width: 100%;
+      padding: 15px 18px;
+      background: rgba(255,255,255,0.06);
+      border: 1.5px solid rgba(255,255,255,0.09);
+      border-radius: 13px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      color: var(--w);
+      outline: none;
+      transition: border-color .2s, background .2s;
+      margin-bottom: 18px;
+      caret-color: var(--y);
+    }
+
+    .f-input::placeholder,
+    .f-textarea::placeholder { color: rgba(254,254,254,.2); }
+
+    .f-input:focus,
+    .f-textarea:focus {
+      border-color: rgba(245,194,0,.45);
+      background: rgba(255,255,255,.09);
+    }
+
+    .f-textarea {
+      resize: vertical;
+      min-height: 108px;
+      line-height: 1.65;
+    }
+
+    /* error */
+    .f-error {
+      background: rgba(239,68,68,.1);
+      border: 1px solid rgba(239,68,68,.25);
+      color: #f87171;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    /* submit row */
+    .submit-row {
+      position: relative;
+      display: inline-block;
+    }
+
+    .submit-btn {
+      background: var(--y);
+      color: var(--k);
+      border: none;
+      padding: 18px 40px;
+      border-radius: 100px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: .1em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: transform .15s, opacity .2s;
+      position: relative;
+      z-index: 1;
+    }
+
+    .submit-btn:hover  { transform: scale(1.02); }
+    .submit-btn:active { transform: scale(.98); }
+    .submit-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+    /* decorative shape — black this time */
+    .submit-shape {
+      position: absolute;
+      right: -40px;
+      bottom: -10px;
+      width: 120px;
+      height: 80px;
+      background: rgba(245,194,0,.18);
+      clip-path: polygon(35% 0%, 100% 0%, 100% 100%, 0% 100%);
+      border-radius: 0 0 14px 0;
+      pointer-events: none;
+    }
+
+    /* ─── success ─── */
+    #wlSuccess {
+      display: none;
+      text-align: center;
+      padding: 36px 0 20px;
+    }
+
+    .success-cat {
+      font-size: 60px;
+      display: block;
+      margin-bottom: 14px;
+      animation: pop .55s cubic-bezier(.34,1.8,.64,1) both;
+    }
+
+    .success-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 52px;
+      letter-spacing: .04em;
+      color: var(--y);
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+
+    .success-desc {
+      font-size: 14px;
+      color: var(--wdim);
+      line-height: 1.7;
+    }
+
+    /* ══════════════════════════════════════
+       MANIFESTO
+    ══════════════════════════════════════ */
+    .manifesto {
+      padding: 10px 0 56px;
+      text-align: center;
+    }
+
+    .manifesto h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(52px, 14vw, 88px);
+      letter-spacing: .05em;
+      line-height: .9;
+      margin-bottom: 26px;
+      color: var(--k);
+    }
+
+    .manifesto-body {
+      font-size: clamp(16px, 3.5vw, 19px);
+      line-height: 1.8;
+      opacity: .78;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* black marker highlight */
+    .mhl {
+      display: inline;
+      background: var(--k);
+      color: var(--y);
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-style: normal;
+    }
+
+    /* ══════════════════════════════════════
+       FOOTER
+    ══════════════════════════════════════ */
+    footer {
+      background: var(--k);
+      padding: 22px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    footer .fl {
+      font-size: 12px;
+      color: rgba(245,194,0,.4);
+      letter-spacing: .05em;
+    }
+
+    footer .fr {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 15px;
+      letter-spacing: .12em;
+      color: var(--y);
+      transition: opacity .2s;
+    }
+
+    footer .fr:hover { opacity: .65; }
+
+    /* ══════════════════════════════════════
+       ANIMATIONS
+    ══════════════════════════════════════ */
+    @keyframes pop {
+      from { transform: scale(.3); opacity: 0; }
+      60%  { transform: scale(1.2); }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .fu   { animation: fadeUp .5s ease both; }
+    .d1   { animation-delay: .07s; }
+    .d2   { animation-delay: .14s; }
+    .d3   { animation-delay: .21s; }
+    .d4   { animation-delay: .28s; }
+
+    /* ══════════════════════════════════════
+       MOBILE
+    ══════════════════════════════════════ */
+    @media (max-width: 480px) {
+      .hero-h1 { font-size: 52px; }
+      .stats { gap: 8px; }
+      .stat-value { font-size: 40px; }
+      .wl-section { padding: 28px 18px 36px; }
+      .wl-title { font-size: 48px; }
+      footer { flex-direction: column; gap: 10px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header class="fu">
+  <div class="logo">
+    <div class="logo-mark">
+      <div class="dot-black"></div>
+      <div class="dot-white"></div>
+      <span class="cat-icon">🐱</span>
+    </div>
+    <span class="logo-name">YELLOWCATZ</span>
+  </div>
+  <a href="https://x.com/YellowCatz_" target="_blank" rel="noopener" class="follow-btn">
+    <span>follow</span>
+    <span>@YellowCatz_</span>
+  </a>
+</header>
+
+<!-- ═══ HERO ═══ -->
+<div class="wrap">
+  <div class="hero">
+    <p class="hero-eyebrow fu d1">A collection of 777 · Ethereum</p>
+    <h1 class="hero-h1 fu d2">
+      WHERE THE<br>
+      <span class="h1-accent">YELLOW CATZ</span><br>
+      MEET <span class="h1-chip">WEB3</span>
+    </h1>
+    <p class="hero-desc fu d3">
+      777 hand-crafted cats placed inside scenes you already know — cinema, history, culture, myth. the yellow cat was always there. you just didn't notice yet.
+    </p>
+    <div class="hero-ctas fu d4">
+      <a href="#whitelist" class="btn-black">secure your spot</a>
+      <a href="https://x.com/YellowCatz_" target="_blank" rel="noopener" class="btn-ghost">@YellowCatz_</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ GIF ═══ -->
+<div class="gif-section">
+  <div class="gif-wrap">
+    <!--
+      ► Replace the src below with your actual GIF path.
+        Example: src="/yellowcatz-reveal.gif"
+        Recommended ratio: 16:9 or 4:3
+    -->
+    <video src="images/yc-wl.mp4" autoplay loop muted playsinline></video>
+
+    <!-- shown only when image fails to load -->
+    <div class="gif-placeholder">
+      <span style="font-size:40px">🐱</span>
+      <span class="gif-placeholder-label">YOUR GIF HERE</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STATS ═══ -->
+<div class="wrap">
+  <div class="stats">
+    <div class="stat-card dark">
+      <div class="stat-label">Supply</div>
+      <div class="stat-value">777</div>
+    </div>
+    <div class="stat-card dark-alt">
+      <div class="stat-label">Chain</div>
+      <div class="stat-value">ETH</div>
+    </div>
+    <div class="stat-card dark">
+      <div class="stat-label">Mint date</div>
+      <div class="stat-value">TBA</div>
+    </div>
+    <div class="stat-card dark-alt">
+      <div class="stat-label">Price</div>
+      <div class="stat-value" style="color:var(--w)">FREE</div>
+    </div>
+  </div>
+
+  <!-- ═══ WHITELIST ═══ -->
+  <div class="wl-section" id="whitelist">
+    <div class="blob-y"></div>
+    <div class="blob-yd"></div>
+
+    <div class="wl-inner">
+
+      <div class="wl-badge">Whitelist · Open</div>
+
+      <h2 class="wl-title">
+        SECURE YOUR<br>
+        <span class="accent">SPOT</span>
+      </h2>
+
+      <p class="wl-sub">
+        complete all four steps. duplicate handles and addresses are rejected.
+      </p>
+
+      <!-- TASK 01 — follow + confirm handle -->
+      <div class="task-card">
+        <div class="task-top">
+          <input type="checkbox" class="task-check" id="t1">
+          <div class="task-body">
+            <div class="task-num">01</div>
+            <div class="task-title">follow on X</div>
+            <div class="task-desc">@YellowCatz_ — your gateway to the drop</div>
+          </div>
+        </div>
+        <a href="https://x.com/YellowCatz_" target="_blank" rel="noopener"
+           class="open-btn" onclick="autoCheck('t1')">open ↗</a>
+        <input type="text" id="t1Handle" class="task-input"
+               placeholder="enter your @handle to confirm"
+               autocomplete="off" autocapitalize="none" spellcheck="false"
+               oninput="syncHandle(this.value)">
+      </div>
+
+      <!-- TASK 02 — notifications -->
+      <div class="task-card">
+        <div class="task-top">
+          <input type="checkbox" class="task-check" id="t2">
+          <div class="task-body">
+            <div class="task-num">02</div>
+            <div class="task-title">turn on notifications</div>
+            <div class="task-desc">bell icon on the profile</div>
+          </div>
+        </div>
+        <a href="https://x.com/YellowCatz_" target="_blank" rel="noopener"
+           class="open-btn" onclick="autoCheck('t2')">open ↗</a>
+      </div>
+
+      <!-- TASK 03 — like + RT, paste proof -->
+      <div class="task-card">
+        <div class="task-top">
+          <input type="checkbox" class="task-check" id="t3">
+          <div class="task-body">
+            <div class="task-num">03</div>
+            <div class="task-title">like + rt this post</div>
+            <div class="task-desc">spread the yellow across the timeline</div>
+          </div>
+        </div>
+        <!-- ► Replace href with your pinned tweet URL -->
+        <a href="https://x.com/YellowCatz_" target="_blank" rel="noopener"
+           class="open-btn">open ↗</a>
+        <input type="url" id="rtLink" class="task-input"
+               placeholder="paste your RT link here"
+               autocomplete="off" spellcheck="false">
+      </div>
+
+      <!-- TASK 04 — comment, paste proof -->
+      <div class="task-card">
+        <div class="task-top">
+          <input type="checkbox" class="task-check" id="t4">
+          <div class="task-body">
+            <div class="task-num">04</div>
+            <div class="task-title">comment under the post</div>
+            <div class="task-desc">drop a 🐱 — then tell us how much you want this collection</div>
+          </div>
+        </div>
+        <a href="https://x.com/YellowCatz_" target="_blank" rel="noopener"
+           class="open-btn">open ↗</a>
+        <input type="url" id="commentLink" class="task-input"
+               placeholder="paste your comment link here"
+               autocomplete="off" spellcheck="false">
+      </div>
+
+      <!-- TASK 05 — Discord (non-blocking) -->
+      <div class="task-card">
+        <div class="task-top">
+          <input type="checkbox" class="task-check" id="t5">
+          <div class="task-body">
+            <div class="task-num">05</div>
+            <div class="task-title">join our Discord</div>
+            <div class="task-desc">become part of the YellowCatz community</div>
+          </div>
+        </div>
+        <a href="https://discord.gg/yellowcatz" target="_blank" rel="noopener"
+           class="open-btn" onclick="autoCheck('t5')">open ↗</a>
+        <p style="margin-top:10px; font-size:12px; color:rgba(254,254,254,0.35); line-height:1.5;">
+          optional — but it may increase your chances.
+          <a href="https://discord.gg/yellowcatz" target="_blank" rel="noopener"
+             style="color:rgba(245,194,0,0.6); text-decoration:underline; text-underline-offset:3px;">
+            discord.gg/yellowcatz
+          </a>
+        </p>
+      </div>
+
+      <!-- FORM -->
+      <div class="wl-form" id="wlForm">
+
+        <!-- X handle is filled by task 01 input, hidden here -->
+        <input type="hidden" id="xHandle">
+
+        <div class="f-label">ETH Address</div>
+        <input type="text" id="ethAddr" class="f-input"
+               placeholder="0x..."
+               autocomplete="off" autocapitalize="none" spellcheck="false">
+
+        <div class="f-label">
+          Community / Special requests <small>(optional)</small>
+        </div>
+        <textarea id="noteVal" class="f-textarea"
+                  placeholder="part of a community? any special requests for the team? let us know here…"></textarea>
+
+        <div class="f-error" id="fErr"></div>
+
+        <div class="submit-row">
+          <button class="submit-btn" id="subBtn" onclick="handleSubmit()">
+            SUBMIT <span style="font-size:18px;">→</span>
+          </button>
+          <div class="submit-shape"></div>
+        </div>
+
+      </div>
+
+      <!-- SUCCESS -->
+      <div id="wlSuccess">
+        <span class="success-cat">🐱</span>
+        <div class="success-title">YOU'RE ON THE LIST.</div>
+        <p class="success-desc">
+          we'll reach out when the drop goes live.<br>
+          keep your notifications on — the cat moves fast.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ MANIFESTO ═══ -->
+  <div class="manifesto">
+    <h2>MANIFESTO</h2>
+    <p class="manifesto-body">
+      each YellowCatz is hand-placed into a frame you already know —
+      cinema, history, culture, myth.
+      <mark class="mhl">then the cat takes over.</mark>
+      no AI. no generators. just one yellow cat and 777 reasons
+      it was always supposed to be there.
+    </p>
+  </div>
+
+</div><!-- /wrap -->
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <span class="fl">© yellowcatz · fine art × web3</span>
+  <a href="https://x.com/YellowCatz_" target="_blank" rel="noopener" class="fr">
+    X.COM/YELLOWCATZ_
+  </a>
+</footer>
+
+<script>
+  /* auto-check after returning from link */
+  function autoCheck(id) {
+    setTimeout(() => {
+      document.getElementById(id).checked = true;
+    }, 1100);
+  }
+
+  /* task 01 handle input → auto-fills hidden xHandle field */
+  function syncHandle(val) {
+    document.getElementById('xHandle').value = val.trim();
+    if (val.trim()) document.getElementById('t1').checked = true;
+  }
+
+  /* smooth scroll */
+  document.querySelector('a[href="#whitelist"]')?.addEventListener('click', e => {
+    e.preventDefault();
+    document.getElementById('whitelist').scrollIntoView({ behavior:'smooth', block:'start' });
+  });
+
+  /* ─── form submit ─── */
+  async function handleSubmit() {
+    const xHandle     = document.getElementById('xHandle').value.trim();
+    const t1Handle    = document.getElementById('t1Handle').value.trim();
+    const ethAddr     = document.getElementById('ethAddr').value.trim();
+    const rtLink      = document.getElementById('rtLink').value.trim();
+    const commentLink = document.getElementById('commentLink').value.trim();
+    const note        = document.getElementById('noteVal').value.trim();
+
+    document.getElementById('fErr').style.display = 'none';
+
+    /* validations — coche + lien pour chaque étape obligatoire */
+    if (!t1Handle)
+      return err('step 01 — enter your X handle to confirm you followed.');
+    if (!document.getElementById('t1').checked)
+      return err('step 01 — tick the box to confirm you followed @YellowCatz_.');
+    if (!document.getElementById('t2').checked)
+      return err('step 02 — tick the box to confirm notifications are on.');
+    if (!rtLink)
+      return err('step 03 — paste your RT link.');
+    if (!document.getElementById('t3').checked)
+      return err('step 03 — tick the box to confirm you liked & RT\'d.');
+    if (!commentLink)
+      return err('step 04 — paste your comment link.');
+    if (!document.getElementById('t4').checked)
+      return err('step 04 — tick the box to confirm you commented.');
+    if (!ethAddr || !ethAddr.startsWith('0x') || ethAddr.length < 40)
+      return err('please enter a valid ETH address (0x…).');
+
+    const handle = (xHandle || t1Handle);
+
+    const btn = document.getElementById('subBtn');
+    btn.disabled = true;
+    btn.textContent = 'SENDING…';
+
+    try {
+      const res = await fetch('/api/wl-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          x_handle:      handle.startsWith('@') ? handle : '@' + handle,
+          eth_address:   ethAddr,
+          rt_link:       rtLink,
+          comment_link:  commentLink,
+          community:     note
+        })
+      });
+
+      if (res.status === 409) {
+        btn.disabled = false; btn.textContent = 'SUBMIT →';
+        return err('this handle or address is already registered.');
+      }
+
+      if (!res.ok) throw new Error();
+
+      document.getElementById('wlForm').style.display    = 'none';
+      document.getElementById('wlSuccess').style.display = 'block';
+
+    } catch {
+      btn.disabled = false; btn.textContent = 'SUBMIT →';
+      err('something went wrong — please try again.');
+    }
+  }
+
+  function err(msg) {
+    const el = document.getElementById('fErr');
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+</script>
+
+</body>
+</html>
