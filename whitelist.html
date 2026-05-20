@@ -769,16 +769,9 @@
 <!-- ═══ GIF ═══ -->
 <div class="gif-section">
   <div class="gif-wrap">
-    <!--
-      ► Replace the src below with your actual GIF path.
-        Example: src="/yellowcatz-reveal.gif"
-        Recommended ratio: 16:9 or 4:3
-    -->
-    <img src="YOUR_GIF_HERE.gif" alt="YellowCatz"
-         onerror="this.style.display='none'">
-
-    <!-- shown only when image fails to load -->
-    <div class="gif-placeholder">
+    <video src="images/yc-wl.mp4" autoplay loop muted playsinline
+           oncanplay="document.getElementById('gifPlaceholder').style.display='none'"></video>
+    <div class="gif-placeholder" id="gifPlaceholder">
       <span style="font-size:40px">🐱</span>
       <span class="gif-placeholder-label">YOUR GIF HERE</span>
     </div>
