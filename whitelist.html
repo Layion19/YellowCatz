@@ -727,9 +727,186 @@
       .wl-title { font-size: 48px; }
       footer { flex-direction: column; gap: 10px; text-align: center; }
     }
+
+    /* ══════════════════════════════════════
+       SPLASH — CHOICE SCREEN
+    ══════════════════════════════════════ */
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: var(--y);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      transition: opacity .5s ease, transform .5s ease;
+    }
+
+    #splash.out {
+      opacity: 0;
+      transform: translateY(-20px);
+      pointer-events: none;
+    }
+
+    .splash-inner {
+      max-width: 560px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .splash-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 14px;
+      letter-spacing: .35em;
+      opacity: .4;
+      margin-bottom: 32px;
+    }
+
+    .splash-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(40px, 12vw, 72px);
+      line-height: .92;
+      letter-spacing: .02em;
+      color: var(--k);
+      margin-bottom: 10px;
+    }
+
+    .splash-sub {
+      font-size: 14px;
+      opacity: .6;
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+
+    .splash-choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .choice-card {
+      background: var(--k);
+      border-radius: 18px;
+      padding: 28px 20px;
+      cursor: pointer;
+      border: 2.5px solid var(--k);
+      transition: transform .18s, box-shadow .18s;
+      text-align: left;
+    }
+
+    .choice-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(0,0,0,0.2); }
+    .choice-card:active { transform: scale(.98); }
+
+    .choice-card.alt {
+      background: transparent;
+      border-color: var(--k);
+    }
+
+    .choice-icon { font-size: 28px; margin-bottom: 12px; display: block; }
+
+    .choice-label {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: .05em;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .choice-card .choice-label { color: var(--y); }
+    .choice-card.alt .choice-label { color: var(--k); }
+
+    .choice-desc {
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .choice-card .choice-desc { color: rgba(245,194,0,.5); }
+    .choice-card.alt .choice-desc { color: rgba(13,13,13,.5); }
+
+    @media (max-width: 420px) {
+      .splash-choices { grid-template-columns: 1fr; }
+    }
+
+    /* ══════════════════════════════════════
+       COLLAB SECTION
+    ══════════════════════════════════════ */
+    .collab-section {
+      background: var(--k);
+      border-radius: 24px;
+      padding: 36px 26px 44px;
+      margin-bottom: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .blob-blue {
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 220px; height: 220px;
+      background: #1a3aad;
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: .5;
+    }
+
+    .blob-amber {
+      position: absolute;
+      bottom: 40px; left: -80px;
+      width: 180px; height: 180px;
+      background: var(--y);
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: .4;
+    }
+
+    .collab-inner { position: relative; z-index: 1; }
+
+    /* back button */
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(245,194,0,.5);
+      cursor: pointer;
+      margin-bottom: 22px;
+      border: none;
+      background: none;
+      letter-spacing: .05em;
+      transition: color .2s;
+    }
+
+    .back-btn:hover { color: var(--y); }
   </style>
 </head>
 <body>
+
+<!-- ═══ SPLASH — CHOICE ═══ -->
+<div id="splash">
+  <div class="splash-inner">
+    <div class="splash-logo">YELLOWCATZ · 777 NFTs</div>
+    <h1 class="splash-title">
+      WELCOME TO THE<br>WORLD OF<br>
+      <span style="background:var(--k);color:var(--y);padding:0 12px 4px;border-radius:8px;">YELLOWCATZ</span>
+    </h1>
+    <p class="splash-sub">who are you?</p>
+    <div class="splash-choices">
+      <div class="choice-card" onclick="chooseSection('whitelist')">
+        <span class="choice-icon">🐱</span>
+        <div class="choice-label">I'M A COLLECTOR</div>
+        <div class="choice-desc">secure a whitelist spot for yourself on the 777 NFT drop</div>
+      </div>
+      <div class="choice-card alt" onclick="chooseSection('collab')">
+        <span class="choice-icon">🤝</span>
+        <div class="choice-label">I REPRESENT A PROJECT</div>
+        <div class="choice-desc">apply for a collab with YellowCatz as a community or project</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ═══ HEADER ═══ -->
 <header class="fu">
@@ -946,6 +1123,82 @@
     </div>
   </div>
 
+  <!-- ═══ COLLAB SECTION ═══ -->
+  <div class="collab-section" id="collab" style="display:none;">
+    <div class="blob-blue"></div>
+    <div class="blob-amber"></div>
+    <div class="collab-inner">
+
+      <button class="back-btn" onclick="goBack()">← back to choice</button>
+
+      <div class="wl-badge" style="background:rgba(245,194,0,0.15);color:var(--y);border:1px solid rgba(245,194,0,0.3);">Collab · Open</div>
+
+      <h2 class="wl-title" style="margin-top:12px;">
+        REPRESENT<br><span class="accent">YOUR PROJECT</span>
+      </h2>
+
+      <p class="wl-sub">all fields are required. only serious projects will be considered.</p>
+
+      <div class="wl-form" id="collabForm">
+
+        <!-- MULTI-PROJECT FIELDS -->
+        <div class="f-label">
+          Twitter (X) links / Projects
+          <span style="font-size:10px;opacity:.5;font-weight:400;text-transform:none;letter-spacing:0;margin-left:4px;">— add as many as needed</span>
+        </div>
+
+        <div id="projectList"></div>
+
+        <button type="button" onclick="addProject()" style="
+          display:flex;align-items:center;gap:8px;
+          background:rgba(245,194,0,0.08);
+          border:1.5px dashed rgba(245,194,0,0.3);
+          color:rgba(245,194,0,0.7);
+          padding:11px 18px;border-radius:12px;
+          font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;
+          cursor:pointer;width:100%;justify-content:center;
+          margin-bottom:20px;transition:all .2s;">
+          + add another project
+        </button>
+
+        <div class="f-label">Tell us about your community and why you wanna collab</div>
+        <textarea id="c_community" class="f-textarea"
+                  placeholder="who are you, how many people, what's the vibe…"></textarea>
+
+        <div class="f-label">How can you give support to YellowCatz?</div>
+        <textarea id="c_support" class="f-textarea"
+                  placeholder="what can your community bring to the table?"></textarea>
+
+        <div class="f-label">Your main contact (Discord / Telegram)</div>
+        <input type="text" id="c_contact" class="f-input"
+               placeholder="@username on Discord or Telegram"
+               autocomplete="off" spellcheck="false">
+
+        <div class="f-label">Will your group post a collab tweet?</div>
+        <textarea id="c_collab_tweet" class="f-textarea" style="min-height:80px;"
+                  placeholder="if yes, drop the main account + core team account links here…"></textarea>
+
+        <div class="f-error" id="cErr"></div>
+
+        <div class="submit-row">
+          <button class="submit-btn" id="collabBtn" onclick="handleCollab()">
+            SEND APPLICATION <span style="font-size:18px;">→</span>
+          </button>
+          <div class="submit-shape"></div>
+        </div>
+
+      </div>
+
+      <!-- SUCCESS -->
+      <div id="collabSuccess" style="display:none; text-align:center; padding:36px 0 20px;">
+        <span class="success-cat">🤝</span>
+        <div class="success-title" style="color:var(--y);">APPLICATION SENT!</div>
+        <p class="success-desc">we'll review your application and reach out via your main contact.</p>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ═══ MANIFESTO ═══ -->
   <div class="manifesto">
     <h2>MANIFESTO</h2>
@@ -969,26 +1222,52 @@
 </footer>
 
 <script>
-  /* auto-check after returning from link */
-  function autoCheck(id) {
-    setTimeout(() => {
-      document.getElementById(id).checked = true;
-    }, 1100);
+  /* ── SPLASH CHOICE ── */
+  function chooseSection(section) {
+    // Dismiss splash
+    const splash = document.getElementById('splash');
+    splash.classList.add('out');
+    setTimeout(() => { splash.style.display = 'none'; }, 500);
+
+    if (section === 'whitelist') {
+      document.getElementById('whitelist').style.display = 'block';
+      document.getElementById('collab').style.display    = 'none';
+      setTimeout(() => {
+        document.getElementById('whitelist').scrollIntoView({ behavior:'smooth', block:'start' });
+      }, 300);
+    } else {
+      document.getElementById('collab').style.display    = 'block';
+      document.getElementById('whitelist').style.display = 'none';
+      setTimeout(() => {
+        document.getElementById('collab').scrollIntoView({ behavior:'smooth', block:'start' });
+      }, 300);
+    }
   }
 
-  /* task 01 handle input → auto-fills hidden xHandle field */
+  function goBack() {
+    document.getElementById('splash').style.display = 'flex';
+    document.getElementById('splash').classList.remove('out');
+    document.getElementById('collab').style.display    = 'none';
+    document.getElementById('whitelist').style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ── WHITELIST TASKS ── */
+  function autoCheck(id) {
+    setTimeout(() => { document.getElementById(id).checked = true; }, 1100);
+  }
+
   function syncHandle(val) {
     document.getElementById('xHandle').value = val.trim();
     if (val.trim()) document.getElementById('t1').checked = true;
   }
 
-  /* smooth scroll */
   document.querySelector('a[href="#whitelist"]')?.addEventListener('click', e => {
     e.preventDefault();
     document.getElementById('whitelist').scrollIntoView({ behavior:'smooth', block:'start' });
   });
 
-  /* ─── form submit ─── */
+  /* ── WHITELIST SUBMIT ── */
   async function handleSubmit() {
     const xHandle     = document.getElementById('xHandle').value.trim();
     const t1Handle    = document.getElementById('t1Handle').value.trim();
@@ -999,64 +1278,137 @@
 
     document.getElementById('fErr').style.display = 'none';
 
-    /* validations — coche + lien pour chaque étape obligatoire */
     if (!t1Handle)
-      return err('step 01 — enter your X handle to confirm you followed.');
+      return err('fErr', 'step 01 — enter your X handle to confirm you followed.');
     if (!document.getElementById('t1').checked)
-      return err('step 01 — tick the box to confirm you followed @YellowCatz_.');
+      return err('fErr', 'step 01 — tick the box to confirm you followed @YellowCatz_.');
     if (!document.getElementById('t2').checked)
-      return err('step 02 — tick the box to confirm notifications are on.');
+      return err('fErr', 'step 02 — tick the box to confirm notifications are on.');
     if (!rtLink)
-      return err('step 03 — paste your RT link.');
+      return err('fErr', 'step 03 — paste your RT link.');
     if (!document.getElementById('t3').checked)
-      return err('step 03 — tick the box to confirm you liked & RT\'d.');
+      return err('fErr', 'step 03 — tick the box to confirm you liked & RT\'d.');
     if (!commentLink)
-      return err('step 04 — paste your comment link.');
+      return err('fErr', 'step 04 — paste your comment link.');
     if (!document.getElementById('t4').checked)
-      return err('step 04 — tick the box to confirm you commented.');
+      return err('fErr', 'step 04 — tick the box to confirm you commented.');
     if (!ethAddr || !ethAddr.startsWith('0x') || ethAddr.length < 40)
-      return err('please enter a valid ETH address (0x…).');
-
-    const handle = (xHandle || t1Handle);
+      return err('fErr', 'please enter a valid ETH address (0x…).');
 
     const btn = document.getElementById('subBtn');
-    btn.disabled = true;
-    btn.textContent = 'SENDING…';
+    btn.disabled = true; btn.textContent = 'SENDING…';
 
     try {
       const res = await fetch('/api/wl-submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          x_handle:      handle.startsWith('@') ? handle : '@' + handle,
-          eth_address:   ethAddr,
-          rt_link:       rtLink,
-          comment_link:  commentLink,
-          community:     note
+          type: 'whitelist',
+          x_handle:     (xHandle || t1Handle).replace(/^@?/, '@'),
+          eth_address:  ethAddr,
+          rt_link:      rtLink,
+          comment_link: commentLink,
+          community:    note
         })
       });
 
       if (res.status === 409) {
         btn.disabled = false; btn.textContent = 'SUBMIT →';
-        return err('this handle or address is already registered.');
+        return err('fErr', 'this handle or address is already registered.');
       }
-
       if (!res.ok) throw new Error();
 
       document.getElementById('wlForm').style.display    = 'none';
       document.getElementById('wlSuccess').style.display = 'block';
-
     } catch {
       btn.disabled = false; btn.textContent = 'SUBMIT →';
-      err('something went wrong — please try again.');
+      err('fErr', 'something went wrong — please try again.');
     }
   }
 
-  function err(msg) {
-    const el = document.getElementById('fErr');
+  /* ── MULTI-PROJECT SYSTEM ── */
+  let projectCount = 0;
+
+  function addProject() {
+    projectCount++;
+    const id = 'proj_' + projectCount;
+    const isFirst = projectCount === 1;
+    const div = document.createElement('div');
+    div.id = id;
+    div.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:10px;';
+    div.innerHTML = `
+      <div style="flex:1;position:relative;">
+        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-family:'Bebas Neue',sans-serif;font-size:13px;color:rgba(245,194,0,0.4);pointer-events:none;">${String(projectCount).padStart(2,'0')}</span>
+        <input type="text" class="f-input proj-input" id="proj_url_${projectCount}"
+               style="padding-left:40px;margin-bottom:0;"
+               placeholder="https://x.com/yourproject${projectCount > 1 ? projectCount : ''}"
+               autocomplete="off" spellcheck="false">
+      </div>
+      ${!isFirst ? `<button type="button" onclick="removeProject('${id}')"
+        style="width:38px;height:38px;flex-shrink:0;border-radius:10px;border:1.5px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);color:rgba(239,68,68,0.7);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>` : ''}
+    `;
+    document.getElementById('projectList').appendChild(div);
+  }
+
+  function removeProject(id) {
+    document.getElementById(id)?.remove();
+  }
+
+  // Init with 1 project field on page load
+  document.addEventListener('DOMContentLoaded', () => addProject());
+
+  /* ── COLLAB SUBMIT ── */
+  async function handleCollab() {
+    // Collect all project URLs
+    const projectInputs = document.querySelectorAll('.proj-input');
+    const projects = Array.from(projectInputs).map(i => i.value.trim()).filter(Boolean);
+
+    const community = document.getElementById('c_community').value.trim();
+    const support   = document.getElementById('c_support').value.trim();
+    const contact   = document.getElementById('c_contact').value.trim();
+    const tweet     = document.getElementById('c_collab_tweet').value.trim();
+
+    document.getElementById('cErr').style.display = 'none';
+
+    if (!projects.length)   return err('cErr', 'please enter at least one Twitter / project link.');
+    if (!community) return err('cErr', 'tell us about your community.');
+    if (!support)   return err('cErr', 'tell us how you can support YellowCatz.');
+    if (!contact)   return err('cErr', 'please enter your main contact.');
+    if (!tweet)     return err('cErr', 'please answer the collab tweet question.');
+
+    const btn = document.getElementById('collabBtn');
+    btn.disabled = true; btn.textContent = 'SENDING…';
+
+    try {
+      const res = await fetch('/api/wl-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type:                  'collab',
+          twitter_link:          projects.join('\n'),   // multiple projects joined
+          community_description: community,
+          support_offer:         support,
+          main_contact:          contact,
+          collab_tweet:          tweet
+        })
+      });
+
+      if (!res.ok) throw new Error();
+
+      document.getElementById('collabForm').style.display    = 'none';
+      document.getElementById('collabSuccess').style.display = 'block';
+    } catch {
+      btn.disabled = false; btn.textContent = 'SEND APPLICATION →';
+      err('cErr', 'something went wrong — please try again.');
+    }
+  }
+
+  /* ── SHARED ERROR ── */
+  function err(elId, msg) {
+    const el = document.getElementById(elId);
     el.textContent = msg;
     el.style.display = 'block';
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.scrollIntoView({ behavior:'smooth', block:'center' });
   }
 </script>
 
