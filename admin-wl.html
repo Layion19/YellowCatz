@@ -418,7 +418,8 @@
         <div class="modal-field"><div class="modal-lbl">Community</div><div class="modal-val">${esc(item.community_description)}</div></div>
         <div class="modal-field"><div class="modal-lbl">Support offer</div><div class="modal-val">${esc(item.support_offer)}</div></div>
         <div class="modal-field"><div class="modal-lbl">Main contact</div><div class="modal-val">${esc(item.main_contact)}</div></div>
-        <div class="modal-field"><div class="modal-lbl">Collab tweet</div><div class="modal-val">${esc(item.collab_tweet)||'—'}</div></div>`;
+        <div class="modal-field"><div class="modal-lbl">Collab tweet / Founder post</div><div class="modal-val">${esc(item.collab_tweet)||'—'}</div></div>
+        <div class="modal-field"><div class="modal-lbl">UGC Campaign</div><div class="modal-val">${esc(item.ugc)||'—'}</div></div>`;
     }
     body+=`<div class="modal-field"><div class="modal-lbl">Date</div><div class="modal-val">${new Date(item.created_at).toLocaleString('fr-FR')}</div></div>`;
     body+=`<div class="modal-field"><div class="modal-lbl">Status</div><div class="modal-val"><span class="badge ${item.status}">${item.status}</span></div></div>`;

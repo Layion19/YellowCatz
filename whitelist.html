@@ -1174,9 +1174,19 @@
                placeholder="@username on Discord or Telegram"
                autocomplete="off" spellcheck="false">
 
-        <div class="f-label">Will your group post a collab tweet?</div>
+        <div class="f-label" style="text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;opacity:.8;line-height:1.5;">
+          Can we get an alpha call / collab post / post from the Founder?<br>
+          <span style="opacity:.7;font-weight:400;">If yes, drop the account links below.</span>
+        </div>
         <textarea id="c_collab_tweet" class="f-textarea" style="min-height:80px;"
-                  placeholder="if yes, drop the main account + core team account links here…"></textarea>
+                  placeholder="drop the account links here…"></textarea>
+
+        <div class="f-label" style="text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;opacity:.8;line-height:1.5;">
+          Can your community run a UGC campaign for YellowCatz?<br>
+          <span style="opacity:.7;font-weight:400;">UGC = members posting tweets about the project organically. How many people could participate?</span>
+        </div>
+        <textarea id="c_ugc" class="f-textarea" style="min-height:80px;"
+                  placeholder="yes / no — and tell us more if yes…"></textarea>
 
         <div class="f-error" id="cErr"></div>
 
@@ -1316,13 +1326,16 @@
         btn.disabled = false; btn.textContent = 'SUBMIT →';
         return err('fErr', 'this handle or address is already registered.');
       }
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'server error ' + res.status);
+      }
 
       document.getElementById('wlForm').style.display    = 'none';
       document.getElementById('wlSuccess').style.display = 'block';
-    } catch {
+    } catch(e) {
       btn.disabled = false; btn.textContent = 'SUBMIT →';
-      err('fErr', 'something went wrong — please try again.');
+      err('fErr', 'error: ' + (e.message || 'something went wrong — please try again.'));
     }
   }
 
@@ -1367,6 +1380,7 @@
     const support   = document.getElementById('c_support').value.trim();
     const contact   = document.getElementById('c_contact').value.trim();
     const tweet     = document.getElementById('c_collab_tweet').value.trim();
+    const ugc       = document.getElementById('c_ugc').value.trim();
 
     document.getElementById('cErr').style.display = 'none';
 
@@ -1374,7 +1388,8 @@
     if (!community) return err('cErr', 'tell us about your community.');
     if (!support)   return err('cErr', 'tell us how you can support YellowCatz.');
     if (!contact)   return err('cErr', 'please enter your main contact.');
-    if (!tweet)     return err('cErr', 'please answer the collab tweet question.');
+    if (!tweet)     return err('cErr', 'please answer the collab post question.');
+    if (!ugc)       return err('cErr', 'please answer the UGC question.');
 
     const btn = document.getElementById('collabBtn');
     btn.disabled = true; btn.textContent = 'SENDING…';
@@ -1389,17 +1404,21 @@
           community_description: community,
           support_offer:         support,
           main_contact:          contact,
-          collab_tweet:          tweet
+          collab_tweet:          tweet,
+          ugc:                   ugc
         })
       });
 
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'server error ' + res.status);
+      }
 
       document.getElementById('collabForm').style.display    = 'none';
       document.getElementById('collabSuccess').style.display = 'block';
-    } catch {
+    } catch(e) {
       btn.disabled = false; btn.textContent = 'SEND APPLICATION →';
-      err('cErr', 'something went wrong — please try again.');
+      err('cErr', 'error: ' + (e.message || 'something went wrong — please try again.'));
     }
   }
 
