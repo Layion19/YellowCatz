@@ -81,9 +81,9 @@ export default async function handler(req, res) {
 
     /* ── COLLAB ── */
     if (type === 'collab') {
-      const { twitter_link, community_description, support_offer, main_contact, collab_tweet, ugc } = body;
+      const { twitter_link, community_description, support_offer, main_contact, collab_tweet } = body;
 
-      if (!twitter_link || !community_description || !support_offer || !main_contact || !collab_tweet || !ugc)
+      if (!twitter_link || !community_description || !support_offer || !main_contact || !collab_tweet)
         return res.status(400).json({ error: 'All fields are required' });
 
       await db.execute(`CREATE TABLE IF NOT EXISTS yc_collab_applications (
@@ -99,8 +99,8 @@ export default async function handler(req, res) {
       await addCol('yc_collab_applications', 'ugc', "TEXT DEFAULT ''");
 
       await db.execute({
-        sql:  'INSERT INTO yc_collab_applications (twitter_link, community_description, support_offer, main_contact, collab_tweet, ugc) VALUES (?,?,?,?,?,?)',
-        args: [twitter_link.trim(), community_description.trim(), support_offer.trim(), main_contact.trim(), collab_tweet.trim(), ugc.trim()]
+        sql:  'INSERT INTO yc_collab_applications (twitter_link, community_description, support_offer, main_contact, collab_tweet) VALUES (?,?,?,?,?)',
+        args: [twitter_link.trim(), community_description.trim(), support_offer.trim(), main_contact.trim(), collab_tweet.trim()]
       });
       return res.status(200).json({ success: true });
     }
