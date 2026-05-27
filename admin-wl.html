@@ -261,7 +261,10 @@
   function doLogin(){
     token=document.getElementById('tokenInput').value.trim();
     if(!token)return;
-    loadData(true);
+    const btn=document.querySelector('.login-btn');
+    btn.textContent='LOADING…';
+    btn.disabled=true;
+    loadData(true).finally(()=>{btn.textContent='UNLOCK →';btn.disabled=false;});
   }
 
   function logout(){
@@ -281,6 +284,7 @@
         document.getElementById('loginScreen').style.display='none';
         document.getElementById('app').style.display='block';
         document.getElementById('loginErr').style.display='none';
+        window.scrollTo(0,0);
         setInterval(()=>loadData(),30000);
       }
       updateStats(); renderWL(); renderCollab(); renderWarnings();
