@@ -417,7 +417,7 @@
 
   function openModal(id,table){
     const arr=table==='collab'?collabs:entries;
-    const item=arr.find(e=>e.id===id);
+    const item=arr.find(e=>String(e.id)===String(id));
     if(!item)return;
     currentItem=item; currentTable=table;
     document.getElementById('modalTitle').textContent='#'+id+' — '+(table==='collab'?'Collab':'Whitelist');
@@ -425,18 +425,17 @@
     if(table==='wl'){
       body=`
         <div class="modal-field"><div class="modal-lbl">X Handle</div><div class="modal-val">${esc(item.x_handle)}</div></div>
-        <div class="modal-field"><div class="modal-lbl">ETH Address</div><div class="modal-val" style="font-family:monospace;font-size:12px;">${esc(item.eth_address)}</div></div>
-        ${item.community?`<div class="modal-field"><div class="modal-lbl">Community</div><div class="modal-val">${esc(item.community)}</div></div>`:''}
-        ${item.rt_link?`<div class="modal-field"><div class="modal-lbl">RT Link</div><div class="modal-val"><a href="${esc(item.rt_link)}" target="_blank" style="color:var(--y);">${esc(item.rt_link)}</a></div></div>`:''}
-        ${item.comment_link?`<div class="modal-field"><div class="modal-lbl">Comment Link</div><div class="modal-val"><a href="${esc(item.comment_link)}" target="_blank" style="color:var(--y);">${esc(item.comment_link)}</a></div></div>`:''}`;
+        <div class="modal-field"><div class="modal-lbl">ETH Address</div><div class="modal-val" style="font-family:monospace;font-size:12px;word-break:break-all;">${esc(item.eth_address)}</div></div>
+        <div class="modal-field"><div class="modal-lbl">Community</div><div class="modal-val">${esc(item.community)||'—'}</div></div>
+        <div class="modal-field"><div class="modal-lbl">RT Link</div><div class="modal-val">${item.rt_link?`<a href="${esc(item.rt_link)}" target="_blank" style="color:var(--y);word-break:break-all;">${esc(item.rt_link)}</a>`:'—'}</div></div>
+        <div class="modal-field"><div class="modal-lbl">Comment Link</div><div class="modal-val">${item.comment_link?`<a href="${esc(item.comment_link)}" target="_blank" style="color:var(--y);word-break:break-all;">${esc(item.comment_link)}</a>`:'—'}</div></div>`;
     }else{
       body=`
-        <div class="modal-field"><div class="modal-lbl">Twitter / Project</div><div class="modal-val"><a href="${esc(item.twitter_link)}" target="_blank" style="color:var(--y);">${esc(item.twitter_link)}</a></div></div>
-        <div class="modal-field"><div class="modal-lbl">Community</div><div class="modal-val">${esc(item.community_description)}</div></div>
-        <div class="modal-field"><div class="modal-lbl">Support offer</div><div class="modal-val">${esc(item.support_offer)}</div></div>
-        <div class="modal-field"><div class="modal-lbl">Main contact</div><div class="modal-val">${esc(item.main_contact)}</div></div>
-        <div class="modal-field"><div class="modal-lbl">Collab tweet / Founder post</div><div class="modal-val">${esc(item.collab_tweet)||'—'}</div></div>
-        <div class="modal-field"><div class="modal-lbl">UGC Campaign</div><div class="modal-val">${esc(item.ugc)||'—'}</div></div>`;
+        <div class="modal-field"><div class="modal-lbl">Twitter / Project</div><div class="modal-val" style="word-break:break-all;">${item.twitter_link?`<a href="${esc(item.twitter_link)}" target="_blank" style="color:var(--y);">${esc(item.twitter_link)}</a>`:'—'}</div></div>
+        <div class="modal-field"><div class="modal-lbl">Community</div><div class="modal-val" style="white-space:pre-wrap;">${esc(item.community_description)||'—'}</div></div>
+        <div class="modal-field"><div class="modal-lbl">Support offer</div><div class="modal-val" style="white-space:pre-wrap;">${esc(item.support_offer)||'—'}</div></div>
+        <div class="modal-field"><div class="modal-lbl">Main contact</div><div class="modal-val">${esc(item.main_contact)||'—'}</div></div>
+        <div class="modal-field"><div class="modal-lbl">Collab tweet / Founder post</div><div class="modal-val" style="white-space:pre-wrap;">${esc(item.collab_tweet)||'—'}</div></div>`;
     }
     body+=`<div class="modal-field"><div class="modal-lbl">Date</div><div class="modal-val">${new Date(item.created_at).toLocaleString('fr-FR')}</div></div>`;
     body+=`<div class="modal-field"><div class="modal-lbl">Status</div><div class="modal-val"><span class="badge ${item.status}">${item.status}</span></div></div>`;
