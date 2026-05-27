@@ -70,17 +70,21 @@ export default async function handler(req, res) {
 
     /* ── GET ── */
     if (req.method === 'GET') {
-      const [wl, warn, collab] = await Promise.all([
-        db.execute(`SELECT id, x_handle, eth_address, community, rt_link, comment_link, status, created_at FROM yc_whitelist ORDER BY created_at DESC`),
-        db.execute(`SELECT id, eth_address, x_handle, reason, created_at FROM yc_wl_warnings ORDER BY created_at DESC`),
-        db.execute(`SELECT id, twitter_link, community_description, support_offer, main_contact, collab_tweet, ugc, status, created_at FROM yc_collab_applications ORDER BY created_at DESC`),
-      ]);
-
-      return res.status(200).json({
-        entries:  wl.rows.map(r => ({ id:r[0], x_handle:r[1], eth_address:r[2], community:r[3], rt_link:r[4], comment_link:r[5], status:r[6], created_at:r[7] })),
-        warnings: warn.rows.map(r => ({ id:r[0], eth_address:r[1], x_handle:r[2], reason:r[3], created_at:r[4] })),
-        collabs:  collab.rows.map(r => ({ id:r[0], twitter_link:r[1], community_description:r[2], support_offer:r[3], main_contact:r[4], collab_tweet:r[5], ugc:r[6], status:r[7], created_at:r[8] })),
-      });
+      try {
+        const [wl, warn, collab] = await Promise.all([
+          db.execute(`SELECT id, x_handle, eth_address, community, rt_link, comment_link, status, created_at FROM yc_whitelist ORDER BY created_at DESC`),
+          db.execute(`SELECT id, eth_address, x_handle, reason, created_at FROM yc_wl_warnings ORDER BY created_at DESC`),
+          db.execute(`SELECT id, twitter_link, community_description, support_offer, main_contact, collab_tweet, ugc, status, created_at FROM yc_collab_applications ORDER BY created_at DESC`),
+        ]);
+        return res.status(200).json({
+          entries:  wl.rows.map(r => ({ id:r[0], x_handle:r[1], eth_address:r[2], community:r[3], rt_link:r[4], comment_link:r[5], status:r[6], created_at:r[7] })),
+          warnings: warn.rows.map(r => ({ id:r[0], eth_address:r[1], x_handle:r[2], reason:r[3], created_at:r[4] })),
+          collabs:  collab.rows.map(r => ({ id:r[0], twitter_link:r[1], community_description:r[2], support_offer:r[3], main_contact:r[4], collab_tweet:r[5], ugc:r[6], status:r[7], created_at:r[8] })),
+        });
+      } catch(queryErr) {
+        // Tables might not exist yet — return empty
+        return res.status(200).json({ entries: [], warnings: [], collabs: [] });
+      }
     }
 
     /* ── POST: update status ── */

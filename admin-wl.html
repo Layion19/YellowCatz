@@ -276,7 +276,13 @@
 
   async function loadData(isLogin=false){
     try{
-      const res=await fetch('/api/wl-list',{headers:{'Authorization':'Bearer '+token}});
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 12000);
+      const res=await fetch('/api/wl-list',{
+        headers:{'Authorization':'Bearer '+token},
+        signal: controller.signal
+      });
+      clearTimeout(t);
       if(res.status===401){if(isLogin)document.getElementById('loginErr').style.display='block';return;}
       const data=await res.json();
       entries=data.entries||[]; warnings=data.warnings||[]; collabs=data.collabs||[];
@@ -291,8 +297,15 @@
       document.getElementById('tc-wl').textContent=entries.length;
       document.getElementById('tc-collab').textContent=collabs.length;
       document.getElementById('lastSync').textContent='Sync '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    }catch(e){if(isLogin){document.getElementById('loginErr').textContent='❌ Erreur de connexion.';document.getElementById('loginErr').style.display='block';}}
+    }catch(e){
+      if(isLogin){
+        const msg = e.name==='AbortError' ? '⏱ Timeout — réessaie' : '❌ Erreur: '+e.message;
+        document.getElementById('loginErr').textContent=msg;
+        document.getElementById('loginErr').style.display='block';
+      }
+    }
   }
+  
 
   function switchTab(tab){
     currentTab=tab;
