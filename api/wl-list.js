@@ -66,8 +66,6 @@ export default async function handler(req, res) {
       authToken: process.env.TURSO_AUTH_TOKEN,
     });
 
-    await ensureTables(db);
-
     /* ── GET ── */
     if (req.method === 'GET') {
       try {
