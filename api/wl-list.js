@@ -67,9 +67,9 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const [wl, warn, collab, counts] = await tursoHttp([
-        { sql: 'SELECT id, x_handle, eth_address, community, rt_link, comment_link, status, created_at FROM yc_whitelist ORDER BY created_at DESC LIMIT 500' },
-        { sql: 'SELECT id, eth_address, x_handle, reason, created_at FROM yc_wl_warnings ORDER BY created_at DESC LIMIT 200' },
-        { sql: 'SELECT id, twitter_link, community_description, support_offer, main_contact, collab_tweet, status, created_at FROM yc_collab_applications ORDER BY created_at DESC LIMIT 500' },
+        { sql: 'SELECT id, x_handle, eth_address, community, rt_link, comment_link, status, created_at FROM yc_whitelist ORDER BY created_at DESC' },
+        { sql: 'SELECT id, eth_address, x_handle, reason, created_at FROM yc_wl_warnings ORDER BY created_at DESC' },
+        { sql: 'SELECT id, twitter_link, community_description, support_offer, main_contact, collab_tweet, status, created_at FROM yc_collab_applications ORDER BY created_at DESC' },
         { sql: 'SELECT (SELECT COUNT(*) FROM yc_whitelist) as wl_total, (SELECT COUNT(*) FROM yc_collab_applications) as collab_total' },
       ]);
       return res.status(200).json({
