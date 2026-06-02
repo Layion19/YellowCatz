@@ -140,6 +140,7 @@
       <span style="font-size:11px;color:var(--muted)" id="lastSync">—</span>
       <button class="tbtn" onclick="loadData()">↻ Refresh</button>
       <button class="tbtn export" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="tbtn" onclick="purgeBots()" style="background:#ef4444;color:#fff;border-color:#ef4444;font-weight:700;">🤖 Purge Bots</button>
       <button class="tbtn" onclick="logout()" style="margin-left:4px;">Logout</button>
     </div>
   </div>
@@ -484,6 +485,32 @@
 
   function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   let tt;function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2800);}
+
+  async function purgeBots(){
+    if(!confirm('⚠️ Supprimer tous les bots et formulaires mal remplis ?\n\n• Comptes user_yc_*, yellowcatz_farmer_*\n• RT link = Comment link\n• Faux tweet IDs\n• Usernames numérotés en série\n\nCette action est irréversible.')) return;
+    const btn = document.querySelector('[onclick="purgeBots()"]');
+    btn.textContent = '⏳ Nettoyage...';
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/wl-list', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json','Authorization':'Bearer '+token},
+        body: JSON.stringify({action:'purge_bots'})
+      });
+      const data = await res.json();
+      if(data.success){
+        toast(`✅ ${data.deleted} entrées supprimées !`);
+        await loadData();
+      } else {
+        toast('❌ Erreur: ' + (data.error||'unknown'));
+      }
+    } catch(e){
+      toast('❌ Erreur de connexion');
+    } finally {
+      btn.textContent = '🤖 Purge Bots';
+      btn.disabled = false;
+    }
+  }
 </script>
 </body>
 </html>
