@@ -126,7 +126,8 @@ export default async function handler(req, res) {
       try { await turso([{ sql: `ALTER TABLE yc_whitelist ADD COLUMN rt_link TEXT DEFAULT ''` }]); } catch(e) {}
       try { await turso([{ sql: `ALTER TABLE yc_whitelist ADD COLUMN comment_link TEXT DEFAULT ''` }]); } catch(e) {}
 
-      // Check blacklist
+      // Create blacklist table if needed + check
+      await turso([{ sql: `CREATE TABLE IF NOT EXISTS yc_blocked (id INTEGER PRIMARY KEY AUTOINCREMENT, eth_address TEXT, x_handle TEXT, reason TEXT DEFAULT 'blocked_by_admin', created_at TEXT DEFAULT (datetime('now')))` }]);
       const [blocked] = await turso([{ sql: `SELECT id FROM yc_blocked WHERE eth_address = ? OR LOWER(x_handle) = ? LIMIT 1`,
         args: [arg(eth), arg(handle)] }]);
       if (blocked.length > 0) return res.status(403).json({ error: 'Submission not accepted' });
