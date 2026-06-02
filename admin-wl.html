@@ -183,6 +183,7 @@
               <th>COMMENT</th>
               <th onclick="sortBy('wl','created_at')">DATE ↕</th>
               <th onclick="sortBy('wl','status')">STATUS ↕</th>
+              <th></th>
             </tr></thead>
             <tbody id="wlBody"><tr class="empty-row"><td colspan="8">Chargement…</td></tr></tbody>
           </table>
@@ -229,6 +230,7 @@
               <th>COLLAB TWEET</th>
               <th onclick="sortBy('collab','created_at')">DATE ↕</th>
               <th onclick="sortBy('collab','status')">STATUS ↕</th>
+              <th></th>
             </tr></thead>
             <tbody id="collabBody"><tr class="empty-row"><td colspan="8">Chargement…</td></tr></tbody>
           </table>
@@ -295,8 +297,8 @@
         setInterval(()=>loadData(),30000);
       }
       updateStats(); renderWL(); renderCollab(); renderWarnings();
-      document.getElementById('tc-wl').textContent=entries.length;
-      document.getElementById('tc-collab').textContent=collabs.length;
+      document.getElementById('tc-wl').textContent=data.totalWL||entries.length;
+      document.getElementById('tc-collab').textContent=data.totalCollab||collabs.length;
       document.getElementById('lastSync').textContent='Sync '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
     }catch(e){
       if(isLogin){
@@ -338,7 +340,7 @@
       return va<vb?-sortDir.wl:va>vb?sortDir.wl:0;
     });
     document.getElementById('wlCount').textContent=sorted.length+' entrée'+(sorted.length!==1?'s':'');
-    if(!sorted.length){document.getElementById('wlBody').innerHTML='<tr class="empty-row"><td colspan="8">Aucune inscription.</td></tr>';return;}
+    if(!sorted.length){document.getElementById('wlBody').innerHTML='<tr class="empty-row"><td colspan="9">Aucune inscription.</td></tr>';return;}
     document.getElementById('wlBody').innerHTML=sorted.map((e,i)=>{
       const eth=e.eth_address||'';
       const short=eth.slice(0,6)+'…'+eth.slice(-4);
@@ -354,6 +356,10 @@
         <td style="text-align:center;">${cm}</td>
         <td class="cell-date">${date}</td>
         <td onclick="event.stopPropagation()"><span class="badge ${e.status}" onclick="cycleStatus(${e.id},'${e.status}','wl')">${e.status}</span></td>
+        <td onclick="event.stopPropagation()" style="text-align:center;white-space:nowrap;">
+          <button onclick="blockEntry(${e.id},'wl')" style="background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:15px;" title="Bloquer">🚫</button>
+          <button onclick="deleteEntry(${e.id},'wl')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:15px;" title="Supprimer">🗑</button>
+        </td>
       </tr>`;
     }).join('');
   }
@@ -366,7 +372,7 @@
       return va<vb?-sortDir.collab:va>vb?sortDir.collab:0;
     });
     document.getElementById('collabCount').textContent=sorted.length+' application'+(sorted.length!==1?'s':'');
-    if(!sorted.length){document.getElementById('collabBody').innerHTML='<tr class="empty-row"><td colspan="8">Aucune application.</td></tr>';return;}
+    if(!sorted.length){document.getElementById('collabBody').innerHTML='<tr class="empty-row"><td colspan="9">Aucune application.</td></tr>';return;}
     document.getElementById('collabBody').innerHTML=sorted.map((e,i)=>{
       const date=new Date(e.created_at).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'2-digit'});
       const tw=e.twitter_link?`<a href="${esc(e.twitter_link)}" target="_blank" class="cell-x" onclick="event.stopPropagation()">${esc(e.twitter_link).replace('https://x.com/','@').replace('https://twitter.com/','@')}</a>`:'—';
@@ -379,6 +385,10 @@
         <td class="cell-muted" title="${esc(e.collab_tweet)}">${e.collab_tweet?'✓':'—'}</td>
         <td class="cell-date">${date}</td>
         <td onclick="event.stopPropagation()"><span class="badge ${e.status}" onclick="cycleStatus(${e.id},'${e.status}','collab')">${e.status}</span></td>
+        <td onclick="event.stopPropagation()" style="text-align:center;white-space:nowrap;">
+          <button onclick="blockEntry(${e.id},'collab')" style="background:none;border:none;color:#ff6b6b;cursor:pointer;font-size:15px;" title="Bloquer">🚫</button>
+          <button onclick="deleteEntry(${e.id},'collab')" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:15px;" title="Supprimer">🗑</button>
+        </td>
       </tr>`;
     }).join('');
   }
@@ -451,7 +461,9 @@
     document.getElementById('modalActions').innerHTML=`
       ${s!=='approved'?`<button class="mac approve" onclick="cycleStatus(${id},'${s}','${t}');updateModalItem(${id},'approved','${t}')">✓ APPROVE</button>`:''}
       ${s!=='rejected'?`<button class="mac reject"  onclick="cycleStatus(${id},'${s}','${t}');updateModalItem(${id},'rejected','${t}')">✕ REJECT</button>`:''}
-      ${s!=='pending' ?`<button class="mac pending" onclick="cycleStatus(${id},'${s}','${t}');updateModalItem(${id},'pending','${t}')">↩ RESET</button>`:''}`;
+      ${s!=='pending' ?`<button class="mac pending" onclick="cycleStatus(${id},'${s}','${t}');updateModalItem(${id},'pending','${t}')">↩ RESET</button>`:''}
+      <button class="mac" style="background:#7c1a1a;color:#ff6b6b;border:1px solid #ff6b6b;flex:0.5;" onclick="blockEntry(${id},'${t}')" title="Bloquer définitivement">🚫</button>
+      <button class="mac" style="background:#333;color:#ef4444;border:1px solid #ef4444;flex:0.5;" onclick="deleteEntry(${id},'${t}')" title="Supprimer">🗑</button>`;
   }
 
   function updateModalItem(id,status,table){
@@ -460,7 +472,37 @@
     if(item){item.status=status;currentItem=item;updateModalActions();}
   }
 
-  function closeModal(){document.getElementById('modal').classList.remove('open');currentItem=null;}
+  async function blockEntry(id, table){
+    if(!confirm('🚫 Bloquer cet utilisateur ?\n\nSon ETH address et X handle seront blacklistés — impossible de re-soumettre.')) return;
+    try {
+      const res = await fetch('/api/wl-list',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:'block_entry',id,table})});
+      const data = await res.json();
+      if(data.success){
+        if(table==='collab') collabs=collabs.filter(e=>String(e.id)!==String(id));
+        else entries=entries.filter(e=>String(e.id)!==String(id));
+        closeModal();
+        updateStats();
+        if(table==='collab') renderCollab(); else renderWL();
+        toast('🚫 Utilisateur bloqué');
+      } else toast('❌ Erreur');
+    } catch(e){ toast('❌ Erreur'); }
+  }
+
+  async function deleteEntry(id, table){
+    if(!confirm('Supprimer cette entrée définitivement ?')) return;
+    try {
+      const res = await fetch('/api/wl-list',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({action:'delete_entry',id,table})});
+      const data = await res.json();
+      if(data.success){
+        if(table==='collab') collabs=collabs.filter(e=>String(e.id)!==String(id));
+        else entries=entries.filter(e=>String(e.id)!==String(id));
+        closeModal();
+        updateStats();
+        if(table==='collab') renderCollab(); else renderWL();
+        toast('🗑 Entrée supprimée');
+      } else toast('❌ Erreur');
+    } catch(e){ toast('❌ Erreur'); }
+  }
   document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
 
   function exportCSV(){
