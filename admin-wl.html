@@ -455,6 +455,13 @@
     document.getElementById('modal').classList.add('open');document.body.style.overflow='hidden';
   }
 
+  // ✅ FIX : fonction manquante — ferme le modal (croix, clic sur le fond, Échap)
+  function closeModal(){
+    document.getElementById('modal').classList.remove('open');
+    document.body.style.overflow='';
+    currentItem=null;
+  }
+
   function updateModalActions(){
     if(!currentItem)return;
     const s=currentItem.status,id=currentItem.id,t=currentTable;
@@ -504,6 +511,8 @@
     } catch(e){ toast('❌ Erreur'); }
   }
   document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+  // ✅ Fermeture au clavier (touche Échap)
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeModal(); });
 
   function exportCSV(){
     const isCollab=currentTab==='collab';
