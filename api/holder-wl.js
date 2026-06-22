@@ -2,7 +2,9 @@
 //  api/holder-wl.js — soumission PUBLIQUE d'un holder $YC
 //  (la vue/gestion admin est dans /api/admin, action holderWL*)
 //
-//  Même stack que ton admin : @libsql/client + TURSO_DATABASE_URL.
+//  ZÉRO dépendance externe hors @libsql/client (déjà dans ton repo) :
+//   - vérif signature Solana = crypto natif Node (ed25519) + base58 maison
+//   - validation ETH = regex
 //  Sécurité : le serveur ne fait pas confiance au navigateur —
 //   - revérifie la signature Solana (preuve de propriété du wallet)
 //   - relit le solde $YC + supply on-chain et RECALCULE les spots
@@ -10,20 +12,53 @@
 //   - solana_wallet en PK -> une seule participation par wallet
 // ============================================================
 import { createClient } from '@libsql/client';
-import { isAddress } from 'ethers';
-import nacl from 'tweetnacl';
-import bs58 from 'bs58';
+import crypto from 'crypto';
 
 const db = createClient({
   url: process.env.TURSO_DATABASE_URL,
   authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
-// mint $YC (adresse publique fixe) — surchargée par YC_TOKEN_MINT si présent
+// mint $YC (adresse publique fixe) — surchargée par YC_TOKEN_MINT / WHEEL_TOKEN_ADDRESS si présents
 const YC_MINT_DEFAULT = '9zcYAff5kaZfVDkEv3DzD2ojvocYyoRL2pFEko53pump';
-// accepte SOLANA_RPC_URL OU SOLANA_RPC (ta variable existante)
 const getRpcUrl = () => process.env.SOLANA_RPC_URL || process.env.SOLANA_RPC;
 const getMint   = () => process.env.YC_TOKEN_MINT || process.env.WHEEL_TOKEN_ADDRESS || YC_MINT_DEFAULT;
+
+/* ---------- Validation adresse ETH (sans ethers) ---------- */
+function isEthAddress(a){ return /^0x[0-9a-fA-F]{40}$/.test(String(a).trim()); }
+
+/* ---------- Décodeur base58 (sans bs58) ---------- */
+const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+function base58decode(str){
+  const map = {}; for (let i=0;i<B58.length;i++) map[B58[i]] = i;
+  const bytes = [];
+  for (const ch of str){
+    let carry = map[ch];
+    if (carry === undefined) throw new Error('bad base58 char');
+    for (let j=0;j<bytes.length;j++){
+      carry += bytes[j] * 58;
+      bytes[j] = carry & 0xff;
+      carry >>= 8;
+    }
+    while (carry > 0){ bytes.push(carry & 0xff); carry >>= 8; }
+  }
+  for (let k=0; k<str.length && str[k]===B58[0]; k++) bytes.push(0);
+  return Uint8Array.from(bytes.reverse());
+}
+
+/* ---------- Vérif signature Solana (ed25519 via crypto natif) ---------- */
+function verifySolSig(message, signatureArr, pubkeyB58){
+  try {
+    const msg = Buffer.from(new TextEncoder().encode(message));
+    const sig = Buffer.from(Uint8Array.from(signatureArr));
+    const pub = base58decode(pubkeyB58);
+    if (pub.length !== 32 || sig.length !== 64) return false;
+    // SubjectPublicKeyInfo DER pour ed25519 = préfixe fixe (12 octets) + clé brute (32 octets)
+    const der = Buffer.concat([Buffer.from('302a300506032b6570032100','hex'), Buffer.from(pub)]);
+    const key = crypto.createPublicKey({ key: der, format: 'der', type: 'spki' });
+    return crypto.verify(null, msg, key, sig);
+  } catch (e) { console.error('verifySolSig error:', e); return false; }
+}
 
 /* ---------- Calcul des spots ---------- */
 const BONUS_THRESHOLD = 20000000, BONUS_SPOTS = 5;
@@ -53,20 +88,11 @@ async function getHoldings(owner, mint){
   return { balance, supply };
 }
 
-/* ---------- Vérif signature Solana ---------- */
-function verifySolSig(message, signatureArr, pubkeyB58){
-  try {
-    const msg = new TextEncoder().encode(message);
-    const sig = Uint8Array.from(signatureArr);
-    return nacl.sign.detached.verify(msg, sig, bs58.decode(pubkeyB58));
-  } catch { return false; }
-}
-
 export default async function handler(req, res){
   if (req.method !== 'POST') return res.status(405).json({ error:'method' });
 
   try {
-    // garde-fou config : variables d'env présentes ?
+    // garde-fou config
     if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN)
       return res.status(500).json({ error:'config_missing', detail:'TURSO_DATABASE_URL / TURSO_AUTH_TOKEN absents' });
     if (!getRpcUrl())
@@ -114,7 +140,7 @@ export default async function handler(req, res){
     // 4) validation ETH + nombre <= spots
     const cleaned = ethAddresses.map(a => String(a).trim());
     if (cleaned.length < 1 || cleaned.length > spots) return res.status(400).json({ error:'wrong_address_count', spots });
-    if (cleaned.some(a => !isAddress(a))) return res.status(400).json({ error:'invalid_eth_address' });
+    if (cleaned.some(a => !isEthAddress(a))) return res.status(400).json({ error:'invalid_eth_address' });
 
     // 5) insert (PK = wallet -> anti double participation)
     try {
@@ -124,7 +150,6 @@ export default async function handler(req, res){
         args:[solanaWallet, discord.trim(), holdings.balance, pct, spots, JSON.stringify(cleaned), Date.now()]
       });
     } catch (e) {
-      // doublon PK = déjà participé ; sinon vraie erreur DB
       if (String(e?.message || e).toLowerCase().includes('unique') || String(e?.code||'').includes('CONSTRAINT'))
         return res.status(409).json({ error:'already_submitted' });
       console.error('insert error:', e);
@@ -134,7 +159,6 @@ export default async function handler(req, res){
     return res.status(200).json({ ok:true, wl_spots: spots, balance: holdings.balance, supply_pct: pct });
 
   } catch (e) {
-    // tout ce qui n'est pas géré au-dessus -> JSON lisible (au lieu d'une page 500)
     console.error('holder-wl fatal:', e);
     return res.status(500).json({ error:'server_error', detail:String(e?.message || e) });
   }
