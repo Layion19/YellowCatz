@@ -9,6 +9,39 @@
 <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1/lib/index.iife.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
 
+<!-- Multi-wallet Solana via Wallet Standard (Phantom, Solflare, Backpack, Glow, Coinbase…) -->
+<script type="module">
+  import { getWallets } from 'https://cdn.jsdelivr.net/npm/@wallet-standard/app@1/+esm';
+  const standard = getWallets();
+
+  const isSolana = (w) =>
+    !!(w.features && w.features['standard:connect'] && w.features['solana:signMessage']);
+
+  function list(){
+    return standard.get().filter(isSolana).map(w => ({ name: w.name, icon: w.icon, raw: w }));
+  }
+  async function connect(wrapper){
+    const w = wrapper.raw;
+    const res = await w.features['standard:connect'].connect();
+    const account = (w.accounts && w.accounts[0]) || (res && res.accounts && res.accounts[0]);
+    if (!account) throw new Error('Aucun compte renvoyé par le wallet');
+    wrapper._account = account;
+    return account.address;
+  }
+  async function sign(wrapper, message){
+    const w = wrapper.raw;
+    const account = wrapper._account || (w.accounts && w.accounts[0]);
+    if (!account) throw new Error('Wallet non connecté');
+    const encoded = new TextEncoder().encode(message);
+    const res = await w.features['solana:signMessage'].signMessage({ account, message: encoded });
+    return Array.from(res[0].signature);
+  }
+
+  window.SolanaWallets = { list, connect, sign };
+  // un wallet peut s'enregistrer après le chargement de la page
+  standard.on('register', () => { if (window.__onWalletsChange) window.__onWalletsChange(); });
+</script>
+
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
@@ -111,6 +144,26 @@ h1{font-family:var(--display);font-size:clamp(30px,7vw,46px);letter-spacing:.04e
   z-index:200;transition:transform .3s cubic-bezier(.34,1.56,.64,1);opacity:0}
 #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
 
+/* wallet picker */
+#wpOverlay{position:fixed;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;z-index:300;padding:20px}
+#wpOverlay.show{display:flex}
+.wp-modal{background:var(--s1);border:1px solid var(--border);border-radius:18px;
+  width:100%;max-width:380px;padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.wp-modal h3{font-family:var(--display);letter-spacing:.5px;font-size:1.5rem;margin-bottom:4px}
+.wp-sub{color:var(--muted);font-size:.85rem;margin-bottom:16px}
+.wp-list{display:flex;flex-direction:column;gap:8px}
+.wp-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+  background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;
+  cursor:pointer;color:var(--text);font-family:var(--body);font-size:.95rem;font-weight:600;
+  transition:border-color .15s, background .15s}
+.wp-item:hover{border-color:var(--yborder);background:#1f1f1f}
+.wp-item img{width:28px;height:28px;border-radius:7px;flex:none;object-fit:cover}
+.wp-empty{color:var(--muted);font-size:.88rem;text-align:center;padding:10px 4px}
+.wp-close{margin-top:14px;width:100%;background:transparent;border:1px solid var(--border);
+  border-radius:10px;padding:10px;color:var(--muted);cursor:pointer;font-family:var(--body)}
+.wp-close:hover{color:var(--text);border-color:var(--yborder)}
+
 @media(max-width:520px){.hd-grid{grid-template-columns:1fr}.wrap{padding:28px 16px 50px}}
 </style>
 </head>
@@ -169,8 +222,8 @@ h1{font-family:var(--display);font-size:clamp(30px,7vw,46px);letter-spacing:.04e
       </div>
 
       <div class="field">
-        <label>Adresses Ethereum (1 par spot)</label>
-        <div class="eth-help">Renseigne une adresse ETH par whitelist spot. Tu peux mettre des adresses différentes ou la même.</div>
+        <label>Adresses Ethereum <span style="color:var(--muted);font-weight:400">(max = tes spots)</span></label>
+        <div class="eth-help">Mets <b>au moins une</b> adresse ETH, jusqu'au nombre de spots que tu as. Tu n'es pas obligé de tout remplir — laisse vides les champs que tu ne veux pas utiliser. Adresses identiques ou différentes, comme tu veux.</div>
         <div id="ethFields"></div>
       </div>
 
@@ -191,6 +244,16 @@ h1{font-family:var(--display);font-size:clamp(30px,7vw,46px);letter-spacing:.04e
   </div>
 </div>
 
+<!-- ============ WALLET PICKER ============ -->
+<div id="wpOverlay" onclick="if(event.target===this)closeWalletPicker()">
+  <div class="wp-modal">
+    <h3>Choisis ton wallet</h3>
+    <div class="wp-sub">Wallets Solana détectés sur ton navigateur</div>
+    <div class="wp-list" id="wpList"></div>
+    <button class="wp-close" onclick="closeWalletPicker()">Annuler</button>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -206,7 +269,7 @@ const CONFIG = {
 };
 
 /* état de session */
-const state = { wallet:null, signature:null, message:null, balance:0, supply:0, pct:0, spots:0, demo:false };
+const state = { wallet:null, walletName:null, signature:null, message:null, balance:0, supply:0, pct:0, spots:0, demo:false };
 
 /* ============================================================
    CALCUL DES WHITELIST SPOTS (source de vérité aussi côté serveur)
@@ -222,43 +285,103 @@ function computeSpots(balance, supply){
 }
 
 /* ============================================================
-   CONNEXION WALLET (Phantom) + PREUVE DE PROPRIÉTÉ
+   CONNEXION WALLET (multi-wallet via Wallet Standard)
    ============================================================ */
 async function connectWallet(){
-  const ph = window.solana;
-  if (!ph || !ph.isPhantom){
-    toast('Phantom non détecté — installe l’extension');
-    document.getElementById('noPhantom').style.display = 'block';
-    return;
-  }
-  // le lib Solana doit être chargé
   if (typeof solanaWeb3 === 'undefined'){
     toast('Erreur : librairie Solana non chargée (vérifie ta connexion)');
     return;
   }
+  const wallets = (window.SolanaWallets && window.SolanaWallets.list()) || [];
+
+  if (wallets.length === 0){
+    // fallback : ancienne injection Phantom (au cas où)
+    if (window.solana && window.solana.isPhantom){ return connectLegacyPhantom(); }
+    toast('Aucun wallet Solana détecté — installe Phantom, Solflare, Backpack…');
+    document.getElementById('noPhantom').style.display = 'block';
+    return;
+  }
+  if (wallets.length === 1){ return chooseWallet(wallets[0]); }
+  openWalletPicker(wallets);
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function openWalletPicker(wallets){
+  const listEl = document.getElementById('wpList');
+  listEl.innerHTML = '';
+  wallets.forEach((w) => {
+    const b = document.createElement('button');
+    b.className = 'wp-item';
+    const ic = w.icon ? `<img src="${w.icon}" alt="">` : '<span style="width:28px;flex:none"></span>';
+    b.innerHTML = `${ic}<span>${escapeHtml(w.name)}</span>`;
+    b.onclick = () => chooseWallet(w);
+    listEl.appendChild(b);
+  });
+  // mise à jour live si un nouveau wallet s'enregistre
+  window.__onWalletsChange = () => {
+    if (!document.getElementById('wpOverlay').classList.contains('show')) return;
+    const fresh = (window.SolanaWallets && window.SolanaWallets.list()) || [];
+    openWalletPicker(fresh);
+  };
+  document.getElementById('wpOverlay').classList.add('show');
+}
+
+function closeWalletPicker(){
+  document.getElementById('wpOverlay').classList.remove('show');
+  window.__onWalletsChange = null;
+}
+
+async function chooseWallet(wrapper){
+  closeWalletPicker();
   const btn = document.getElementById('connectBtn');
   btn.textContent = 'Connexion…'; btn.disabled = true;
 
   // --- Étape 1 : connexion + signature (refus = vrai "annulé") ---
-  let wallet;
   try{
-    const resp = await ph.connect();
-    wallet = resp.publicKey.toString();
-    const msg = `YellowCatz WL Registration\nWallet: ${wallet}\nTime: ${new Date().toISOString()}`;
-    const signed = await ph.signMessage(new TextEncoder().encode(msg), 'utf8');
-    state.wallet = wallet;
-    state.message = msg;
-    state.signature = Array.from(signed.signature);
+    const address = await window.SolanaWallets.connect(wrapper);
+    const msg = `YellowCatz WL Registration\nWallet: ${address}\nTime: ${new Date().toISOString()}`;
+    const signature = await window.SolanaWallets.sign(wrapper, msg);
+    state.wallet = address; state.message = msg; state.signature = signature; state.walletName = wrapper.name;
   }catch(e){
     console.error('connect/sign error:', e);
-    toast('Connexion ou signature refusée dans Phantom');
+    toast('Connexion ou signature refusée');
     btn.textContent = 'Connect Wallet'; btn.disabled = false;
     return;
   }
 
-  // --- Étape 2 : lecture du solde on-chain (échoue souvent = RPC) ---
+  // --- Étape 2 : lecture du solde on-chain ---
   try{
-    await loadHoldings(wallet);
+    await loadHoldings(state.wallet);
+  }catch(e){
+    console.error('loadHoldings error:', e);
+    toast('Erreur de lecture du solde — RPC Solana injoignable');
+  }finally{
+    btn.textContent = 'Connect Wallet'; btn.disabled = false;
+  }
+}
+
+/* fallback : ancienne API Phantom (window.solana) si Wallet Standard absent */
+async function connectLegacyPhantom(){
+  const ph = window.solana;
+  const btn = document.getElementById('connectBtn');
+  btn.textContent = 'Connexion…'; btn.disabled = true;
+  try{
+    const resp = await ph.connect();
+    const wallet = resp.publicKey.toString();
+    const msg = `YellowCatz WL Registration\nWallet: ${wallet}\nTime: ${new Date().toISOString()}`;
+    const signed = await ph.signMessage(new TextEncoder().encode(msg), 'utf8');
+    state.wallet = wallet; state.message = msg; state.signature = Array.from(signed.signature); state.walletName = 'Phantom';
+  }catch(e){
+    console.error('connect/sign error:', e);
+    toast('Connexion ou signature refusée');
+    btn.textContent = 'Connect Wallet'; btn.disabled = false;
+    return;
+  }
+  try{
+    await loadHoldings(state.wallet);
   }catch(e){
     console.error('loadHoldings error:', e);
     toast('Erreur de lecture du solde — RPC Solana injoignable');
@@ -323,10 +446,11 @@ function applyHoldings(balance, supply){
 function renderEthFields(n){
   let html = '';
   for (let i = 0; i < n; i++){
+    const optional = i > 0;
     html += `
       <div class="eth-row">
         <span class="idx">${i+1}</span>
-        <input class="input eth" data-i="${i}" placeholder="0x…" oninput="validateForm()" />
+        <input class="input eth" data-i="${i}" placeholder="${optional ? '0x… (optionnel)' : '0x…'}" oninput="validateForm()" />
         <span class="check" id="chk-${i}"></span>
       </div>`;
   }
@@ -338,17 +462,25 @@ function validateForm(){
   const discordOk = discord.length >= 2;
 
   const inputs = [...document.querySelectorAll('.eth')];
-  let allEthOk = inputs.length > 0;
+  let validCount = 0;
+  let anyInvalid = false;
   inputs.forEach(inp => {
     const v = inp.value.trim();
-    const ok = ethers.isAddress(v);                 // validation auto via ethers
     const chk = document.getElementById('chk-' + inp.dataset.i);
-    if (!v){ inp.classList.remove('ok','bad'); chk.textContent=''; allEthOk=false; }
-    else if (ok){ inp.classList.add('ok'); inp.classList.remove('bad'); chk.textContent='✓'; chk.style.color='var(--green)'; }
-    else { inp.classList.add('bad'); inp.classList.remove('ok'); chk.textContent='✕'; chk.style.color='var(--red)'; allEthOk=false; }
+    if (!v){                                          // vide = ignoré, pas une erreur
+      inp.classList.remove('ok','bad'); chk.textContent='';
+    } else if (ethers.isAddress(v)){
+      inp.classList.add('ok'); inp.classList.remove('bad'); chk.textContent='✓'; chk.style.color='var(--green)';
+      validCount++;
+    } else {
+      inp.classList.add('bad'); inp.classList.remove('ok'); chk.textContent='✕'; chk.style.color='var(--red)';
+      anyInvalid = true;
+    }
   });
 
-  document.getElementById('submitBtn').disabled = !(discordOk && allEthOk);
+  // OK si : au moins 1 adresse valide ET aucune adresse remplie n'est invalide
+  const ethOk = validCount >= 1 && !anyInvalid;
+  document.getElementById('submitBtn').disabled = !(discordOk && ethOk);
 }
 
 /* ============================================================
@@ -358,15 +490,28 @@ async function submitForm(){
   const errEl = document.getElementById('submitErr');
   errEl.style.display = 'none';
 
-  // wallet toujours connecté ?
-  if (!state.demo && (!window.solana || !window.solana.isConnected)){
+  // wallet toujours connecté ? (multi-wallet : on se base sur l'état, pas sur window.solana)
+  if (!state.demo && !state.wallet){
     showErr('Wallet déconnecté — reconnecte-toi.'); return;
   }
 
   const discord = document.getElementById('discord').value.trim();
-  const ethAddresses = [...document.querySelectorAll('.eth')].map(i => i.value.trim());
-  if (!discord || ethAddresses.some(a => !ethers.isAddress(a))){
-    showErr('Vérifie le Discord et les adresses ETH.'); return;
+
+  // on ne garde que les adresses remplies, valides et uniques (les vides sont ignorées)
+  const filled = [...document.querySelectorAll('.eth')].map(i => i.value.trim()).filter(Boolean);
+  const seen = new Set();
+  const ethAddresses = [];
+  for (const a of filled){
+    if (!ethers.isAddress(a)){ showErr('Une adresse ETH est invalide.'); return; }
+    const key = a.toLowerCase();
+    if (seen.has(key)) continue;                 // doublon ignoré silencieusement
+    seen.add(key); ethAddresses.push(a);
+  }
+  if (!discord || ethAddresses.length === 0){
+    showErr('Renseigne ton Discord et au moins une adresse ETH.'); return;
+  }
+  if (ethAddresses.length > state.spots){
+    showErr(`Maximum ${state.spots} adresse(s) pour ton palier.`); return;
   }
 
   if (state.demo){ // aperçu local uniquement
