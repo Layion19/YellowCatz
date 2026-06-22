@@ -199,7 +199,7 @@ h1{font-family:var(--display);font-size:clamp(30px,7vw,46px);letter-spacing:.04e
    ============================================================ */
 const CONFIG = {
   YC_MINT:    "9zcYAff5kaZfVDkEv3DzD2ojvocYyoRL2pFEko53pump", // mint $YC (pump.fun)
-  SOLANA_RPC: "https://api.mainnet-beta.solana.com", // prod : mets un RPC dédié (Helius/QuickNode)
+  SOLANA_RPC: "https://api.mainnet-beta.solana.com", // ⚠️ À REMPLACER : le RPC public bloque/limite les lectures depuis un navigateur. Mets un RPC dédié (Helius/QuickNode), ex: https://mainnet.helius-rpc.com/?api-key=TA_CLE
   API:        "/api/holder-wl",                      // ta Vercel function
   BONUS_THRESHOLD: 20000000,                         // 20M $YC -> +5 spots
   BONUS_SPOTS: 5
@@ -231,22 +231,37 @@ async function connectWallet(){
     document.getElementById('noPhantom').style.display = 'block';
     return;
   }
+  // le lib Solana doit être chargé
+  if (typeof solanaWeb3 === 'undefined'){
+    toast('Erreur : librairie Solana non chargée (vérifie ta connexion)');
+    return;
+  }
   const btn = document.getElementById('connectBtn');
   btn.textContent = 'Connexion…'; btn.disabled = true;
+
+  // --- Étape 1 : connexion + signature (refus = vrai "annulé") ---
+  let wallet;
   try{
     const resp = await ph.connect();
-    const wallet = resp.publicKey.toString();
-
-    // 🔐 signature de preuve de propriété (le serveur la revérifie)
+    wallet = resp.publicKey.toString();
     const msg = `YellowCatz WL Registration\nWallet: ${wallet}\nTime: ${new Date().toISOString()}`;
     const signed = await ph.signMessage(new TextEncoder().encode(msg), 'utf8');
     state.wallet = wallet;
     state.message = msg;
     state.signature = Array.from(signed.signature);
+  }catch(e){
+    console.error('connect/sign error:', e);
+    toast('Connexion ou signature refusée dans Phantom');
+    btn.textContent = 'Connect Wallet'; btn.disabled = false;
+    return;
+  }
 
+  // --- Étape 2 : lecture du solde on-chain (échoue souvent = RPC) ---
+  try{
     await loadHoldings(wallet);
   }catch(e){
-    toast('Connexion annulée'); console.error(e);
+    console.error('loadHoldings error:', e);
+    toast('Erreur de lecture du solde — RPC Solana injoignable');
   }finally{
     btn.textContent = 'Connect Wallet'; btn.disabled = false;
   }
