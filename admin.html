@@ -553,6 +553,7 @@
     <button class="main-tab" onclick="switchMainTab('yellowcards')">🎴 Yellow Cards</button>
     <button class="main-tab" onclick="switchMainTab('wheel')">🎡 Wheel</button>
     <button class="main-tab" onclick="switchMainTab('buycontest')">🏆 Buy Contest</button>
+    <button class="main-tab" onclick="switchMainTab('holderwl')">🎟️ Holder WL</button>
   </div>
 
   <!-- BADGES TAB -->
@@ -1057,6 +1058,53 @@
 
 </div>
 
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- HOLDER WHITELIST TAB ($YC holders) — ADDED              -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-holderwl">
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="number" id="hwlTotal">-</div><div class="label">Submissions</div></div>
+    <div class="stat-card green"><div class="number" id="hwlSpots">-</div><div class="label">Total WL Spots</div></div>
+    <div class="stat-card"><div class="number" id="hwlEth">-</div><div class="label">ETH Addresses</div></div>
+  </div>
+
+  <div class="section">
+    <h2>🎟️ $YC Holder Whitelist — Submissions</h2>
+    <p style="color:#888;margin-bottom:15px;font-size:13px;">
+      Soumissions des holders $YC (vérifiées on-chain côté serveur). Token :
+      <a href="https://pump.fun/coin/9zcYAff5kaZfVDkEv3DzD2ojvocYyoRL2pFEko53pump"
+         target="_blank" style="color:#00ff88;">pump.fun</a>.
+    </p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px;">
+      <button class="btn btn-success" onclick="loadHolderWL()" style="max-width:160px;">🔄 Refresh</button>
+      <button class="btn btn-warning" onclick="exportHolderWLCSV()" style="max-width:160px;">📊 Export CSV</button>
+    </div>
+    <div style="max-height:600px;overflow-y:auto;background:#1a1a1a;border-radius:8px;padding:10px;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="background:#2a2a2a;position:sticky;top:0;">
+            <th style="padding:10px;text-align:left;color:#E8A000;border-bottom:2px solid #333;">#</th>
+            <th style="padding:10px;text-align:left;color:#E8A000;border-bottom:2px solid #333;">Discord</th>
+            <th style="padding:10px;text-align:left;color:#E8A000;border-bottom:2px solid #333;">Solana Wallet</th>
+            <th style="padding:10px;text-align:right;color:#E8A000;border-bottom:2px solid #333;">$YC</th>
+            <th style="padding:10px;text-align:right;color:#E8A000;border-bottom:2px solid #333;">% Supply</th>
+            <th style="padding:10px;text-align:center;color:#E8A000;border-bottom:2px solid #333;">WL</th>
+            <th style="padding:10px;text-align:left;color:#E8A000;border-bottom:2px solid #333;">ETH Addresses</th>
+            <th style="padding:10px;text-align:right;color:#E8A000;border-bottom:2px solid #333;">Date</th>
+            <th style="padding:10px;border-bottom:2px solid #333;"></th>
+          </tr>
+        </thead>
+        <tbody id="hwlTableBody">
+          <tr><td colspan="9" style="padding:20px;text-align:center;color:#666;">Clique sur Refresh pour charger.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
 <script>
 let adminPassword = '';
 let currentUserId = null;
@@ -1087,6 +1135,9 @@ function switchMainTab(tab) {
   }
   if (tab === 'buycontest') {
     loadBCStats();
+  }
+  if (tab === 'holderwl') {
+    loadHolderWL();
   }
 }
 
@@ -2239,6 +2290,77 @@ async function adminEndContest(contestId) {
     }
   } catch(e) { alert('Error: '+e.message); }
 }
+
+// ============================================================
+// HOLDER WHITELIST ($YC holders) — ADDED
+// ============================================================
+let _hwlData = [];
+
+async function loadHolderWL() {
+  const data = await apiCall('holderWLList');
+  if (!data.success) { alert('Holder WL error: ' + (data.error || 'unknown')); return; }
+  _hwlData = data.submissions || [];
+
+  document.getElementById('hwlTotal').textContent = data.stats?.totalSubs ?? _hwlData.length;
+  document.getElementById('hwlSpots').textContent = data.stats?.totalSpots ?? 0;
+  document.getElementById('hwlEth').textContent   = data.stats?.totalEth ?? 0;
+
+  const tbody = document.getElementById('hwlTableBody');
+  if (_hwlData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="padding:20px;text-align:center;color:#666;">Aucune soumission.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = _hwlData.map((s, i) => {
+    let eths = [];
+    try { eths = JSON.parse(s.eth_addresses || '[]'); } catch {}
+    const ethHtml = eths.map(a =>
+      `<div style="font-family:monospace;color:#2ecc71;cursor:pointer;" onclick="copyWallet('${a}')" title="Copier ${a}">${a.slice(0,6)}...${a.slice(-4)}</div>`
+    ).join('');
+    const shortSol = s.solana_wallet.slice(0,6) + '...' + s.solana_wallet.slice(-4);
+    const date = new Date(Number(s.created_at)).toLocaleDateString('fr-FR');
+    return `<tr style="border-bottom:1px solid #2a2a2a;">
+      <td style="padding:8px;color:#E8A000;font-weight:bold;">${i+1}</td>
+      <td style="padding:8px;color:#fff;">${hwlEsc(s.discord)}</td>
+      <td style="padding:8px;color:#2ecc71;font-family:monospace;cursor:pointer;" onclick="copyWallet('${s.solana_wallet}')" title="Copier ${s.solana_wallet}">${shortSol}</td>
+      <td style="padding:8px;text-align:right;color:#fff;">${Math.floor(Number(s.yc_balance)).toLocaleString('en-US')}</td>
+      <td style="padding:8px;text-align:right;color:#888;">${Number(s.supply_pct).toFixed(3)}%</td>
+      <td style="padding:8px;text-align:center;color:#E8A000;font-weight:bold;">${s.wl_spots}</td>
+      <td style="padding:8px;">${ethHtml}</td>
+      <td style="padding:8px;text-align:right;color:#666;">${date}</td>
+      <td style="padding:8px;text-align:center;"><button onclick="deleteHolderWL('${s.solana_wallet}')" style="background:none;border:none;color:#ff4444;cursor:pointer;font-size:15px;" title="Supprimer">🗑️</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function exportHolderWLCSV() {
+  if (!_hwlData.length) { alert('Aucune donnée à exporter'); return; }
+  const cols = ['Discord Username','Solana Wallet','Balance $YC','Supply Percentage','WL Spots Earned','Ethereum Addresses','Submission Date'];
+  const rows = _hwlData.map(s => {
+    let eths = [];
+    try { eths = JSON.parse(s.eth_addresses || '[]'); } catch {}
+    return [
+      s.discord, s.solana_wallet, Math.floor(Number(s.yc_balance)),
+      Number(s.supply_pct).toFixed(4) + '%', s.wl_spots,
+      eths.join(' ; '), new Date(Number(s.created_at)).toISOString()
+    ];
+  });
+  const csv = [cols, ...rows].map(r => r.map(c => `"${String(c ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `yellowcatz_holder_wl_${Date.now()}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+async function deleteHolderWL(wallet) {
+  if (!confirm('Supprimer cette soumission ?\n\n' + wallet)) return;
+  const data = await apiCall('holderWLDelete', { wallet });
+  if (data.success) loadHolderWL();
+  else alert('Erreur: ' + (data.error || 'unknown'));
+}
+
+function hwlEsc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 </script>
 </body>

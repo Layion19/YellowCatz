@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>YellowCatz — Holder Whitelist</title>
+
+<!-- Libs web3 (chargées en prod sur ton domaine) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/solana-web3.js/1.95.3/index.iife.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ============ TOKENS DE MARQUE YELLOWCATZ ============ */
+:root{
+  --bg:#0D0D0D; --s1:#141414; --s2:#1A1A1A; --border:rgba(255,255,255,.07);
+  --y:#F5C200; --ydim:rgba(245,194,0,.10); --yborder:rgba(245,194,0,.22);
+  --text:#F0F0F0; --muted:rgba(240,240,240,.42); --faint:rgba(240,240,240,.26);
+  --green:#22c55e; --red:#ef4444;
+  --display:'Bebas Neue',sans-serif; --body:'Outfit',sans-serif;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:
+    radial-gradient(900px 480px at 50% -8%, rgba(245,194,0,.10), transparent 62%),
+    var(--bg);
+  color:var(--text);font-family:var(--body);min-height:100vh;line-height:1.5;
+}
+a{color:var(--y)}
+.wrap{max-width:640px;margin:0 auto;padding:40px 20px 60px}
+
+/* ============ HEADER ============ */
+.header{text-align:center;margin-bottom:30px}
+.logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:18px}
+.logo .mark{width:42px;height:42px;border-radius:11px;background:var(--y);color:var(--bg);
+  display:grid;place-items:center;font-size:22px;box-shadow:0 0 26px rgba(245,194,0,.45);transform:rotate(-5deg)}
+.logo .name{font-family:var(--display);font-size:26px;letter-spacing:.15em;color:var(--y)}
+.badge-official{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--y);background:var(--ydim);
+  border:1px solid var(--yborder);padding:5px 12px;border-radius:100px;margin-bottom:18px}
+.badge-official::before{content:'●';font-size:7px}
+h1{font-family:var(--display);font-size:clamp(30px,7vw,46px);letter-spacing:.04em;line-height:1.02}
+.sub{color:var(--muted);font-size:15px;margin-top:10px;max-width:440px;margin-inline:auto}
+
+/* ============ CARD ============ */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:18px;padding:26px;margin-bottom:18px}
+
+/* connect */
+.connect-card{text-align:center;padding:40px 26px}
+.connect-card .ico{font-size:42px;margin-bottom:14px}
+.connect-card p{color:var(--muted);font-size:14px;margin-bottom:22px}
+.btn{font-family:var(--body);font-weight:600;font-size:15px;cursor:pointer;border-radius:12px;
+  padding:14px 26px;border:1px solid var(--border);background:var(--s2);color:var(--text);transition:.18s}
+.btn:hover{border-color:var(--yborder)}
+.btn.y{background:var(--y);color:var(--bg);border-color:var(--y);font-weight:700}
+.btn.y:hover{opacity:.88}
+.btn.full{width:100%;justify-content:center}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-ghost{background:none;border:none;color:var(--faint);font-size:12px;cursor:pointer;margin-top:14px;text-decoration:underline}
+
+/* ============ HOLDINGS ============ */
+.holdings{display:none}
+.hd-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}
+.hd-cell{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:15px 16px}
+.hd-cell .lbl{font-size:9px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.hd-cell .val{font-size:18px;font-weight:600;word-break:break-word}
+.hd-cell .val.mono{font-family:'Courier New',monospace;font-size:13px;color:rgba(240,240,240,.75)}
+
+.spots-banner{margin-top:14px;background:linear-gradient(135deg, rgba(245,194,0,.14), rgba(245,194,0,.05));
+  border:1px solid var(--yborder);border-radius:14px;padding:22px;text-align:center}
+.spots-banner .lbl{font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--y);margin-bottom:4px}
+.spots-banner .num{font-family:var(--display);font-size:64px;line-height:1;color:var(--y)}
+.spots-banner .unit{font-size:13px;color:var(--muted);margin-top:4px}
+.spots-banner .break{font-size:11px;color:var(--faint);margin-top:10px;font-family:'Courier New',monospace}
+
+.ineligible{display:none;text-align:center;padding:24px}
+.ineligible .ico{font-size:34px;margin-bottom:10px}
+.ineligible h3{font-family:var(--display);font-size:22px;letter-spacing:.04em;margin-bottom:6px}
+.ineligible p{color:var(--muted);font-size:14px}
+
+/* ============ FORM ============ */
+.form{display:none;margin-top:18px}
+.field{margin-bottom:18px}
+.field > label{display:block;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.input{width:100%;background:var(--s2);border:1.5px solid var(--border);border-radius:11px;
+  padding:13px 15px;color:var(--text);font-family:var(--body);font-size:14px;outline:none;transition:border-color .18s}
+.input:focus{border-color:var(--yborder)}
+.input.ok{border-color:rgba(34,197,94,.5)}
+.input.bad{border-color:rgba(239,68,68,.5)}
+.eth-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.eth-row .idx{font-family:var(--display);font-size:15px;color:var(--y);width:28px;text-align:center;flex-shrink:0}
+.eth-row .input{flex:1}
+.eth-row .check{width:20px;flex-shrink:0;text-align:center;font-size:14px}
+.hint{font-size:11px;color:var(--faint);margin-top:6px}
+.eth-help{font-size:12px;color:var(--muted);margin-bottom:12px}
+
+.submit-err{color:var(--red);font-size:13px;text-align:center;margin-top:10px;display:none}
+
+/* ============ SUCCESS ============ */
+.success{display:none;text-align:center;padding:40px 26px}
+.success .ico{font-size:48px;margin-bottom:14px}
+.success h2{font-family:var(--display);font-size:30px;letter-spacing:.04em;color:var(--green);margin-bottom:8px}
+.success p{color:var(--muted);font-size:14px;max-width:380px;margin:0 auto}
+
+.foot{text-align:center;color:var(--faint);font-size:11px;font-family:'Courier New',monospace;margin-top:24px;line-height:1.8}
+
+/* toast */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(40px);background:var(--s2);
+  border:1px solid var(--border);color:var(--text);padding:11px 20px;border-radius:100px;font-size:13px;font-weight:600;
+  z-index:200;transition:transform .3s cubic-bezier(.34,1.56,.64,1);opacity:0}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+@media(max-width:520px){.hd-grid{grid-template-columns:1fr}.wrap{padding:28px 16px 50px}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- ============ HEADER ============ -->
+  <div class="header">
+    <div class="logo"><span class="mark">🐱</span><span class="name">YELLOWCATZ</span></div>
+    <div><span class="badge-official">Official Whitelist Campaign</span></div>
+    <h1>YellowCatz Holder Whitelist Registration</h1>
+    <p class="sub">Connect your Solana wallet, verify your $YC holdings, and claim your YellowCatz whitelist spots.</p>
+  </div>
+
+  <!-- ============ CONNECT ============ -->
+  <div class="card connect-card" id="connectCard">
+    <div class="ico">👛</div>
+    <p>Connecte ton wallet Solana pour vérifier tes $YC.</p>
+    <button class="btn y full" id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+    <div id="noPhantom" style="display:none">
+      <button class="btn-ghost" onclick="demoPreview()">👁 Voir un aperçu (démo)</button>
+    </div>
+  </div>
+
+  <!-- ============ HOLDINGS ============ -->
+  <div class="card holdings" id="holdingsCard">
+    <div class="hd-grid">
+      <div class="hd-cell"><div class="lbl">Solana Wallet</div><div class="val mono" id="hdWallet">—</div></div>
+      <div class="hd-cell"><div class="lbl">$YC détenus</div><div class="val" id="hdBalance">—</div></div>
+      <div class="hd-cell"><div class="lbl">% de la supply</div><div class="val" id="hdPct">—</div></div>
+      <div class="hd-cell"><div class="lbl">Statut</div><div class="val" id="hdStatus">—</div></div>
+    </div>
+
+    <!-- éligible -->
+    <div class="spots-banner" id="spotsBanner" style="display:none">
+      <div class="lbl">Whitelist spots</div>
+      <div class="num" id="spotsNum">0</div>
+      <div class="unit">spots obtenus</div>
+      <div class="break" id="spotsBreak"></div>
+    </div>
+
+    <!-- non éligible -->
+    <div class="ineligible" id="ineligible">
+      <div class="ico">🚫</div>
+      <h3>Pas encore éligible</h3>
+      <p>Il faut détenir au moins <b>0,1 %</b> de la supply de $YC pour réclamer un whitelist spot.</p>
+    </div>
+
+    <!-- ============ FORM ============ -->
+    <div class="form" id="form">
+      <div class="field">
+        <label for="discord">Discord Username <span style="color:var(--y)">*</span></label>
+        <input class="input" id="discord" placeholder="ex. Layion#1234 ou layion" oninput="validateForm()" />
+        <div class="hint">Obligatoire — on s'en sert pour te contacter.</div>
+      </div>
+
+      <div class="field">
+        <label>Adresses Ethereum (1 par spot)</label>
+        <div class="eth-help">Renseigne une adresse ETH par whitelist spot. Tu peux mettre des adresses différentes ou la même.</div>
+        <div id="ethFields"></div>
+      </div>
+
+      <button class="btn y full" id="submitBtn" onclick="submitForm()" disabled>Submit</button>
+      <div class="submit-err" id="submitErr"></div>
+    </div>
+  </div>
+
+  <!-- ============ SUCCESS ============ -->
+  <div class="card success" id="successCard">
+    <div class="ico">✅</div>
+    <h2>Inscription validée</h2>
+    <p id="successMsg">Tes whitelist spots sont enregistrés. On te recontacte sur Discord pour la suite.</p>
+  </div>
+
+  <div class="foot">
+    YELLOWCATZ · Official $YC Holder Whitelist · une seule participation par wallet Solana
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   CONFIG — à compléter
+   ============================================================ */
+const CONFIG = {
+  YC_MINT:    "9zcYAff5kaZfVDkEv3DzD2ojvocYyoRL2pFEko53pump", // mint $YC (pump.fun)
+  SOLANA_RPC: "https://api.mainnet-beta.solana.com", // prod : mets un RPC dédié (Helius/QuickNode)
+  API:        "/api/holder-wl",                      // ta Vercel function
+  BONUS_THRESHOLD: 20000000,                         // 20M $YC -> +5 spots
+  BONUS_SPOTS: 5
+};
+
+/* état de session */
+const state = { wallet:null, signature:null, message:null, balance:0, supply:0, pct:0, spots:0, demo:false };
+
+/* ============================================================
+   CALCUL DES WHITELIST SPOTS (source de vérité aussi côté serveur)
+   ============================================================ */
+function computeSpots(balance, supply){
+  const pct = supply > 0 ? (balance / supply) * 100 : 0;
+  let base = 0;
+  if (pct >= 1)        base = 10;
+  else if (pct >= 0.5) base = 5;
+  else if (pct >= 0.1) base = 1;
+  const bonus = balance >= CONFIG.BONUS_THRESHOLD ? CONFIG.BONUS_SPOTS : 0;
+  return { pct, base, bonus, total: base + bonus };
+}
+
+/* ============================================================
+   CONNEXION WALLET (Phantom) + PREUVE DE PROPRIÉTÉ
+   ============================================================ */
+async function connectWallet(){
+  const ph = window.solana;
+  if (!ph || !ph.isPhantom){
+    toast('Phantom non détecté — installe l’extension');
+    document.getElementById('noPhantom').style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('connectBtn');
+  btn.textContent = 'Connexion…'; btn.disabled = true;
+  try{
+    const resp = await ph.connect();
+    const wallet = resp.publicKey.toString();
+
+    // 🔐 signature de preuve de propriété (le serveur la revérifie)
+    const msg = `YellowCatz WL Registration\nWallet: ${wallet}\nTime: ${new Date().toISOString()}`;
+    const signed = await ph.signMessage(new TextEncoder().encode(msg), 'utf8');
+    state.wallet = wallet;
+    state.message = msg;
+    state.signature = Array.from(signed.signature);
+
+    await loadHoldings(wallet);
+  }catch(e){
+    toast('Connexion annulée'); console.error(e);
+  }finally{
+    btn.textContent = 'Connect Wallet'; btn.disabled = false;
+  }
+}
+
+/* lecture du solde $YC + supply on-chain */
+async function loadHoldings(wallet){
+  const conn  = new solanaWeb3.Connection(CONFIG.SOLANA_RPC, 'confirmed');
+  const mint  = new solanaWeb3.PublicKey(CONFIG.YC_MINT);
+  const owner = new solanaWeb3.PublicKey(wallet);
+
+  const accs = await conn.getParsedTokenAccountsByOwner(owner, { mint });
+  let bal = 0;
+  for (const a of accs.value) bal += a.account.data.parsed.info.tokenAmount.uiAmount || 0;
+
+  const supplyInfo = await conn.getTokenSupply(mint);
+  const supply = supplyInfo.value.uiAmount || 0;
+
+  applyHoldings(bal, supply);
+}
+
+/* ============================================================
+   AFFICHAGE DES RÉSULTATS
+   ============================================================ */
+function applyHoldings(balance, supply){
+  state.balance = balance; state.supply = supply;
+  const calc = computeSpots(balance, supply);
+  state.pct = calc.pct; state.spots = calc.total;
+
+  document.getElementById('connectCard').style.display = 'none';
+  document.getElementById('holdingsCard').style.display = 'block';
+
+  document.getElementById('hdWallet').textContent  = short(state.wallet);
+  document.getElementById('hdBalance').textContent = fmt(balance) + ' $YC';
+  document.getElementById('hdPct').textContent     = calc.pct.toFixed(3) + ' %';
+  document.getElementById('hdStatus').innerHTML    = calc.total > 0
+    ? '<span style="color:var(--green)">Éligible ✓</span>'
+    : '<span style="color:var(--red)">Non éligible</span>';
+
+  if (calc.total > 0){
+    document.getElementById('spotsBanner').style.display = 'block';
+    document.getElementById('spotsNum').textContent = calc.total;
+    document.getElementById('spotsBreak').textContent =
+      `${calc.base} (palier) ${calc.bonus ? '+ ' + calc.bonus + ' (bonus 20M+)' : ''}`.trim();
+    document.getElementById('ineligible').style.display = 'none';
+    document.getElementById('form').style.display = 'block';
+    renderEthFields(calc.total);
+    validateForm();
+  } else {
+    document.getElementById('ineligible').style.display = 'block';
+    document.getElementById('spotsBanner').style.display = 'none';
+    document.getElementById('form').style.display = 'none';
+  }
+}
+
+/* ============================================================
+   FORMULAIRE : 1 champ ETH par spot + validation live
+   ============================================================ */
+function renderEthFields(n){
+  let html = '';
+  for (let i = 0; i < n; i++){
+    html += `
+      <div class="eth-row">
+        <span class="idx">${i+1}</span>
+        <input class="input eth" data-i="${i}" placeholder="0x…" oninput="validateForm()" />
+        <span class="check" id="chk-${i}"></span>
+      </div>`;
+  }
+  document.getElementById('ethFields').innerHTML = html;
+}
+
+function validateForm(){
+  const discord = document.getElementById('discord').value.trim();
+  const discordOk = discord.length >= 2;
+
+  const inputs = [...document.querySelectorAll('.eth')];
+  let allEthOk = inputs.length > 0;
+  inputs.forEach(inp => {
+    const v = inp.value.trim();
+    const ok = ethers.isAddress(v);                 // validation auto via ethers
+    const chk = document.getElementById('chk-' + inp.dataset.i);
+    if (!v){ inp.classList.remove('ok','bad'); chk.textContent=''; allEthOk=false; }
+    else if (ok){ inp.classList.add('ok'); inp.classList.remove('bad'); chk.textContent='✓'; chk.style.color='var(--green)'; }
+    else { inp.classList.add('bad'); inp.classList.remove('ok'); chk.textContent='✕'; chk.style.color='var(--red)'; allEthOk=false; }
+  });
+
+  document.getElementById('submitBtn').disabled = !(discordOk && allEthOk);
+}
+
+/* ============================================================
+   SOUMISSION
+   ============================================================ */
+async function submitForm(){
+  const errEl = document.getElementById('submitErr');
+  errEl.style.display = 'none';
+
+  // wallet toujours connecté ?
+  if (!state.demo && (!window.solana || !window.solana.isConnected)){
+    showErr('Wallet déconnecté — reconnecte-toi.'); return;
+  }
+
+  const discord = document.getElementById('discord').value.trim();
+  const ethAddresses = [...document.querySelectorAll('.eth')].map(i => i.value.trim());
+  if (!discord || ethAddresses.some(a => !ethers.isAddress(a))){
+    showErr('Vérifie le Discord et les adresses ETH.'); return;
+  }
+
+  if (state.demo){ // aperçu local uniquement
+    return showSuccess(state.spots);
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.textContent = 'Envoi…'; btn.disabled = true;
+  try{
+    const res = await fetch(CONFIG.API, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        solanaWallet: state.wallet,
+        signature: state.signature,   // le serveur revérifie + relit le solde on-chain
+        message: state.message,
+        discord,
+        ethAddresses
+      })
+    });
+    const data = await res.json();
+    if (res.ok && data.ok){ showSuccess(data.wl_spots); }
+    else if (res.status === 409){ showErr('Ce wallet a déjà participé.'); }
+    else { showErr(data.error || 'Erreur — réessaie.'); }
+  }catch(e){
+    showErr('Erreur réseau — réessaie.');
+  }finally{
+    btn.textContent = 'Submit'; btn.disabled = false;
+  }
+}
+
+function showSuccess(spots){
+  document.getElementById('holdingsCard').style.display = 'none';
+  document.getElementById('successCard').style.display = 'block';
+  document.getElementById('successMsg').textContent =
+    `${spots} whitelist spot(s) enregistré(s). On te recontacte sur Discord pour la suite.`;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+function showErr(m){ const e=document.getElementById('submitErr'); e.textContent=m; e.style.display='block'; }
+
+/* ============================================================
+   APERÇU DÉMO (preview sans wallet) — sans valeur réelle, le serveur
+   revérifie tout. À retirer en prod si tu veux.
+   ============================================================ */
+function demoPreview(){
+  state.demo = true;
+  state.wallet = '7GhDemoPreviewWa11et00000000000000000000xKp';
+  applyHoldings(24000000, 1000000000); // 24M / 1B = 2,4 % -> 10 + bonus 5 = 15
+  toast('Aperçu démo — les chiffres ne sont pas réels');
+}
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const short = a => a ? a.slice(0,4)+'…'+a.slice(-4) : '—';
+const fmt   = n => Math.floor(n).toLocaleString('fr-FR');
+let tt; function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2800);}
+</script>
+</body>
+</html>

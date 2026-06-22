@@ -650,6 +650,56 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, message: 'Submission rejected — user can resubmit' });
     }
 
+    // ============================================================
+    // HOLDER WHITELIST ($YC holders) — LIST  [ADDED]
+    // Lit la table `holder_wl` alimentée par /api/holder-wl
+    // ============================================================
+    if (action === 'holderWLList') {
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS holder_wl (
+          solana_wallet TEXT PRIMARY KEY,
+          discord       TEXT NOT NULL,
+          yc_balance    REAL NOT NULL,
+          supply_pct    REAL NOT NULL,
+          wl_spots      INTEGER NOT NULL,
+          eth_addresses TEXT NOT NULL,
+          created_at    INTEGER NOT NULL
+        )
+      `);
+
+      const rows = await db.execute(`
+        SELECT solana_wallet, discord, yc_balance, supply_pct, wl_spots, eth_addresses, created_at
+        FROM holder_wl
+        ORDER BY created_at DESC
+      `);
+
+      const totalSpots = rows.rows.reduce((s, r) => s + (Number(r.wl_spots) || 0), 0);
+      const totalEth = rows.rows.reduce((s, r) => {
+        try { return s + JSON.parse(r.eth_addresses || '[]').length; } catch { return s; }
+      }, 0);
+
+      return res.status(200).json({
+        success: true,
+        submissions: rows.rows,
+        stats: { totalSubs: rows.rows.length, totalSpots, totalEth }
+      });
+    }
+
+    // ============================================================
+    // HOLDER WHITELIST — DELETE  [ADDED]
+    // ============================================================
+    if (action === 'holderWLDelete') {
+      const { wallet } = body;
+      if (!wallet) return res.status(200).json({ error: 'Wallet required' });
+
+      await db.execute({
+        sql: 'DELETE FROM holder_wl WHERE solana_wallet = ?',
+        args: [wallet]
+      });
+
+      return res.status(200).json({ success: true, message: 'Submission deleted' });
+    }
+
     return res.status(400).json({ error: 'Invalid action' });
 
   } catch (err) {
