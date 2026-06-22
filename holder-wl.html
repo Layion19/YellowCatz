@@ -531,12 +531,25 @@ async function submitForm(){
         ethAddresses
       })
     });
-    const data = await res.json();
+
+    // on lit d'abord en texte pour gérer le cas "pas du JSON" (ex: page 404 Vercel)
+    const text = await res.text();
+    let data = {};
+    try { data = text ? JSON.parse(text) : {}; }
+    catch {
+      console.error('Réponse non-JSON:', res.status, text.slice(0, 200));
+      showErr(res.status === 404
+        ? 'API introuvable (404) — la fonction /api/holder-wl n’est pas déployée.'
+        : `Réponse inattendue du serveur (HTTP ${res.status}).`);
+      return;
+    }
+
     if (res.ok && data.ok){ showSuccess(data.wl_spots); }
     else if (res.status === 409){ showErr('Ce wallet a déjà participé.'); }
-    else { showErr(data.error || 'Erreur — réessaie.'); }
+    else { showErr(data.error ? `Erreur : ${data.error}` : `Erreur (HTTP ${res.status}) — réessaie.`); }
   }catch(e){
-    showErr('Erreur réseau — réessaie.');
+    console.error('fetch error:', e);
+    showErr('Erreur réseau — vérifie ta connexion et réessaie.');
   }finally{
     btn.textContent = 'Submit'; btn.disabled = false;
   }
