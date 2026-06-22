@@ -23,7 +23,7 @@ const db = createClient({
 const YC_MINT_DEFAULT = '9zcYAff5kaZfVDkEv3DzD2ojvocYyoRL2pFEko53pump';
 // accepte SOLANA_RPC_URL OU SOLANA_RPC (ta variable existante)
 const getRpcUrl = () => process.env.SOLANA_RPC_URL || process.env.SOLANA_RPC;
-const getMint   = () => process.env.YC_TOKEN_MINT || YC_MINT_DEFAULT;
+const getMint   = () => process.env.YC_TOKEN_MINT || process.env.WHEEL_TOKEN_ADDRESS || YC_MINT_DEFAULT;
 
 /* ---------- Calcul des spots ---------- */
 const BONUS_THRESHOLD = 20000000, BONUS_SPOTS = 5;
