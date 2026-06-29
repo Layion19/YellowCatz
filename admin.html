@@ -2335,15 +2335,19 @@ async function loadHolderWL() {
 
 function exportHolderWLCSV() {
   if (!_hwlData.length) { alert('Aucune donnée à exporter'); return; }
-  const cols = ['Discord Username','Solana Wallet','Balance $YC','Supply Percentage','WL Spots Earned','Ethereum Addresses','Submission Date'];
-  const rows = _hwlData.map(s => {
+  const cols = ['Discord Username','Solana Wallet','Balance $YC','Supply Percentage','WL Spots Earned','Ethereum Address','Submission Date'];
+  const rows = [];
+  _hwlData.forEach(s => {
     let eths = [];
     try { eths = JSON.parse(s.eth_addresses || '[]'); } catch {}
-    return [
-      s.discord, s.solana_wallet, Math.floor(Number(s.yc_balance)),
-      Number(s.supply_pct).toFixed(4) + '%', s.wl_spots,
-      eths.join('\n'), new Date(Number(s.created_at)).toISOString()
-    ];
+    if (eths.length === 0) eths = ['']; // au moins une ligne même sans adresse
+    const balance = Math.floor(Number(s.yc_balance));
+    const pct = Number(s.supply_pct).toFixed(4) + '%';
+    const date = new Date(Number(s.created_at)).toISOString();
+    // une ligne par adresse ETH : Discord + Solana répétés à chaque ligne
+    eths.forEach(addr => {
+      rows.push([ s.discord, s.solana_wallet, balance, pct, s.wl_spots, addr, date ]);
+    });
   });
   const csv = [cols, ...rows].map(r => r.map(c => `"${String(c ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
