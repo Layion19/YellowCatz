@@ -2070,7 +2070,7 @@ function renderWheelWins() {
           ? `<span style="color:#00c853;font-size:12px;">✅ Paid ${new Date(w.paid_at).toLocaleDateString()}</span>`
           : `<button class="btn btn-success" style="font-size:12px;padding:6px 14px;" onclick="wheelMarkPaid(${w.id}, this)">✓ Mark Paid</button>`
         }
-        <button onclick="navigator.clipboard.writeText('${w.wallet}').then(()=>showToast('Copied!'))" 
+        <button onclick="copyWallet('${w.wallet}')" 
           style="background:#222;border:1px solid #444;border-radius:8px;color:#aaa;padding:5px 10px;cursor:pointer;font-size:11px;">
           📋 Copy Wallet
         </button>
@@ -2342,7 +2342,7 @@ function exportHolderWLCSV() {
     return [
       s.discord, s.solana_wallet, Math.floor(Number(s.yc_balance)),
       Number(s.supply_pct).toFixed(4) + '%', s.wl_spots,
-      eths.join(' ; '), new Date(Number(s.created_at)).toISOString()
+      eths.join('\n'), new Date(Number(s.created_at)).toISOString()
     ];
   });
   const csv = [cols, ...rows].map(r => r.map(c => `"${String(c ?? '').replace(/"/g,'""')}"`).join(',')).join('\n');
